@@ -40,8 +40,8 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
   };
 
   const backgroundType = wisdom.background_type ?? 'minimal';
-  const backgroundUrl = wisdom.background_url ?? '';
-  const hasBg = !!wisdom.featured_image || !!backgroundUrl;
+  const backgroundUrl = wisdom.background_url ?? wisdom.featured_image ?? wisdom.background_image ?? '';
+  const hasBg = !!wisdom.featured_image || !!backgroundUrl || !!wisdom.background_image;
 
   return (
     <motion.article
