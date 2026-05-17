@@ -34,7 +34,7 @@ export function Footer({ socialLinks, links = footerLinks }: FooterProps) {
         <div className="flex flex-col gap-10 md:flex-row md:justify-between">
           <div>
             <p className="text-lg font-medium tracking-tight text-foreground">{SITE_NAME}</p>
-            <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted/50">
+            <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted/80">
               {SITE_DESCRIPTION}
             </p>
           </div>
@@ -43,7 +43,7 @@ export function Footer({ socialLinks, links = footerLinks }: FooterProps) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-muted/40 transition-colors duration-300 hover:text-gold-light"
+                className="text-sm text-muted/80 transition-colors duration-300 hover:text-gold-light"
               >
                 {link.label}
               </Link>
@@ -61,21 +61,21 @@ export function Footer({ socialLinks, links = footerLinks }: FooterProps) {
           </div>
         )}
 
-        <div className="mt-14 border-t border-border/10 pt-8 flex flex-col gap-6 text-muted/30">
+        <div className="mt-14 border-t border-border/10 pt-8 flex flex-col gap-6 text-muted/60">
           <div className="flex flex-col gap-2 md:flex-row md:justify-between md:items-center">
             <p className="text-xs font-medium tracking-wide text-foreground/80">
               © 2026 TheNahj | Spread Teachings. Developed by <span className="text-gold-light font-semibold hover:text-gold transition-colors duration-300">CtrlAltSaqulainH</span>
             </p>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-muted/20">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-muted/50">
               Built with reverence
             </p>
           </div>
           
-          <div className="flex flex-col gap-3 max-w-4xl text-[11px] leading-relaxed font-light text-muted/40">
+          <div className="flex flex-col gap-3 max-w-4xl text-[11px] leading-relaxed font-light text-muted/70">
             <p>
               All research, analysis, and collections on this website are created by our team. We do not claim ownership of articles, quotes, or other materials taken from external sources unless clearly mentioned. Everything is shared only for educational and non-commercial purposes. We do not earn any money from this content.
             </p>
-            <p className="italic text-muted/30">
+            <p className="italic text-muted/60">
               If any copyright holder wants any content removed or changed, please contact us and we will respond quickly.
             </p>
           </div>
