@@ -1,0 +1,55 @@
+{
+  "brand": {
+    "siteName": "TheNahj",
+    "tagline": "Wisdom for the distracted generation.",
+    "description": "Navigate modern life through the wisdom of Imam Ali (AS).",
+    "primaryColor": "#c1a46b",
+    "supportEmail": "salam@thenahj.org",
+    "socialLinks": {
+      "instagram": "https://instagram.com/thenahj",
+      "telegram": "https://t.me/thenahj",
+      "youtube": "https://youtube.com/@thenahj",
+      "facebook": "https://facebook.com/thenahj",
+      "twitter": "https://twitter.com/thenahj"
+    }
+  },
+  "homepage": {
+    "hero": {
+      "headline": "Wisdom for the distracted generation.",
+      "subtext": "Navigate modern life through the wisdom of Imam Ali (AS).",
+      "ctaText": "Explore Wisdom",
+      "ctaLink": "/wisdom",
+      "bgMode": "image",
+      "bgImage": "/hero-bg.jpg",
+      "mobileBgImage": "/hero-bg.jpg",
+      "bgVideo": "https://cdn.pixabay.com/video/2019/02/25/21626-319524075_large.mp4",
+      "focalPoint": "center",
+      "overlayBrightness": 60,
+      "overlayBlur": 0
+    },
+    "blocks": [
+      { "id": "1", "type": "hero", "enabled": true, "title": "Hero Section" },
+      { "id": "2", "type": "daily-wisdom", "enabled": true, "title": "Daily Wisdom" },
+      { "id": "3", "type": "student-corner", "enabled": true, "title": "Featured Student Corner" },
+      { "id": "4", "type": "youth-corner", "enabled": true, "title": "Featured Youth Corner" },
+      { "id": "5", "type": "emotional-prompt", "enabled": true, "title": "Emotional Prompt" },
+      { "id": "6", "type": "newsletter", "enabled": true, "title": "Newsletter CTA" }
+    ]
+  },
+  "navigation": {
+    "main": [
+      { "label": "Imam Ali Says", "href": "/wisdom" },
+      { "label": "Student Corner", "href": "/student" },
+      { "label": "Youth Corner", "href": "/youth" },
+      { "label": "Nahjul Balagha", "href": "/nahjul-balagha" },
+      { "label": "Articles", "href": "/articles" },
+      { "label": "Audio Reflections", "href": "/audio" },
+      { "label": "Focus Timer", "href": "/focus" }
+    ],
+    "footer": [
+      { "label": "Daily Wisdom", "href": "/daily" },
+      { "label": "About Mission", "href": "/about" },
+      { "label": "Contact", "href": "/contact" }
+    ]
+  }
+}

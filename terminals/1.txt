@@ -1,0 +1,9 @@
+---
+pid: 24592
+cwd: |
+  C:\Users\Asus
+---
+PS C:\Users\Asus> 
+ *  History restored 
+
+PS C:\Users\Asus> 

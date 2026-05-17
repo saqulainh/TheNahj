@@ -1,0 +1,12 @@
+---
+cwd: "C:\\Users\\Asus"
+command: "Set-Location \"C:\\Users\\Asus\\.cursor\\projects\\empty-window\"; npm install 2>&1 | Out-String; if ($LASTEXITCODE -eq 0) { npm run dev }"
+started_at: 2026-05-16T18:11:46.309Z
+running_for_ms: 5        
+---
+
+---
+error: "Sandbox policy 'workspace_readwrite' is not supported on this system. Ensure the sandbox helper binary is available, or use 'insecure_none'. Reason: Windows sandbox helper only provides network proxy, not filesystem isolation"
+elapsed_ms: 21
+ended_at: 2026-05-16T18:11:46.330Z
+---

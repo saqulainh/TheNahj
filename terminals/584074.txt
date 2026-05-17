@@ -1,0 +1,12 @@
+---
+cwd: "C:\\Users\\Asus"
+command: "powershell -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\Asus\\.cursor\\projects\\empty-window\\start-dev.ps1\""
+started_at: 2026-05-16T18:39:35.283Z
+running_for_ms: 4        
+---
+
+---
+error: "Sandbox policy 'workspace_readwrite' is not supported on this system. Ensure the sandbox helper binary is available, or use 'insecure_none'. Reason: Windows sandbox helper only provides network proxy, not filesystem isolation"
+elapsed_ms: 26
+ended_at: 2026-05-16T18:39:35.309Z
+---

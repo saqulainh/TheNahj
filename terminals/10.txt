@@ -1,0 +1,10 @@
+---
+pid: 12020
+cwd: |
+  C:\Users\Asus
+---
+PS C:\Users\Asus> cd C:\Users\Asus\.cursor\projects\empty-window
+>> npm install
+>> npm run devcd C:\Users\Asus\.cursor\projects\empty-window
+>> npm install
+>> npm run devcd C:\Users\Asus\.cursor\projects\empty-window

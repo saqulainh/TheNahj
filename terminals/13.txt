@@ -1,0 +1,147 @@
+---
+pid: 1780
+cwd: |
+  C:\Users\Asus\.cursor\projects\empty-window
+last_command: npm run dev
+last_exit_code: 0
+---
+PS C:\Users\Asus> cd C:\Users\Asus\.cursor\projects\empty-window
+PS C:\Users\Asus\.cursor\projects\empty-window> npm install
+
+added 359 packages, and audited 360 packages in 1m
+
+140 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+PS C:\Users\Asus\.cursor\projects\empty-window> npm run dev
+
+> thenahj@0.1.0 dev
+> next dev --port 3000
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\Asus\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\Asus\.cursor\projects\empty-window\package-lock.json
+
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:3000
+   - Network:      http://10.249.194.113:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 3.3s
+ ○ Compiling / ...
+ ✓ Compiled / in 7s (1618 modules)
+ ✓ Compiled in 802ms (705 modules)
+ GET / 200 in 7871ms
+ ○ Compiling /wisdom ...
+ ✓ Compiled /wisdom in 596ms (1582 modules)
+ GET /wisdom 200 in 757ms
+ ○ Compiling /topics/[slug] ...
+ ✓ Compiled /topics/[slug] in 563ms (1592 modules)
+ GET /topics/discipline 200 in 1445ms
+ ✓ Compiled /topics in 440ms (1594 modules)
+ GET /topics 200 in 579ms
+ GET /topics 200 in 36ms
+ ✓ Compiled /student in 485ms (1596 modules)
+ GET /student 200 in 628ms
+ ○ Compiling /focus ...
+ ✓ Compiled /focus in 1206ms (1612 modules)
+ GET /focus 200 in 1336ms
+ ○ Compiling /about ...
+ ✓ Compiled /about in 558ms (1600 modules)
+ GET /about 200 in 638ms
+ GET /focus 200 in 47ms
+ ○ Compiling /articles ...
+ ✓ Compiled /articles in 741ms (1600 modules)
+ GET /articles 200 in 918ms
+ ○ Compiling /articles/[slug] ...
+ ✓ Compiled /articles/[slug] in 561ms (1601 modules)
+ GET /articles/before-you-open-instagram 200 in 1366ms
+ GET /articles 200 in 42ms
+ GET /topics 200 in 46ms
+ ✓ Compiled /wisdom in 364ms (902 modules)
+ GET /wisdom 200 in 469ms
+ ○ Compiling / ...
+ ✓ Compiled / in 721ms (919 modules)
+ GET / 200 in 836ms
+ ○ Compiling /nahjul-balagha ...
+ ✓ Compiled /nahjul-balagha in 2.9s (1606 modules)
+ GET /nahjul-balagha 200 in 3662ms
+ ○ Compiling /wisdom/[slug] ...
+ ✓ Compiled /wisdom/[slug] in 1833ms (1606 modules)
+ GET /wisdom/value-of-youth-and-health 200 in 2976ms
+ GET /wisdom 200 in 45ms
+ GET /wisdom 200 in 636ms
+ ✓ Compiled in 1516ms (1618 modules)
+ ✓ Compiled in 183ms (713 modules)
+ ✓ Compiled in 233ms (713 modules)
+ ✓ Compiled in 212ms (713 modules)
+ ✓ Compiled in 675ms (1618 modules)
+ ✓ Compiled in 1611ms (1629 modules)
+ ✓ Compiled in 852ms (1629 modules)
+ ✓ Compiled in 226ms (713 modules)
+ ✓ Compiled in 430ms (1629 modules)
+ ✓ Compiled in 199ms (713 modules)
+ ✓ Compiled in 1856ms (1643 modules)
+ ✓ Compiled in 511ms (1643 modules)
+ ✓ Compiled in 2.7s (1643 modules)
+ ✓ Compiled in 307ms (713 modules)
+ ✓ Compiled in 272ms (713 modules)
+ ✓ Compiled in 212ms (713 modules)
+ ✓ Compiled in 579ms (1643 modules)
+ GET / 200 in 236ms
+ GET / 200 in 71ms
+ GET / 200 in 65ms
+ GET / 200 in 63ms
+ GET / 200 in 62ms
+ GET / 200 in 59ms
+ GET / 200 in 83ms
+ GET / 200 in 112ms
+ GET / 200 in 139ms
+ GET / 200 in 59ms
+ GET / 200 in 58ms
+ GET / 200 in 56ms
+ GET / 200 in 53ms
+ GET / 200 in 58ms
+ GET / 200 in 55ms
+ GET / 200 in 49ms
+ GET / 200 in 57ms
+ GET / 200 in 49ms
+ GET / 200 in 54ms
+ GET / 200 in 51ms
+ GET / 200 in 55ms
+ GET / 200 in 54ms
+ GET / 200 in 376ms
+ ○ Compiling /saved ...
+ ✓ Compiled /saved in 1042ms (1638 modules)
+ GET /saved 200 in 1167ms
+ GET / 200 in 385ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 1143ms (116 modules)
+ ○ Compiling /admin/login ...
+ ✓ Compiled /admin/login in 2.3s (1657 modules)
+ GET /admin/login 200 in 3363ms
+ ○ Compiling /api/admin/login ...
+ ✓ Compiled /api/admin/login in 1582ms (1661 modules)
+ POST /api/admin/login 200 in 1851ms
+ ○ Compiling /admin ...
+ ✓ Compiled /admin in 692ms (1668 modules)
+ GET /admin 200 in 873ms
+ GET /admin 200 in 71ms
+ ○ Compiling /api/admin/logout ...
+ ✓ Compiled /api/admin/logout in 698ms (1652 modules)
+ POST /api/admin/logout 200 in 775ms
+ GET /admin/login 200 in 82ms
+ GET /admin/login 200 in 31ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOSPC: no space left on device, write
+
+PS C:\Users\Asus\.cursor\projects\empty-window> 
