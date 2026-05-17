@@ -61,13 +61,24 @@ export function Footer({ socialLinks, links = footerLinks }: FooterProps) {
           </div>
         )}
 
-        <div className="mt-14 flex items-center justify-between border-t border-border/10 pt-6">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted/25">
-            Built with reverence
-          </p>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted/25">
-            Content for reflection and growth
-          </p>
+        <div className="mt-14 border-t border-border/10 pt-8 flex flex-col gap-6 text-muted/30">
+          <div className="flex flex-col gap-2 md:flex-row md:justify-between md:items-center">
+            <p className="text-xs font-medium tracking-wide text-foreground/80">
+              © 2026 TheNahj | Spread Teachings. Developed by <span className="text-gold-light font-semibold hover:text-gold transition-colors duration-300">CtrlAltSaqulainH</span>
+            </p>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-muted/20">
+              Built with reverence
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-3 max-w-4xl text-[11px] leading-relaxed font-light text-muted/40">
+            <p>
+              All research, analysis, and collections on this website are created by our team. We do not claim ownership of articles, quotes, or other materials taken from external sources unless clearly mentioned. Everything is shared only for educational and non-commercial purposes. We do not earn any money from this content.
+            </p>
+            <p className="italic text-muted/30">
+              If any copyright holder wants any content removed or changed, please contact us and we will respond quickly.
+            </p>
+          </div>
         </div>
       </div>
     </footer>
