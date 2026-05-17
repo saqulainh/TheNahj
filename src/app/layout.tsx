@@ -3,6 +3,7 @@ import { Amiri, Inter, Noto_Nastaliq_Urdu, Instrument_Serif, Plus_Jakarta_Sans }
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { getCMSConfig } from "@/lib/cms";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 const inter = Inter({
@@ -66,6 +67,7 @@ export default async function RootLayout({
         <Header siteName={cms.brand.siteName} links={cms.navigation.main} />
         <main className="min-h-[calc(100vh-8rem)]">{children}</main>
         <Footer socialLinks={cms.brand.socialLinks} links={cms.navigation.footer} />
+        <Analytics />
       </body>
     </html>
   );
