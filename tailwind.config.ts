@@ -9,19 +9,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#080807", // Deep cinematic night sand black
-        surface: "#0f0f0e",
-        "surface-elevated": "#171715",
-        border: "rgba(231, 226, 217, 0.08)", // Subtle sand-tinted border
+        background: "hsl(var(--background) / <alpha-value>)",
+        surface: "hsl(var(--surface) / <alpha-value>)",
+        "surface-elevated": "hsl(var(--surface-elevated) / <alpha-value>)",
+        border: "hsl(var(--border) / <alpha-value>)",
         gold: {
-          DEFAULT: "#c1a46b", // Authentic noble gold
-          muted: "#8c764b", // Noble gold muted
-          light: "#dfcfaf", // Noble gold light
-          dim: "#4e4128", // Noble gold dim
+          DEFAULT: "hsl(var(--gold) / <alpha-value>)",
+          muted: "hsl(var(--gold-muted) / <alpha-value>)",
+          light: "hsl(var(--gold-light) / <alpha-value>)",
+          dim: "hsl(var(--gold-dim) / <alpha-value>)",
         },
-        foreground: "#E7E2D9", // Soft premium editorial sand off-white
-        secondary: "#b8b3a7", // Solid sand secondary (allows Tailwind opacity modifiers)
-        muted: "#8a857b", // Solid sand muted (allows Tailwind opacity modifiers)
+        foreground: "hsl(var(--foreground) / <alpha-value>)",
+        secondary: "hsl(var(--secondary) / <alpha-value>)",
+        muted: "hsl(var(--muted) / <alpha-value>)",
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],

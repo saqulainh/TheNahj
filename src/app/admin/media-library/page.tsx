@@ -1,346 +1,209 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ImageIcon, Plus, Trash2, Search, Link as LinkIcon, UploadCloud, Loader2, Music } from "lucide-react";
-import { Loader } from "@/components/ui/Loader";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ImageIcon, Search, UploadCloud, Trash2, Copy, Loader2 } from "lucide-react";
 
-interface MediaAsset {
+interface MediaItem {
   id: string;
   title: string;
+  fileName: string;
   url: string;
-  type: string;
-  size: string;
-  tags: string[];
+  mimeType: string;
+  size: number;
+  variants?: Array<{ width: number; url: string; format: string; fileName: string }>;
+  created_at: string;
 }
 
-const mockAssets: MediaAsset[] = [
-  {
-    id: "m1",
-    title: "Cinematic Reflection Backdrop",
-    url: "/backgrounds/reflection-1.png",
-    type: "image/png",
-    size: "1.4 MB",
-    tags: ["backdrop", "cinematic", "sermon"],
-  },
-  {
-    id: "m2",
-    title: "Abstract Gradient Pattern",
-    url: "/textures/abstract.png",
-    type: "image/png",
-    size: "450 KB",
-    tags: ["texture", "abstract", "purple"],
-  },
-];
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
 
 export default function MediaLibraryPage() {
-  const [assets, setAssets] = useState<MediaAsset[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const queryClient = useQueryClient();
 
-  // Form states for uploading/adding
-  const [newTitle, setNewTitle] = useState("");
-  const [newTags, setNewTags] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const mediaQuery = useQuery({
+    queryKey: ["media"],
+    queryFn: async () => {
+      const res = await fetch("/api/media");
+      const json = await res.json();
+      return (json.items ?? []) as MediaItem[];
+    },
+  });
 
-  useEffect(() => {
-    fetchAssets();
-  }, []);
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("title", file.name);
 
-  const fetchAssets = async () => {
-    if (!isSupabaseConfigured || !supabase) {
-      setAssets(mockAssets);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.storage.from("media").list(undefined, {
-        limit: 100,
-        sortBy: { column: "created_at", order: "desc" },
+      const response = await new Promise<MediaItem>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/media");
+        xhr.upload.onprogress = (event) => {
+          if (!event.lengthComputable) return;
+          const percent = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percent);
+        };
+        xhr.onload = () => {
+          try {
+            const parsed = JSON.parse(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300 && parsed.success) {
+              resolve(parsed.item as MediaItem);
+            } else {
+              reject(new Error(parsed.error || "Upload failed"));
+            }
+          } catch {
+            reject(new Error("Invalid upload response"));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.send(formData);
       });
 
-      if (error) throw error;
+      return response;
+    },
+    onSuccess: (item) => {
+      toast.success("Upload complete", { description: item.title });
+      setUploadProgress(0);
+      queryClient.invalidateQueries({ queryKey: ["media"] });
+    },
+    onError: (error) => {
+      setUploadProgress(0);
+      toast.error("Upload failed", {
+        description: error instanceof Error ? error.message : "Request failed",
+      });
+    },
+  });
 
-      if (data) {
-        const mapped: MediaAsset[] = data.map((file) => {
-          const { data: urlData } = supabase.storage.from("media").getPublicUrl(file.name);
-          const sizeMB = file.metadata ? (file.metadata.size / (1024 * 1024)).toFixed(2) : "0.1";
-          
-          return {
-            id: file.id || file.name,
-            title: file.name.split("-").slice(1).join("-") || file.name,
-            url: urlData.publicUrl,
-            type: file.metadata?.mimetype || (file.name.endsWith(".mp3") ? "audio/mpeg" : "image/jpeg"),
-            size: `${sizeMB} MB`,
-            tags: file.name.endsWith(".mp3") ? ["audio"] : ["image"],
-          };
-        });
-        setAssets(mapped);
-      }
-    } catch (err) {
-      console.error("Error fetching assets:", err);
-      setStatus("Failed to load live assets. Ensure 'media' bucket is configured.");
-      setAssets(mockAssets);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/media?id=${id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || "Delete failed");
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["media"] });
+      toast.success("Asset removed");
+    },
+    onError: (error) => {
+      toast.error("Delete failed", {
+        description: error instanceof Error ? error.message : "Request failed",
+      });
+    },
+  });
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFile) {
-      setStatus("Please select a file first.");
-      return;
-    }
-
-    if (!isSupabaseConfigured || !supabase) {
-      // Local fallback simulation
-      const mockNew: MediaAsset = {
-        id: `mock-${Date.now()}`,
-        title: newTitle || selectedFile.name,
-        url: URL.createObjectURL(selectedFile),
-        type: selectedFile.type,
-        size: `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`,
-        tags: newTags.split(",").map((t) => t.trim()).filter(Boolean),
-      };
-      setAssets([mockNew, ...assets]);
-      setSelectedFile(null);
-      setNewTitle("");
-      setNewTags("");
-      setStatus("Simulated upload successful (Local fallback active).");
-      return;
-    }
-
-    setUploading(true);
-    setStatus("Uploading to Supabase Storage...");
-
-    try {
-      const fileExt = selectedFile.name.split(".").pop();
-      const sanitizedTitle = (newTitle || selectedFile.name.split(".")[0])
-        .replace(/[^a-zA-Z0-9]/g, "-")
-        .toLowerCase();
-      const fileName = `${Date.now()}-${sanitizedTitle}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("media")
-        .upload(fileName, selectedFile, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (uploadError) throw uploadError;
-
-      setStatus("Asset uploaded successfully! Fetching library...");
-      setSelectedFile(null);
-      setNewTitle("");
-      setNewTags("");
-      await fetchAssets();
-    } catch (err) {
-      console.error("Upload error:", err);
-      setStatus(err instanceof Error ? err.message : "Upload failed.");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const copyUrl = (url: string) => {
-    navigator.clipboard.writeText(url);
-    setStatus(`Copied: ${url}`);
-    setTimeout(() => setStatus(null), 3000);
-  };
-
-  const deleteAsset = async (asset: MediaAsset) => {
-    if (!isSupabaseConfigured || !supabase) {
-      setAssets(assets.filter((a) => a.id !== asset.id));
-      setStatus("Asset deleted locally.");
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to delete "${asset.title}"?`)) return;
-
-    setStatus("Deleting asset...");
-    try {
-      // Extract file name from public URL
-      const urlParts = asset.url.split("/");
-      const fileName = urlParts[urlParts.length - 1];
-
-      const { error } = await supabase.storage.from("media").remove([fileName]);
-      if (error) throw error;
-
-      setStatus("Asset deleted successfully.");
-      await fetchAssets();
-    } catch (err) {
-      console.error("Delete error:", err);
-      setStatus("Failed to delete asset from Storage.");
-    }
-  };
-
-  const filtered = assets.filter((a) =>
-    a.title.toLowerCase().includes(search.toLowerCase()) ||
-    a.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()))
-  );
+  const assets = useMemo(() => {
+    const all = mediaQuery.data || [];
+    if (!search.trim()) return all;
+    const q = search.toLowerCase();
+    return all.filter((item) => item.title.toLowerCase().includes(q) || item.fileName.toLowerCase().includes(q));
+  }, [mediaQuery.data, search]);
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between border-b border-border pb-5">
-        <div className="flex items-center gap-3">
-          <ImageIcon className="h-8 w-8 text-gold" />
-          <div>
-            <h1 className="text-3xl font-medium tracking-tight text-foreground">Media Library</h1>
-            <p className="mt-1 text-sm text-muted">Upload and manage audio reflections and image banners directly in Supabase Storage.</p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-medium tracking-tight text-foreground">Media Library</h1>
+          <p className="mt-2 text-sm text-muted">Unified media manager for hero images, card backgrounds, inline visuals, and banners.</p>
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Upload Form */}
-        <div className="lg:col-span-1 rounded-xl border border-border bg-surface p-6 space-y-6 self-start">
-          <h2 className="text-lg font-medium text-foreground flex items-center gap-2">
-            <UploadCloud className="h-4 w-4 text-gold-muted" /> Live File Upload
-          </h2>
+      <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
+        <section className="rounded-2xl border border-border/30 bg-surface/70 p-5">
+          <h2 className="text-sm font-medium text-foreground">Upload</h2>
+          <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-border/35 bg-background p-6 text-center">
+            <UploadCloud size={18} className="mb-2" />
+            <span className="text-xs text-muted">Drop or select image/audio</span>
+            <input
+              type="file"
+              accept="image/*,audio/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadMutation.mutate(file);
+              }}
+            />
+          </label>
 
-          <form onSubmit={handleUpload} className="space-y-4">
-            <div className="flex items-center justify-center w-full">
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl border-border bg-background hover:bg-surface/50 cursor-pointer transition-all">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4 text-center">
-                  <UploadCloud className="w-8 h-8 mb-2 text-muted" />
-                  <p className="text-xs text-muted">
-                    {selectedFile ? (
-                      <span className="font-semibold text-gold-light">{selectedFile.name}</span>
-                    ) : (
-                      <span>Click to upload image or audio (.mp3, .png, .jpg)</span>
-                    )}
-                  </p>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*,audio/mpeg"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      setSelectedFile(e.target.files[0]);
-                      setNewTitle(e.target.files[0].name.split(".")[0]);
-                    }
-                  }}
-                  className="hidden"
-                />
-              </label>
+          {uploadMutation.isPending && (
+            <div className="mt-4 rounded-xl border border-border/30 bg-background p-3">
+              <div className="flex items-center gap-2 text-xs text-muted">
+                <Loader2 className="animate-spin" size={12} /> Uploading {uploadProgress}%
+              </div>
+              <div className="mt-2 h-2 rounded-full bg-surface-elevated">
+                <div className="h-2 rounded-full bg-gold/70 transition-all" style={{ width: `${uploadProgress}%` }} />
+              </div>
             </div>
+          )}
+        </section>
 
-            <label className="block">
-              <span className="text-xs uppercase tracking-wider text-gold-muted">Asset Title (Optional)</span>
-              <input
-                type="text"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="e.g. Focus Sermon"
-                className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-gold/40 focus:outline-none"
-              />
-            </label>
-
-            <button
-              type="submit"
-              disabled={uploading || !selectedFile}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gold/15 py-3 text-xs font-semibold text-gold-light hover:bg-gold/25 disabled:opacity-50 transition-colors border border-gold/25"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Uploading…
-                </>
-              ) : (
-                "Upload to Supabase Storage"
-              )}
-            </button>
-          </form>
-        </div>
-
-        {/* Media List */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Search bar */}
+        <section className="space-y-4">
           <div className="relative">
-            <Search className="absolute left-4 top-3.5 h-4 w-4 text-muted/65" />
+            <Search size={14} className="absolute left-3 top-3.5 text-muted" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search library..."
-              className="w-full rounded-xl border border-border bg-surface pl-11 pr-4 py-3 text-sm focus:border-gold/40 focus:outline-none"
+              placeholder="Search uploaded assets"
+              className="w-full rounded-xl border border-border/35 bg-surface/70 py-3 pl-9 pr-3 text-sm"
             />
           </div>
 
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-24 text-muted bg-surface/30 rounded-2xl border border-border/20">
-              <Loader size="8rem" />
-              <p className="mt-4 text-xs tracking-widest text-gold-muted uppercase">Loading media assets...</p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {filtered.map((asset) => (
-                <div key={asset.id} className="rounded-xl border border-border bg-surface overflow-hidden flex flex-col justify-between">
-                  {/* Visual Thumbnail */}
-                  <div className="h-32 bg-background relative overflow-hidden flex items-center justify-center border-b border-border">
-                    {asset.type.startsWith("audio/") || asset.url.endsWith(".mp3") ? (
-                      <div className="flex flex-col items-center justify-center gap-2 text-gold">
-                        <Music className="h-8 w-8 text-gold-muted" />
-                        <span className="text-[10px] uppercase tracking-wider font-medium text-gold/80">Audio Reflection</span>
-                      </div>
-                    ) : (
-                      <img src={asset.url} alt={asset.title} className="w-full h-full object-cover" />
-                    )}
-                  </div>
-
-                  <div className="p-4 space-y-3">
-                    <div>
-                      <h3 className="font-semibold text-foreground text-sm line-clamp-1">{asset.title}</h3>
-                      <p className="text-xs text-muted font-mono line-clamp-1 mt-0.5">{asset.url}</p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1">
-                      {asset.tags.map((t, i) => (
-                        <span key={i} className="text-[10px] bg-background text-muted px-2 py-0.5 rounded border border-border">{t}</span>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center justify-between border-t border-border pt-3 text-[10px] text-muted">
-                      <span>{asset.size}</span>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => copyUrl(asset.url)}
-                          className="p-1.5 hover:text-gold-light rounded bg-background border border-border"
-                          title="Copy Public URL"
-                        >
-                          <LinkIcon size={12} />
-                        </button>
-                        <button
-                          onClick={() => deleteAsset(asset)}
-                          className="p-1.5 hover:text-red-400 rounded bg-background border border-border"
-                          title="Delete Asset"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {mediaQuery.isLoading && <p className="text-sm text-muted">Loading media...</p>}
+            {assets.map((asset) => (
+              <article key={asset.id} className="overflow-hidden rounded-xl border border-border/30 bg-surface/70">
+                <div className="flex h-36 items-center justify-center bg-background">
+                  {asset.mimeType.startsWith("image/") ? (
+                    <img src={asset.url} alt={asset.title} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="text-xs uppercase tracking-[0.2em] text-gold-muted">Audio</div>
+                  )}
+                </div>
+                <div className="space-y-2 p-3">
+                  <h3 className="line-clamp-1 text-sm text-foreground">{asset.title}</h3>
+                  <p className="text-[11px] text-muted">{formatSize(asset.size)}</p>
+                  {asset.variants?.length ? (
+                    <p className="text-[11px] text-gold-muted">{asset.variants.length} responsive variants</p>
+                  ) : null}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(asset.url);
+                        toast.success("URL copied", { description: asset.url });
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border/35 px-2 py-1 text-[11px] text-muted hover:text-foreground"
+                    >
+                      <Copy size={11} /> Copy URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteMutation.mutate(asset.id)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border/35 px-2 py-1 text-[11px] text-muted hover:text-red-400"
+                    >
+                      <Trash2 size={11} /> Delete
+                    </button>
                   </div>
                 </div>
-              ))}
-
-              {filtered.length === 0 && (
-                <div className="col-span-full text-center py-10 text-xs text-muted">
-                  No assets found matching the search query.
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+              </article>
+            ))}
+            {!mediaQuery.isLoading && assets.length === 0 && (
+              <div className="col-span-full rounded-xl border border-border/30 bg-surface/70 p-8 text-center text-sm text-muted">
+                <ImageIcon className="mx-auto mb-2" size={18} />
+                No assets found.
+              </div>
+            )}
+          </div>
+        </section>
       </div>
-
-      {status && (
-        <div className="rounded-lg bg-surface p-4 text-xs text-gold-muted border border-border">
-          {status}
-        </div>
-      )}
     </div>
   );
 }

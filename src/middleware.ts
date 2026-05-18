@@ -6,6 +6,15 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(COOKIE_NAME)?.value;
   const isAuthed = await verifyAdminToken(token);
+  const origin = request.headers.get("origin");
+  const host = request.headers.get("host");
+  const isUnsafeMethod = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method);
+
+  if (isUnsafeMethod && pathname.startsWith("/api/")) {
+    if (origin && host && !origin.includes(host)) {
+      return NextResponse.json({ error: "CSRF validation failed" }, { status: 403 });
+    }
+  }
 
   if (
     (pathname === "/admin" || pathname.startsWith("/admin/")) &&
@@ -18,7 +27,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (pathname === "/api/wisdom" && request.method === "POST" && !isAuthed) {
+  const adminWriteRoutes = ["/api/wisdom", "/api/articles", "/api/content", "/api/media"];
+  if (adminWriteRoutes.includes(pathname) && isUnsafeMethod && !isAuthed) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (pathname.startsWith("/api/content/revisions") && !isAuthed) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -26,5 +40,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*", "/api/wisdom"],
+  matcher: ["/admin", "/admin/:path*", "/api/wisdom", "/api/articles", "/api/content", "/api/content/:path*", "/api/media"],
 };

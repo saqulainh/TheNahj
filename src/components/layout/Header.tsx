@@ -1,11 +1,12 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { CinematicButton } from "@/components/ui/CinematicButton";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 interface HeaderProps {
   siteName?: string;
@@ -18,25 +19,16 @@ export function Header({
 }: HeaderProps) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { scrollY } = useScroll();
-  
-  const headerBg = useTransform(
-    scrollY,
-    [0, 50],
-    ["rgba(10, 10, 10, 0)", "rgba(10, 10, 10, 0.8)"]
-  );
+  const [hasScrolled, setHasScrolled] = useState(false);
 
-  const headerBorder = useTransform(
-    scrollY,
-    [0, 50],
-    ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.05)"]
-  );
-
-  const headerBlur = useTransform(
-    scrollY,
-    [0, 50],
-    ["blur(0px)", "blur(12px)"]
-  );
+  useEffect(() => {
+    const handleScroll = () => {
+      setHasScrolled(window.scrollY > 15);
+    };
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -55,15 +47,18 @@ export function Header({
   const isHome = pathname === "/";
 
   return (
-    <motion.header
-      style={isHome ? {} : {
-        backgroundColor: headerBg,
-        borderColor: headerBorder,
-        backdropFilter: headerBlur,
-      }}
-      className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${isHome ? 'flex justify-center pt-8 px-4 md:px-0' : 'border-b'}`}
+    <header
+      className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
+        isHome 
+          ? 'flex justify-center pt-6 px-4 md:px-0 bg-transparent border-transparent' 
+          : `border-b backdrop-blur-md ${
+              hasScrolled 
+                ? 'bg-surface/85 border-border/20 shadow-sm' 
+                : 'bg-background/20 border-transparent'
+            }`
+      }`}
     >
-      <div className={`${isHome ? 'w-full md:w-auto flex items-center justify-between rounded-[2rem] border border-white/5 bg-black/40 px-6 md:px-10 py-4 backdrop-blur-xl' : 'mx-auto flex max-w-7xl items-center justify-between px-6 py-5'}`}>
+      <div className={`${isHome ? 'w-full md:w-auto flex items-center justify-between rounded-[2rem] border border-border/25 bg-surface/65 px-6 md:px-10 py-4 backdrop-blur-xl shadow-[0_14px_50px_-24px_rgba(0,0,0,0.55)]' : 'mx-auto flex max-w-7xl items-center justify-between px-6 py-5'}`}>
         {/* Site Name (Hidden on Desktop Home) */}
         <Link 
           href="/" 
@@ -76,7 +71,7 @@ export function Header({
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className={`hidden items-center md:flex ${isHome ? 'gap-6' : 'gap-6'}`}>
+        <nav className={`hidden items-center md:flex ${isHome ? 'gap-4' : 'gap-6'}`}>
           {links && links.map((link) => (
             link.href === "/focus" ? (
               <Link
@@ -90,23 +85,33 @@ export function Header({
               <Link
                 key={link.href}
                 href={link.href}
-                className={`uppercase tracking-widest transition-all duration-300 hover:text-white ${
-                  isHome ? 'text-[10px] text-white/60' : 'text-xs text-muted hover:text-gold-light'
-                } ${!isHome && pathname === link.href ? "text-gold" : ""}`}
+                className={`relative uppercase tracking-widest transition-all duration-300 hover:text-foreground ${
+                  isHome ? 'text-[10px] text-muted/80' : 'text-xs text-muted hover:text-gold'
+                } ${pathname === link.href ? "text-gold" : ""}`}
               >
                 {link.label}
+                {pathname === link.href && (
+                  <span className="absolute -bottom-2 left-1/2 h-px w-8 -translate-x-1/2 bg-gradient-to-r from-transparent via-gold/80 to-transparent" />
+                )}
               </Link>
             )
           ))}
         </nav>
 
+        <div className="hidden md:block md:pl-3">
+          <ThemeToggle />
+        </div>
+
         {/* Mobile Menu Toggle */}
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 text-muted hover:text-foreground md:hidden"
-        >
-          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="rounded-full border border-border/25 bg-surface/80 p-2 text-muted hover:text-foreground"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation */}
@@ -114,7 +119,7 @@ export function Header({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute left-0 right-0 top-full border-b border-white/5 bg-background/95 p-6 backdrop-blur-xl md:hidden"
+          className="absolute left-3 right-3 top-full mt-2 rounded-2xl border border-border/25 bg-surface/95 p-6 backdrop-blur-xl md:hidden"
         >
           <nav className="flex flex-col gap-6">
             {links && links.map((link) => (
@@ -131,6 +136,6 @@ export function Header({
           </nav>
         </motion.div>
       )}
-    </motion.header>
+    </header>
   );
 }

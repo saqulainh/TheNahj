@@ -24,32 +24,92 @@
       "mobileBgImage": "/hero-bg.jpg",
       "bgVideo": "https://cdn.pixabay.com/video/2019/02/25/21626-319524075_large.mp4",
       "focalPoint": "center",
-      "overlayBrightness": 60,
+      "overlayBrightness": 50,
       "overlayBlur": 0
     },
     "blocks": [
-      { "id": "1", "type": "hero", "enabled": true, "title": "Hero Section" },
-      { "id": "2", "type": "daily-wisdom", "enabled": true, "title": "Daily Wisdom" },
-      { "id": "3", "type": "student-corner", "enabled": true, "title": "Featured Student Corner" },
-      { "id": "4", "type": "youth-corner", "enabled": true, "title": "Featured Youth Corner" },
-      { "id": "5", "type": "emotional-prompt", "enabled": true, "title": "Emotional Prompt" },
-      { "id": "6", "type": "newsletter", "enabled": true, "title": "Newsletter CTA" }
+      {
+        "id": "1",
+        "type": "hero",
+        "enabled": true,
+        "title": "Hero Section"
+      },
+      {
+        "id": "2",
+        "type": "daily-wisdom",
+        "enabled": true,
+        "title": "Daily Wisdom"
+      },
+      {
+        "id": "3",
+        "type": "student-corner",
+        "enabled": true,
+        "title": "Featured Student Corner"
+      },
+      {
+        "id": "4",
+        "type": "youth-corner",
+        "enabled": true,
+        "title": "Featured Youth Corner"
+      },
+      {
+        "id": "5",
+        "type": "emotional-prompt",
+        "enabled": true,
+        "title": "Emotional Prompt"
+      },
+      {
+        "id": "6",
+        "type": "newsletter",
+        "enabled": true,
+        "title": "Newsletter CTA"
+      }
     ]
   },
   "navigation": {
     "main": [
-      { "label": "Imam Ali Says", "href": "/wisdom" },
-      { "label": "Student Corner", "href": "/student" },
-      { "label": "Youth Corner", "href": "/youth" },
-      { "label": "Nahjul Balagha", "href": "/nahjul-balagha" },
-      { "label": "Articles", "href": "/articles" },
-      { "label": "Audio Reflections", "href": "/audio" },
-      { "label": "Focus Timer", "href": "/focus" }
+      {
+        "label": "Imam Ali Says",
+        "href": "/wisdom"
+      },
+      {
+        "label": "Student Corner",
+        "href": "/student"
+      },
+      {
+        "label": "Youth Corner",
+        "href": "/youth"
+      },
+      {
+        "label": "Nahjul Balagha",
+        "href": "/nahjul-balagha"
+      },
+      {
+        "label": "Articles",
+        "href": "/articles"
+      },
+      {
+        "label": "Audio Reflections",
+        "href": "/audio"
+      },
+      {
+        "label": "Focus Timer",
+        "href": "/focus"
+      }
     ],
     "footer": [
-      { "label": "Daily Wisdom", "href": "/daily" },
-      { "label": "About Mission", "href": "/about" },
-      { "label": "Contact", "href": "/contact" }
+      {
+        "label": "Daily Wisdom",
+        "href": "/daily"
+      },
+      {
+        "label": "About Mission",
+        "href": "/about"
+      },
+      {
+        "label": "Contact",
+        "href": "/contact"
+      }
     ]
   }
 }

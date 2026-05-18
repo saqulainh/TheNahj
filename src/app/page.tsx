@@ -187,15 +187,15 @@ export default async function HomePage() {
                 <Link
                   key={article.id}
                   href={`/articles/${article.slug}`}
-                  className="group relative overflow-hidden rounded-2xl border border-border/30 bg-surface/40 p-6 transition-all duration-500 hover:border-gold/20 hover:bg-surface-elevated/60"
+                  className="card-cinematic group relative overflow-hidden rounded-2xl p-6"
                 >
-                  <span className="text-[10px] uppercase tracking-[0.25em] text-gold-muted/70">
+                  <span className="text-[10px] uppercase tracking-[0.25em] text-gold">
                     {article.type}
                   </span>
-                  <h3 className="mt-3 font-medium text-foreground transition-colors duration-300 group-hover:text-gold-light">
+                  <h3 className="mt-3 font-medium text-foreground transition-colors duration-300 group-hover:text-gold">
                     {article.title}
                   </h3>
-                  <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted/50">
+                  <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-secondary/70">
                     {article.excerpt}
                   </p>
                 </Link>
@@ -209,17 +209,17 @@ export default async function HomePage() {
       {isEnabled("audio") && (
         <section className="relative py-16 md:py-20">
           <div className="mx-auto max-w-3xl px-4 md:px-6">
-            <div className="noise-overlay relative overflow-hidden rounded-3xl border border-border/20 bg-surface/30 p-10 text-center md:p-16">
-              <p className="text-[10px] uppercase tracking-[0.35em] text-gold-muted">Listen</p>
+            <div className="card-cinematic noise-overlay relative overflow-hidden rounded-3xl p-10 text-center md:p-16">
+              <p className="text-[10px] uppercase tracking-[0.35em] text-gold">Listen</p>
               <h2 className="mt-4 text-xl font-light text-foreground md:text-2xl font-display">
                 Audio Reflections
               </h2>
-              <p className="mx-auto mt-4 max-w-sm text-sm text-muted/60">
+              <p className="mx-auto mt-4 max-w-sm text-sm text-secondary">
                 Wisdom narration, night reminders, and focus sessions — when reading feels like too much.
               </p>
               <Link
                 href="/audio"
-                className="mt-8 inline-flex items-center gap-2 rounded-full border border-border/40 px-6 py-2.5 text-sm text-muted transition-all duration-300 hover:border-gold/30 hover:text-gold-light"
+                className="mt-8 inline-flex items-center gap-2 rounded-full border border-border/40 px-6 py-2.5 text-sm text-secondary transition-all duration-300 hover:border-gold/30 hover:text-gold"
               >
                 Browse Audio Library
               </Link>

@@ -104,3 +104,99 @@ create table if not exists audio_tracks (
 alter table audio_tracks enable row level security;
 
 create policy "Public read audio tracks" on audio_tracks for select using (true);
+
+-- Unified Content Engine (single source for all categories)
+create table if not exists articles_unified (
+  id uuid primary key default uuid_generate_v4(),
+  title text not null,
+  slug text not null unique,
+  excerpt text not null,
+  category text not null,
+  tags text[] default '{}',
+  layout_type text not null default 'editorial',
+  featured_image text,
+  hero_image text,
+  sidebar_banner text,
+  content_blocks jsonb not null default '[]',
+  arabic_content text,
+  english_content text,
+  urdu_content text,
+  reading_time integer default 0,
+  featured boolean default false,
+  seo_title text,
+  seo_description text,
+  status text not null default 'draft',
+  published_at timestamptz,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists article_revisions (
+  id uuid primary key default uuid_generate_v4(),
+  article_slug text not null,
+  title text,
+  excerpt text,
+  content_blocks jsonb not null default '[]',
+  status text default 'draft',
+  created_at timestamptz default now()
+);
+
+create table if not exists uploads (
+  id uuid primary key default uuid_generate_v4(),
+  title text not null,
+  file_name text not null,
+  storage_path text not null,
+  mime_type text not null,
+  size_bytes bigint not null default 0,
+  width integer,
+  height integer,
+  created_at timestamptz default now()
+);
+
+create table if not exists seo_metadata (
+  id uuid primary key default uuid_generate_v4(),
+  article_slug text not null unique,
+  seo_title text,
+  seo_description text,
+  canonical_url text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists reflections (
+  id uuid primary key default uuid_generate_v4(),
+  article_slug text not null,
+  user_id uuid references auth.users(id) on delete set null,
+  reflection_text text not null,
+  created_at timestamptz default now()
+);
+
+create table if not exists bookmarks (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  article_slug text not null,
+  created_at timestamptz default now(),
+  unique(user_id, article_slug)
+);
+
+create table if not exists activity_logs (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references auth.users(id) on delete set null,
+  action text not null,
+  entity text not null,
+  entity_id text,
+  payload jsonb default '{}',
+  created_at timestamptz default now()
+);
+
+alter table articles_unified enable row level security;
+alter table article_revisions enable row level security;
+alter table uploads enable row level security;
+alter table seo_metadata enable row level security;
+alter table reflections enable row level security;
+alter table bookmarks enable row level security;
+alter table activity_logs enable row level security;
+
+create policy "Public read unified articles" on articles_unified for select using (true);
+create policy "Public read reflections" on reflections for select using (true);
+create policy "Users manage own bookmarks" on bookmarks for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

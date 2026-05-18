@@ -55,12 +55,12 @@ export default function AdminDashboardPage() {
           </div>
           <div className="p-6 grid gap-4 sm:grid-cols-2">
             <Link 
-              href="/admin/wisdom-cards"
+              href="/admin/studio"
               className="flex items-center justify-between rounded-lg border border-border bg-background p-4 transition-colors hover:border-gold/40 hover:bg-gold/5"
             >
               <div className="flex items-center gap-3">
                 <BookOpen className="h-5 w-5 text-gold-muted" />
-                <span className="text-sm font-medium">New Wisdom</span>
+                <span className="text-sm font-medium">Content Studio</span>
               </div>
               <ArrowRight className="h-4 w-4 text-muted" />
             </Link>
@@ -75,7 +75,7 @@ export default function AdminDashboardPage() {
               <ArrowRight className="h-4 w-4 text-muted" />
             </Link>
             <Link 
-              href="/admin/articles"
+              href="/admin/studio?category=Articles"
               className="flex items-center justify-between rounded-lg border border-border bg-background p-4 transition-colors hover:border-gold/40 hover:bg-gold/5"
             >
               <div className="flex items-center gap-3">

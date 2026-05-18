@@ -54,7 +54,7 @@ export function StruggleSelector() {
             <motion.div key={s.label} variants={cardVariants}>
               <Link
                 href={s.href}
-                className="group relative flex flex-col items-center rounded-2xl border border-border/40 bg-surface/50 px-4 py-8 text-center transition-all duration-500 hover:border-gold/20 hover:bg-surface-elevated/80 hover:shadow-[0_0_50px_-15px_rgba(201,162,39,0.1)] md:px-6 md:py-10"
+                className="card-cinematic group relative flex flex-col items-center px-4 py-8 text-center md:px-6 md:py-10"
               >
                 <span className="text-3xl transition-transform duration-500 group-hover:scale-110 md:text-4xl">
                   {s.emoji}
@@ -62,7 +62,7 @@ export function StruggleSelector() {
                 <span className="mt-4 text-sm font-medium text-foreground">
                   {s.label}
                 </span>
-                <span className="mt-2 text-xs leading-relaxed text-muted/60">
+                <span className="mt-2 text-xs leading-relaxed text-secondary/70">
                   {s.description}
                 </span>
               </Link>

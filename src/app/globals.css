@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+  --background: 40 46% 94%;
+  --surface: 40 39% 91%;
+  --surface-elevated: 36 34% 89%;
+  --border: 37 20% 83%;
+  --foreground: 28 28% 13%;
+  --secondary: 30 23% 29%;
+  --muted: 30 15% 45%;
+  --gold: 39 48% 57%;
+  --gold-muted: 39 30% 45%;
+  --gold-light: 39 50% 68%;
+  --gold-dim: 39 25% 30%;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: 219 16% 7%;
+  --surface: 220 16% 11%;
+  --surface-elevated: 218 16% 14%;
+  --border: 220 15% 20%;
+  --foreground: 41 40% 94%;
+  --secondary: 32 19% 74%;
+  --muted: 32 12% 56%;
+  --gold: 39 55% 62%;
+  --gold-muted: 39 35% 48%;
+  --gold-light: 39 60% 72%;
+  --gold-dim: 39 30% 25%;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -9,6 +39,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    transition: background-color 350ms ease, color 350ms ease;
   }
 
   ::selection {
@@ -96,15 +127,168 @@
 
   /* ─── Card Cinematic Base ─── */
   .card-cinematic {
-    @apply relative overflow-hidden rounded-2xl;
-    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                box-shadow 0.5s ease;
+    @apply relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out;
+    background: linear-gradient(135deg, hsl(var(--surface-elevated)) 0%, hsl(var(--surface)) 100%);
+    border-color: hsla(var(--border) / 0.5);
+    box-shadow: 0 10px 30px -10px rgba(92, 75, 58, 0.06);
   }
 
   .card-cinematic:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 60px -20px rgba(201, 162, 39, 0.12),
-                0 0 0 1px rgba(201, 162, 39, 0.08);
+    transform: translateY(-4px);
+    border-color: hsla(var(--gold) / 0.35);
+    box-shadow: 0 25px 50px -12px rgba(92, 75, 58, 0.14),
+                0 0 20px -2px rgba(198, 161, 91, 0.08);
+  }
+
+  .dark .card-cinematic {
+    background: linear-gradient(135deg, hsl(var(--surface-elevated)) 0%, hsl(var(--surface)) 100%);
+    border-color: hsla(var(--border) / 0.3);
+    box-shadow: 0 10px 40px -15px rgba(0, 0, 0, 0.5);
+  }
+
+  .dark .card-cinematic:hover {
+    border-color: hsla(var(--gold) / 0.45);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7),
+                0 0 30px -5px rgba(212, 175, 106, 0.12);
+  }
+
+  /* ─── Premium Uiverse Classic Card System (by andrew-demchenk0) ─── */
+  .wisdom-classic-card {
+    --main-color: hsl(var(--foreground));
+    --bg-color: hsl(var(--surface-elevated));
+    @apply relative p-7 rounded-[22px] flex flex-col justify-between transition-all duration-500 ease-out h-full border border-border/10 overflow-hidden;
+    background: linear-gradient(135deg, hsl(var(--surface-elevated)) 0%, hsl(var(--surface)) 100%);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  }
+
+  .wisdom-classic-card:hover {
+    transform: translateY(-5px);
+    border-color: hsla(var(--gold) / 0.3);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.18),
+                0 0 25px -2px rgba(198, 161, 91, 0.1);
+  }
+
+  .dark .wisdom-classic-card {
+    border-color: hsla(var(--border) / 0.15);
+    box-shadow: 0 10px 40px -15px rgba(0, 0, 0, 0.4);
+  }
+
+  .dark .wisdom-classic-card:hover {
+    border-color: hsla(var(--gold) / 0.4);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.65),
+                0 0 30px -5px rgba(212, 175, 106, 0.08);
+  }
+
+  .wisdom-classic-wrapper {
+    @apply flex flex-row items-center justify-between w-full;
+  }
+
+  .wisdom-classic-accounts {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    z-index: 1;
+    cursor: pointer;
+  }
+
+  .wisdom-classic-accounts > div:nth-child(2) {
+    position: absolute;
+    left: 25px;
+    z-index: -1;
+  }
+
+  .wisdom-classic-accounts > div:nth-child(3) {
+    position: absolute;
+    left: 50px;
+    z-index: -2;
+  }
+
+  .wisdom-classic-score {
+    @apply flex justify-center items-center font-semibold text-[13px] tracking-wide font-display;
+    color: hsl(var(--surface-elevated));
+    width: 40px;
+    height: 40px;
+    border-radius: 100%;
+    background: var(--main-color);
+    border: 2px solid hsl(var(--surface-elevated));
+  }
+
+  .wisdom-classic-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 100%;
+    border: 2px solid hsl(var(--surface-elevated));
+    overflow: hidden;
+    background: hsl(var(--surface));
+  }
+
+  .wisdom-classic-menu {
+    width: 40px;
+    height: 40px;
+    background: hsla(var(--gold) / 0.15);
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .wisdom-classic-menu:hover {
+    background: hsla(var(--gold) / 0.3);
+    transform: scale(1.05);
+  }
+
+  .wisdom-classic-title {
+    @apply mt-8 font-arabic text-center text-[1.65rem] leading-[2.1] drop-shadow-sm;
+    color: var(--main-color);
+  }
+
+  .wisdom-classic-subtitle {
+    @apply mt-6 font-urdu text-center text-[14.5px] leading-[1.95] text-foreground/80;
+  }
+
+  .wisdom-classic-translation {
+    @apply mt-4 text-center text-[13.5px] leading-relaxed text-secondary/80 font-normal;
+  }
+
+  .wisdom-classic-indicator {
+    @apply mt-8 font-medium text-[11px] tracking-[0.2em] uppercase font-display text-center;
+    color: var(--main-color);
+    opacity: 0.85;
+  }
+
+  .wisdom-classic-indicator-amount {
+    @apply text-gold font-semibold;
+  }
+
+  .wisdom-classic-indicator-percentage {
+    @apply opacity-60;
+  }
+
+  .wisdom-classic-progress {
+    @apply mt-4 w-full;
+  }
+
+  .wisdom-classic-progress progress {
+    width: 100%;
+    height: 4px;
+    border-radius: 100px;
+    display: block;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .wisdom-classic-progress progress::-webkit-progress-bar {
+    background-color: hsla(var(--border) / 0.35);
+    border-radius: 100px;
+  }
+
+  .wisdom-classic-progress progress::-webkit-progress-value {
+    background-color: hsl(var(--gold));
+    border-radius: 100px;
+    transition: width 0.5s ease-out;
   }
 
   /* ─── Divider ─── */
@@ -117,23 +301,22 @@
     width: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #0a0a0a;
+    background: hsl(var(--surface));
   }
   ::-webkit-scrollbar-thumb {
-    background: #2a2a2a;
+    background: hsl(var(--muted) / 0.35);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #3a3a3a;
+    background: hsl(var(--muted) / 0.5);
   }
 }
 
-/* ─── Uiverse Premium Loader by andrew-manzyk ─── */
 .loader {
   --main-size: 3em;
-  --text-color: #c1a46b; /* Premium TheNahj Gold */
-  --shine-color: rgba(193, 164, 107, 0.25);
-  --shadow-color: #3a3a3a;
+  --text-color: hsl(var(--gold));
+  --shine-color: hsla(var(--gold) / 0.25);
+  --shadow-color: hsl(var(--border));
   display: flex;
   justify-content: center;
   align-items: center;
@@ -417,8 +600,8 @@
   --border-radius: 9999px;
   --padding: 3px;
   --transition: 0.4s;
-  --button-color: #0f0f0e; /* Surface background */
-  --highlight-color-hue: 40deg; /* Warm gold theme hue */
+  --button-color: hsl(var(--surface-elevated));
+  --highlight-color-hue: 39deg; /* Warm gold theme hue */
 
   user-select: none;
   display: flex;

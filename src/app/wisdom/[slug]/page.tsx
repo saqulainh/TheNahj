@@ -31,13 +31,13 @@ export default async function ReflectionPage({ params }: PageProps) {
   const related = await getRelatedWisdom(wisdom);
 
   return (
-    <article className="selection:bg-gold/30 selection:text-white bg-[#050505] min-h-screen">
+    <article className="selection:bg-gold/30 selection:text-white bg-background min-h-screen">
       {/* 1. High-Fidelity Immersive Hero */}
-      <div className="relative h-[65vh] min-h-[450px] w-full overflow-hidden border-b border-white/[0.04]">
+      <div className="relative h-[65vh] min-h-[450px] w-full overflow-hidden border-b border-border/30">
         {/* Cinematic Backdrop Layer */}
         {wisdom.featured_image ? (
           <div 
-            className="h-full w-full opacity-35 mix-blend-luminosity filter contrast-125 scale-105"
+            className="h-full w-full opacity-25 mix-blend-luminosity filter contrast-125 scale-105"
             style={{ 
               backgroundImage: `url('${wisdom.featured_image}')`,
               backgroundSize: "cover",
@@ -46,13 +46,13 @@ export default async function ReflectionPage({ params }: PageProps) {
             }}
           />
         ) : (
-          <div className="h-full w-full bg-[#050505]" />
+          <div className="h-full w-full bg-background" />
         )}
 
         {/* Dynamic Visual Overlays */}
         <div className="pointer-events-none absolute inset-0 z-10">
-          {/* Main Dark Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/75 to-transparent" />
+          {/* Main Adaptive Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-transparent" />
           {/* Subtle vignette blur overlay */}
           <div className="absolute inset-0 backdrop-blur-[2px]" />
           {/* Ambient Gold Glows */}
@@ -68,19 +68,19 @@ export default async function ReflectionPage({ params }: PageProps) {
         
         {/* Core Hero Content (Centered scripts) */}
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-6 pt-24 text-center">
-          <Link href="/wisdom" className="absolute left-6 top-10 text-[10px] uppercase tracking-[0.25em] text-muted hover:text-gold-light md:left-12 transition-colors">
+          <Link href="/wisdom" className="absolute left-6 top-10 text-[10px] uppercase tracking-[0.25em] text-secondary hover:text-gold md:left-12 transition-colors">
             ← Wisdom Repository
           </Link>
 
           <p
-            className="max-w-4xl font-arabic text-center text-[clamp(2rem,5vw,4.5rem)] leading-[1.8] md:leading-[2] text-[#F5F5F0] drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]"
+            className="max-w-4xl font-arabic text-center text-[clamp(2rem,5vw,4.5rem)] leading-[1.8] md:leading-[2] text-foreground drop-shadow-[0_10px_20px_rgba(0,0,0,0.05)]"
             dir="rtl"
             lang="ar"
           >
             {wisdom.arabic_text}
           </p>
           
-          <div className="mt-10 flex items-center gap-5 text-[10px] uppercase tracking-[0.25em] font-medium text-gold/75">
+          <div className="mt-10 flex items-center gap-5 text-[10px] uppercase tracking-[0.25em] font-medium text-gold">
             <span>{wisdom.category?.name}</span>
             <div className="h-1 w-1 rounded-full bg-gold/30" />
             <span>{wisdom.source}</span>
@@ -90,11 +90,11 @@ export default async function ReflectionPage({ params }: PageProps) {
 
       {/* 2. Interactive Reflection Hub */}
       <div className="mx-auto max-w-2xl px-6 py-12 md:py-20 relative z-20">
-        <p className="font-urdu text-center text-[clamp(1.25rem,2.5vw,1.75rem)] leading-[2.2] text-[#F5F5F0]/90 border-b border-white/[0.04] pb-10" dir="rtl">
+        <p className="font-urdu text-center text-[clamp(1.25rem,2.5vw,1.75rem)] leading-[2.2] text-foreground/90 border-b border-border/30 pb-10" dir="rtl">
           {wisdom.urdu_translation}
         </p>
 
-        <p className="my-10 text-center text-[clamp(1.1rem,2vw,1.35rem)] leading-relaxed text-muted/80 font-light italic">
+        <p className="my-10 text-center text-[clamp(1.1rem,2vw,1.35rem)] leading-relaxed text-secondary/80 font-light italic">
           "{wisdom.english_translation}"
         </p>
 
@@ -109,11 +109,11 @@ export default async function ReflectionPage({ params }: PageProps) {
 
         {/* Related wisdom block */}
         {related.length > 0 && (
-          <section className="mt-24 border-t border-white/[0.06] pt-16">
-            <span className="text-[10px] uppercase tracking-[0.25em] text-gold-muted font-medium block mb-8">
+          <section className="mt-24 border-t border-border/30 pt-16">
+            <span className="text-[10px] uppercase tracking-[0.25em] text-gold font-medium block mb-8">
               Keep Reflecting
             </span>
-            <h2 className="mb-10 text-2xl font-light text-[#F5F5F0]">Related Wisdom</h2>
+            <h2 className="mb-10 text-2xl font-light text-foreground">Related Wisdom</h2>
             <div className="space-y-8">
               {related.map((w, i) => (
                 <WisdomCard key={w.id} wisdom={w} index={i} />

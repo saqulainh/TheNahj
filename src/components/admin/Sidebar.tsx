@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Home,
   BookOpen,
+  Sparkles,
   Feather,
   GraduationCap,
   Users,
@@ -26,6 +27,7 @@ import { SITE_NAME } from "@/lib/brand";
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/homepage", label: "Homepage", icon: Home },
+  { href: "/admin/studio", label: "Content Studio", icon: Sparkles },
   { href: "/admin/wisdom-cards", label: "Wisdom Cards", icon: BookOpen },
   { href: "/admin/imam-ali-says", label: "Imam Ali Says", icon: Feather },
   { href: "/admin/student-corner", label: "Student Corner", icon: GraduationCap },

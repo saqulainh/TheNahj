@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Check, Edit3, Save, Trash2, Heart, Award, ArrowRight, ShieldAlert } from "lucide-react";
+import { Check, Edit3, Save, Trash2, Heart, Award } from "lucide-react";
 import { formatReflection } from "@/lib/format";
 
 interface InteractiveReflectionProps {
@@ -111,18 +111,18 @@ export function InteractiveReflection({
       <div className="space-y-12">
         {simpleMeaning && (
           <section>
-            <h2 className="text-sm uppercase tracking-wider text-gold-muted">Simple meaning</h2>
+            <h2 className="text-sm uppercase tracking-wider text-gold">Simple meaning</h2>
             <p className="mt-4 text-lg leading-relaxed text-foreground/90">{simpleMeaning}</p>
           </section>
         )}
         {whyToday && (
           <section>
-            <h2 className="text-sm uppercase tracking-wider text-gold-muted">Why this matters today</h2>
+            <h2 className="text-sm uppercase tracking-wider text-gold">Why this matters today</h2>
             <p className="mt-4 leading-relaxed text-foreground/85">{whyToday}</p>
           </section>
         )}
         <section>
-          <h2 className="text-sm uppercase tracking-wider text-gold-muted">Deep reflection</h2>
+          <h2 className="text-sm uppercase tracking-wider text-gold">Deep reflection</h2>
           <div className="prose-reflection mt-6" dangerouslySetInnerHTML={{ __html: formatReflection(deepReflection) }} />
         </section>
       </div>
@@ -139,7 +139,7 @@ export function InteractiveReflection({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-xs uppercase tracking-[0.2em] text-gold-muted font-medium">Simple Meaning</h2>
+            <h2 className="text-xs uppercase tracking-[0.2em] text-gold font-medium">Simple Meaning</h2>
             <p className="mt-4 text-lg leading-relaxed text-foreground/90 font-light">{simpleMeaning}</p>
           </motion.section>
         )}
@@ -150,8 +150,8 @@ export function InteractiveReflection({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
           >
-            <h2 className="text-xs uppercase tracking-[0.2em] text-gold-muted font-medium">Why This Matters Today</h2>
-            <p className="mt-4 leading-relaxed text-muted/80 font-light">{whyToday}</p>
+            <h2 className="text-xs uppercase tracking-[0.2em] text-gold font-medium">Why This Matters Today</h2>
+            <p className="mt-4 leading-relaxed text-secondary/80 font-light">{whyToday}</p>
           </motion.section>
         )}
 
@@ -160,7 +160,7 @@ export function InteractiveReflection({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <h2 className="text-xs uppercase tracking-[0.2em] text-gold-muted font-medium">Deep Reflection</h2>
+          <h2 className="text-xs uppercase tracking-[0.2em] text-gold font-medium">Deep Reflection</h2>
           <div
             className="prose-reflection mt-6"
             dangerouslySetInnerHTML={{ __html: formatReflection(deepReflection) }}
@@ -170,10 +170,10 @@ export function InteractiveReflection({
 
       {/* 2. Interactive Reflection Questions (Journaling Hub) */}
       {reflectionQuestions.length > 0 && (
-        <section className="rounded-3xl border border-white/[0.04] bg-surface/30 p-6 md:p-8 backdrop-blur-md">
+        <section className="rounded-3xl border border-border/30 bg-surface/30 p-6 md:p-8 backdrop-blur-md">
           <div className="flex items-center gap-2 mb-6">
             <Heart size={16} className="text-gold" />
-            <h2 className="text-sm uppercase tracking-wider text-gold-muted font-medium">Reflection Questions</h2>
+            <h2 className="text-sm uppercase tracking-wider text-gold font-medium">Reflection Questions</h2>
           </div>
 
           <div className="space-y-4">
@@ -187,8 +187,8 @@ export function InteractiveReflection({
                   key={idx} 
                   className={`rounded-2xl border p-5 transition-all duration-300 ${
                     isChecked 
-                      ? "border-gold/15 bg-gold/[0.01]" 
-                      : "border-border/40 bg-black/20 hover:border-white/10"
+                      ? "border-gold/30 bg-gold/[0.03]" 
+                      : "border-border/30 bg-surface/40 hover:border-gold/20"
                   }`}
                 >
                   <div className="flex items-start gap-4">
@@ -197,8 +197,8 @@ export function InteractiveReflection({
                       onClick={() => toggleQuestion(idx)}
                       className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
                         isChecked 
-                          ? "border-gold bg-gold text-black" 
-                          : "border-border hover:border-gold-muted"
+                          ? "border-gold bg-gold text-background" 
+                          : "border-border hover:border-gold/60"
                       }`}
                     >
                       {isChecked && <Check size={12} strokeWidth={3} />}
@@ -208,7 +208,7 @@ export function InteractiveReflection({
                       <p 
                         onClick={() => toggleQuestion(idx)}
                         className={`text-sm leading-relaxed transition-all cursor-pointer ${
-                          isChecked ? "text-muted/50 line-through" : "text-foreground/90 font-light"
+                          isChecked ? "text-secondary/40 line-through" : "text-foreground/90 font-light"
                         }`}
                       >
                         {q}
@@ -216,14 +216,14 @@ export function InteractiveReflection({
 
                       {/* Saved Journal Entry Excerpt */}
                       {hasJournal && !isEditing && (
-                        <div className="mt-4 rounded-xl bg-black/45 border border-white/[0.02] p-4 text-xs text-gold-light/80 italic leading-relaxed relative group">
-                          <span className="text-[8px] uppercase tracking-widest text-muted/30 block mb-1">Your Reflection</span>
+                        <div className="mt-4 rounded-xl bg-surface-elevated/70 border border-border/30 p-4 text-xs text-foreground/90 italic leading-relaxed relative group">
+                          <span className="text-[8px] uppercase tracking-widest text-secondary/50 block mb-1">Your Reflection</span>
                           &ldquo;{journalEntries[idx]}&rdquo;
                           <div className="absolute right-3 top-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleOpenJournal(idx)} className="text-muted hover:text-foreground">
+                            <button onClick={() => handleOpenJournal(idx)} className="text-secondary hover:text-foreground">
                               <Edit3 size={12} />
                             </button>
-                            <button onClick={() => handleDeleteJournal(idx)} className="text-muted hover:text-red-400">
+                            <button onClick={() => handleDeleteJournal(idx)} className="text-secondary hover:text-red-400">
                               <Trash2 size={12} />
                             </button>
                           </div>
@@ -238,18 +238,18 @@ export function InteractiveReflection({
                             value={tempJournalText}
                             onChange={(e) => setTempJournalText(e.target.value)}
                             placeholder="Write your private thoughts here to integrate this wisdom into your character..."
-                            className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-xs text-foreground placeholder:text-muted/35 focus:border-gold/30 focus:outline-none transition-colors"
+                            className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-xs text-foreground placeholder:text-secondary/40 focus:border-gold/30 focus:outline-none transition-colors"
                           />
                           <div className="flex justify-end gap-2">
                             <button
                               onClick={() => setActiveJournalIndex(null)}
-                              className="rounded-full px-4 py-1.5 text-[10px] uppercase tracking-widest text-muted hover:text-foreground transition-colors"
+                              className="rounded-full px-4 py-1.5 text-[10px] uppercase tracking-widest text-secondary hover:text-foreground transition-colors"
                             >
                               Cancel
                             </button>
                             <button
                               onClick={() => handleSaveJournal(idx)}
-                              className="rounded-full bg-gold/10 px-4 py-1.5 text-[10px] uppercase tracking-widest text-gold-light hover:bg-gold/20 transition-all flex items-center gap-1.5 font-medium"
+                              className="rounded-full bg-gold/10 px-4 py-1.5 text-[10px] uppercase tracking-widest text-gold hover:bg-gold/20 transition-all flex items-center gap-1.5 font-medium"
                             >
                               <Save size={10} /> Save Entry
                             </button>
@@ -259,7 +259,7 @@ export function InteractiveReflection({
                         !hasJournal && (
                           <button
                             onClick={() => handleOpenJournal(idx)}
-                            className="mt-3 flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted hover:text-gold-light transition-colors"
+                            className="mt-3 flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-secondary hover:text-gold transition-colors"
                           >
                             <Edit3 size={10} /> Write Reflection
                           </button>
@@ -276,19 +276,19 @@ export function InteractiveReflection({
 
       {/* 3. Practical Steps (Gamified Checklist) */}
       {actionSteps.length > 0 && (
-        <section className="rounded-3xl border border-white/[0.04] bg-surface/30 p-6 md:p-8 backdrop-blur-md">
+        <section className="rounded-3xl border border-border/30 bg-surface/30 p-6 md:p-8 backdrop-blur-md">
           <div className="flex flex-col gap-2 mb-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <Award size={16} className="text-gold" />
-              <h2 className="text-sm uppercase tracking-wider text-gold-muted font-medium">Practical Action Steps</h2>
+              <h2 className="text-sm uppercase tracking-wider text-gold font-medium">Practical Action Steps</h2>
             </div>
-            <span className="text-[10px] uppercase tracking-widest text-muted/50">
+            <span className="text-[10px] uppercase tracking-widest text-secondary/60">
               {completedStepsCount} of {totalStepsCount} Completed
             </span>
           </div>
 
           {/* Action Progress Bar */}
-          <div className="mb-8 h-1 w-full bg-white/[0.03] rounded-full overflow-hidden">
+          <div className="mb-8 h-1 w-full bg-border/20 rounded-full overflow-hidden">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
@@ -306,20 +306,20 @@ export function InteractiveReflection({
                   onClick={() => toggleStep(idx)}
                   className={`flex gap-4 rounded-2xl border p-5 cursor-pointer transition-all duration-300 ${
                     isChecked 
-                      ? "border-gold/15 bg-gold/[0.01]" 
-                      : "border-border/40 bg-black/20 hover:border-white/10"
+                      ? "border-gold/30 bg-gold/[0.03]" 
+                      : "border-border/30 bg-surface/40 hover:border-gold/20"
                   }`}
                 >
                   <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-all duration-300 text-xs font-semibold ${
                     isChecked 
-                      ? "bg-gold text-black" 
-                      : "bg-gold/15 text-gold-light"
+                      ? "bg-gold text-background" 
+                      : "bg-gold/10 text-gold"
                   }`}>
                     {idx + 1}
                   </span>
                   
                   <p className={`text-sm leading-relaxed transition-all ${
-                    isChecked ? "text-muted/50 line-through" : "text-foreground/90 font-light"
+                    isChecked ? "text-secondary/40 line-through" : "text-foreground/90 font-light"
                   }`}>
                     {step}
                   </p>
@@ -334,10 +334,10 @@ export function InteractiveReflection({
               animate={{ opacity: 1, scale: 1 }}
               className="mt-8 rounded-2xl border border-gold/20 bg-gold/[0.03] p-5 text-center"
             >
-              <p className="text-xs uppercase tracking-widest text-gold-light font-semibold mb-1 flex items-center justify-center gap-1.5">
+              <p className="text-xs uppercase tracking-widest text-gold font-semibold mb-1 flex items-center justify-center gap-1.5">
                 🌟 All Steps Attempted!
               </p>
-              <p className="text-xs text-muted/60 font-light">
+              <p className="text-xs text-secondary/60 font-light">
                 Imam Ali (AS) taught that action is the fruit of knowledge. You are living the wisdom today.
               </p>
             </motion.div>

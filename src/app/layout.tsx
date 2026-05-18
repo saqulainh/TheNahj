@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Amiri, Inter, Noto_Nastaliq_Urdu, Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
+import Script from "next/script";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { AppProviders } from "@/components/providers/AppProviders";
 import { getCMSConfig } from "@/lib/cms";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -60,16 +62,21 @@ export default async function RootLayout({
   const cms = await getCMSConfig();
 
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${amiri.variable} ${notoUrdu.variable} ${instrumentSerif.variable} ${plusJakarta.variable} font-sans antialiased bg-background text-foreground`}
         suppressHydrationWarning
       >
-        <Header siteName={cms.brand.siteName} links={cms.navigation.main} />
-        <main className="min-h-[calc(100vh-8rem)]">{children}</main>
-        <Footer socialLinks={cms.brand.socialLinks} links={cms.navigation.footer} />
-        <Analytics />
-        <SpeedInsights />
+        <Script id="thenahj-theme-init" strategy="beforeInteractive">
+          {`(function(){try{var t=localStorage.getItem('thenahj-theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var n=(t==='light'||t==='dark')?t:(d?'dark':'light');document.documentElement.classList.toggle('dark',n==='dark');}catch(e){document.documentElement.classList.add('dark')}})();`}
+        </Script>
+        <AppProviders>
+          <Header siteName={cms.brand.siteName} links={cms.navigation.main} />
+          <main className="min-h-[calc(100vh-8rem)]">{children}</main>
+          <Footer socialLinks={cms.brand.socialLinks} links={cms.navigation.footer} />
+          <Analytics />
+          <SpeedInsights />
+        </AppProviders>
       </body>
     </html>
   );

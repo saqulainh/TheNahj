@@ -59,17 +59,17 @@ export function CornerPreview({ title, subtitle, basePath, topics, accent }: Cor
             <motion.div key={topic.slug} variants={cardVariants}>
               <Link
                 href={`${basePath}/${topic.slug}`}
-                className="group relative block overflow-hidden rounded-2xl border border-border/30 bg-surface/40 p-6 transition-all duration-500 hover:border-gold/20 hover:bg-surface-elevated/60 md:p-7"
+                className="card-cinematic group relative block overflow-hidden rounded-2xl p-6 md:p-7"
               >
                 {/* Number */}
                 <span className="absolute right-5 top-5 text-[10px] font-medium tabular-nums text-muted/20">
                   {String(i + 1).padStart(2, "0")}
                 </span>
 
-                <h3 className="text-sm font-medium text-foreground transition-colors duration-300 group-hover:text-gold-light">
+                <h3 className="text-sm font-medium text-foreground transition-colors duration-300 group-hover:text-gold">
                   {topic.title}
                 </h3>
-                <p className="mt-3 text-xs leading-relaxed text-muted/60">
+                <p className="mt-3 text-xs leading-relaxed text-secondary/70">
                   {topic.description}
                 </p>
 

@@ -28,6 +28,8 @@ export interface Wisdom {
   featured?: boolean;
   trending?: boolean;
   background_type?: "cinematic" | "abstract" | "architectural" | "minimal";
+  background_url?: string;
+  background_image?: string;
 }
 
 export interface Article {
