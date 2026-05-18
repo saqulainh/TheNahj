@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { CinematicButton } from "@/components/ui/CinematicButton";
+import { StarBorder } from "@/components/ui/StarBorder";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 interface HeaderProps {
@@ -79,7 +80,9 @@ export function Header({
                 href={link.href}
                 className="no-underline transition-all duration-300 hover:scale-[1.03] active:scale-[0.98]"
               >
-                <CinematicButton text={link.label} />
+                <StarBorder speed="5s" thickness={1}>
+                  {link.label}
+                </StarBorder>
               </Link>
             ) : (
               <Link
