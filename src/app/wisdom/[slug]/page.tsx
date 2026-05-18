@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 import { getRelatedWisdom, getWisdomBySlug } from "@/lib/wisdom";
 import { InteractiveReflection } from "@/components/wisdom/InteractiveReflection";
+import GradualBlur from "@/components/ui/GradualBlur";
 import type { Metadata } from "next";
 
 interface PageProps {
@@ -63,6 +64,17 @@ export default async function ReflectionPage({ params }: PageProps) {
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
             }}
+          />
+          {/* Gradual Blur for a smooth glassmorphic fade out */}
+          <GradualBlur
+            target="parent"
+            position="bottom"
+            height="12rem"
+            strength={3}
+            divCount={6}
+            curve="bezier"
+            exponential={true}
+            opacity={0.9}
           />
         </div>
         
