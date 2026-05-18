@@ -24,6 +24,9 @@ const initialForm = {
   corner_topics: [] as string[],
   featured: false,
   trending: false,
+  featured_image: "",
+  background_type: "cinematic",
+  background_url: "",
 };
 
 export default function WisdomCardsPage() {
@@ -85,6 +88,8 @@ export default function WisdomCardsPage() {
                 ["english_translation", "English translation", "textarea"],
                 ["source", "Source", "input"],
                 ["short_reflection", "Short reflection", "textarea"],
+                ["featured_image", "Background Image URL (Upload)", "input"],
+                ["background_type", "Background Theme (cinematic, abstract, architectural, minimal)", "input"],
               ] as const
             ).map(([key, label, type]) => (
               <label key={key} className={`block ${key === "source" ? "col-span-full" : ""}`}>
@@ -93,7 +98,7 @@ export default function WisdomCardsPage() {
                   <textarea
                     value={form[key as keyof typeof form] as string}
                     onChange={(e) => update(key, e.target.value)}
-                    required={!["action_steps", "tags", "reflection_questions", "simple_meaning", "why_today"].includes(key)}
+                    required={!["action_steps", "tags", "reflection_questions", "simple_meaning", "why_today", "featured_image", "background_type", "background_url"].includes(key)}
                     rows={3}
                     className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm focus:border-gold/40 focus:outline-none"
                   />
@@ -102,7 +107,7 @@ export default function WisdomCardsPage() {
                     type="text"
                     value={form[key as keyof typeof form] as string}
                     onChange={(e) => update(key, e.target.value)}
-                    required={!["action_steps", "tags", "reflection_questions", "simple_meaning", "why_today"].includes(key)}
+                    required={!["action_steps", "tags", "reflection_questions", "simple_meaning", "why_today", "featured_image", "background_type", "background_url"].includes(key)}
                     className="mt-1 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm focus:border-gold/40 focus:outline-none"
                   />
                 )}

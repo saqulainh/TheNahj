@@ -12,28 +12,21 @@ function slugify(text: string): string {
 export async function POST(request: Request) {
   const body = await request.json();
 
-  const slug = slugify(body.english_translation ?? body.arabic_text ?? "wisdom");
+  const slug = slugify(body.english_translation ?? body.arabic_text ?? "imam-ali-says");
 
   const record = {
     slug,
     arabic_text: body.arabic_text,
-    urdu_translation: body.urdu_translation,
     english_translation: body.english_translation,
-    short_reflection: body.short_reflection,
-    deep_reflection: body.deep_reflection,
-    simple_meaning: body.simple_meaning || null,
-    why_today: body.why_today || null,
-    reflection_questions: body.reflection_questions ?? [],
     source: body.source,
-    category_id: body.category_id,
-    action_steps: body.action_steps ?? [],
+    category: body.category,
+    featured_image: body.featured_image,
+    publish_date: body.publish_date,
+    meta_title: body.meta_title,
+    meta_description: body.meta_description,
     tags: body.tags ?? [],
-    corner_topics: body.corner_topics ?? [],
-    featured: Boolean(body.featured),
-    trending: Boolean(body.trending),
-    featured_image: body.featured_image || null,
-    background_type: body.background_type || 'cinematic',
-    background_url: body.background_url || body.featured_image || null,
+    background_image: body.background_image,
+    background_type: body.background_type,
   };
 
   if (!isSupabaseConfigured || !supabase) {
@@ -47,7 +40,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase.from("wisdom").insert(record).select().single();
+  const { data, error } = await supabase.from("imam_ali_says").insert(record).select().single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
