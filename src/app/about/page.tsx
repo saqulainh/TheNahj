@@ -35,6 +35,36 @@ export default function AboutPage() {
           honest step at a time.
         </p>
       </section>
+
+      {/* Dev Reflection Quote Section */}
+      <div className="mt-20 border-t border-border/25 pt-12">
+        <div className="relative rounded-2xl border border-border/25 bg-surface/50 p-8 md:p-12 backdrop-blur-md overflow-hidden group">
+          {/* Decorative gold gradient ambient glow */}
+          <div className="pointer-events-none absolute -right-1/4 -top-1/4 h-[300px] w-[300px] rounded-full bg-gold/[0.03] blur-[80px] transition-all duration-500 group-hover:bg-gold/[0.05]" />
+          
+          {/* Stylized Quotation Mark */}
+          <div className="flex justify-center mb-4">
+            <span className="font-serif text-6xl text-gold/30 select-none leading-none">””</span>
+          </div>
+
+          <blockquote className="text-center">
+            <p className="font-serif text-lg md:text-xl leading-relaxed text-foreground/90 italic max-w-xl mx-auto">
+              "Trying my best to be the one my Imam (a.t.f.s.) wants, striving to serve the community with every skill I have, working to unite the youth, and aiming to see every student of the Ahlulbayt succeed. Indeed, they are succeeding and will continue to do so."
+            </p>
+            <cite className="mt-8 block not-italic">
+              <span className="text-[10px] uppercase tracking-[0.25em] text-muted/60 block mb-2">Developed & Maintained by</span>
+              <a
+                href="http://www.instagram.com/s_a_q_u_l_a_i_n__h?igsh=dGtvNmNodHJqNml3"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-sm font-semibold tracking-wider text-gold-light hover:text-gold transition-colors duration-300 underline underline-offset-4 decoration-gold/30 hover:decoration-gold"
+              >
+                s_a_q_u_l_a_i_n__h
+              </a>
+            </cite>
+          </blockquote>
+        </div>
+      </div>
     </section>
   );
 }

@@ -64,7 +64,15 @@ export function Footer({ socialLinks, links = footerLinks }: FooterProps) {
         <div className="mt-14 border-t border-border/10 pt-8 flex flex-col gap-6 text-muted/60">
           <div className="flex flex-col gap-2 md:flex-row md:justify-between md:items-center">
             <p className="text-xs font-medium tracking-wide text-foreground/80">
-              © 2026 TheNahj | Spread Teachings. Developed by <span className="text-gold-light font-semibold hover:text-gold transition-colors duration-300">CtrlAltSaqulainH</span>
+              © 2026 TheNahj | Spread Teachings. Developed by{" "}
+              <a 
+                href="http://www.instagram.com/s_a_q_u_l_a_i_n__h?igsh=dGtvNmNodHJqNml3"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gold-light font-semibold hover:text-gold transition-colors duration-300 underline underline-offset-4"
+              >
+                s_a_q_u_l_a_i_n__h
+              </a>
             </p>
             <p className="text-[10px] uppercase tracking-[0.25em] text-muted/50">
               Built with reverence
