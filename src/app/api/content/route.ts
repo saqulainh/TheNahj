@@ -27,28 +27,45 @@ export async function GET(request: Request) {
     });
   }
 
-  let query = supabase
-    .from("articles_unified")
-    .select("*")
-    .order("updated_at", { ascending: false });
+  try {
+    let query = supabase
+      .from("articles_unified")
+      .select("*")
+      .order("updated_at", { ascending: false });
 
-  if (slug) query = query.eq("slug", slug);
-  if (category) query = query.eq("category", category);
-  if (q) query = query.ilike("title", `%${q}%`);
+    if (slug) query = query.eq("slug", slug);
+    if (category) query = query.eq("category", category);
+    if (q) query = query.ilike("title", `%${q}%`);
 
-  const { data, error } = await query;
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+    const { data, error } = await query;
 
-  return NextResponse.json(
-    { items: data ?? [], source: "supabase" },
-    {
-      headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
-      },
+    if (error) {
+      // Table may not exist yet — return empty gracefully
+      if (error.message.includes("Invalid path") || error.message.includes("relation") || error.code === "PGRST204") {
+        return NextResponse.json({
+          items: [],
+          source: "supabase",
+          message: "Table not found — run the migration to create articles_unified.",
+        });
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-  );
+
+    return NextResponse.json(
+      { items: data ?? [], source: "supabase" },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        },
+      }
+    );
+  } catch (err) {
+    return NextResponse.json({
+      items: [],
+      source: "error",
+      message: err instanceof Error ? err.message : "Unexpected error",
+    });
+  }
 }
 
 export async function POST(request: Request) {
