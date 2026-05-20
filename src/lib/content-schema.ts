@@ -17,6 +17,9 @@ export const unifiedCategories = [
   "Spirituality",
 ] as const;
 
+/* ─────────────────────────────────────────────
+   Legacy block types (kept for backward compat)
+   ───────────────────────────────────────────── */
 export const blockTypes = [
   "heading",
   "paragraph",
@@ -46,28 +49,86 @@ export const contentBlockSchema = z.object({
   meta: z.record(z.string(), z.any()).optional(),
 });
 
-export const articlePayloadSchema = z.object({
+/* ─────────────────────────────────────────────
+   Narration schema — repeatable entries
+   ───────────────────────────────────────────── */
+export const narrationSchema = z.object({
+  id: z.string().min(1),
+  narration: z.string().default(""),
+  narrator: z.string().default(""),
+  source: z.string().default(""),
+  explanation: z.string().default(""),
+});
+
+export type Narration = z.infer<typeof narrationSchema>;
+
+/* ─────────────────────────────────────────────
+   Wisdom Article Schema (Structured Sections)
+   ───────────────────────────────────────────── */
+export const wisdomArticleSchema = z.object({
   id: z.string().uuid().optional(),
+
+  // ── Section 1: Basic Information ──
   title: z.string().min(5, "Title is required"),
   slug: z.string().min(3, "Slug is required"),
   excerpt: z.string().min(12, "Excerpt is required"),
   category: z.enum(unifiedCategories),
   tags: z.array(z.string()).default([]),
-  layout_type: z.string().default("editorial"),
   featured_image: z.string().optional().nullable(),
   hero_image: z.string().optional().nullable(),
   sidebar_banner: z.string().optional().nullable(),
-  content_blocks: z.array(contentBlockSchema).min(1, "At least one block is required"),
+  reading_time: z.number().int().nonnegative().default(0),
+  status: z.enum(["draft", "scheduled", "published"]).default("draft"),
+  featured: z.boolean().default(false),
+  schedule_publish_at: z.string().optional().nullable(),
+
+  // ── Section 2: Original Wisdom Content ──
+  arabic_text: z.string().default(""),
+  urdu_translation: z.string().default(""),
+  english_translation: z.string().default(""),
+  source: z.string().default(""),
+  source_number: z.string().default(""),
+  book_name: z.string().default(""),
+
+  // ── Section 3: Explanation Area ──
+  main_explanation: z.string().default(""),
+  detailed_explanation: z.string().default(""),
+  tafseer: z.string().default(""),
+  historical_context: z.string().default(""),
+
+  // ── Section 4: Related Narrations (repeatable) ──
+  narrations: z.array(narrationSchema).default([]),
+
+  // ── Section 5: Modern Relevance ──
+  current_issues: z.string().default(""),
+  youth_relevance: z.string().default(""),
+  student_relevance: z.string().default(""),
+  practical_application: z.string().default(""),
+
+  // ── Section 6: Reflection ──
+  reflection_questions: z.string().default(""),
+  action_steps: z.string().default(""),
+  personal_reflection: z.string().default(""),
+
+  // ── Section 7: Conclusion ──
+  summary: z.string().default(""),
+  closing_reflection: z.string().default(""),
+
+  // ── Section 8: SEO ──
+  seo_title: z.string().optional().nullable(),
+  seo_description: z.string().optional().nullable(),
+
+  // ── Legacy compat (optional, for old articles) ──
+  layout_type: z.string().default("wisdom-editorial"),
+  content_blocks: z.array(contentBlockSchema).optional().default([]),
   arabic_content: z.string().optional().nullable(),
   english_content: z.string().optional().nullable(),
   urdu_content: z.string().optional().nullable(),
-  reading_time: z.number().int().nonnegative().default(0),
-  featured: z.boolean().default(false),
-  seo_title: z.string().optional().nullable(),
-  seo_description: z.string().optional().nullable(),
-  schedule_publish_at: z.string().optional().nullable(),
-  status: z.enum(["draft", "scheduled", "published"]).default("draft"),
 });
 
-export type ArticlePayload = z.infer<typeof articlePayloadSchema>;
+export type WisdomArticle = z.infer<typeof wisdomArticleSchema>;
+
+/* ─── Legacy type alias ─── */
+export const articlePayloadSchema = wisdomArticleSchema;
+export type ArticlePayload = WisdomArticle;
 export type ContentBlock = z.infer<typeof contentBlockSchema>;
