@@ -116,3 +116,29 @@ CREATE INDEX IF NOT EXISTS idx_revisions_created ON article_revisions(created_at
 ALTER TABLE article_revisions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anon read revisions" ON article_revisions FOR SELECT TO anon USING (true);
 CREATE POLICY "Anon write revisions" ON article_revisions FOR ALL TO anon USING (true) WITH CHECK (true);
+
+-- ============================================
+-- media_items table (for database media library)
+-- ============================================
+CREATE TABLE IF NOT EXISTS media_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  storage_provider TEXT NOT NULL DEFAULT 'supabase',
+  storage_path TEXT,
+  variants JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_media_items_created ON media_items(created_at DESC);
+
+-- Enable RLS
+ALTER TABLE media_items ENABLE ROW LEVEL SECURITY;
+
+-- Allow read and write access for both anon and authenticated users (useful for custom serverless upload flow)
+CREATE POLICY "Anon read media" ON media_items FOR SELECT TO anon USING (true);
+CREATE POLICY "Anon write media" ON media_items FOR ALL TO anon USING (true) WITH CHECK (true);
+

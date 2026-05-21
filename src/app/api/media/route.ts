@@ -29,22 +29,70 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const IMAGE_WIDTHS = [480, 960, 1600];
 
 async function ensureStorage() {
-  await fs.mkdir(uploadsDir, { recursive: true });
+  // Safe-guard: do not write to local folder if on read-only serverless environment
+  try {
+    await fs.mkdir(uploadsDir, { recursive: true });
+  } catch (err) {
+    console.warn("Could not create local uploads folder (read-only filesystem):", err);
+  }
   try {
     await fs.access(mediaDbPath);
   } catch {
-    await fs.writeFile(mediaDbPath, "[]", "utf8");
+    try {
+      await fs.writeFile(mediaDbPath, "[]", "utf8");
+    } catch (err) {
+      console.warn("Could not create local media-library.json:", err);
+    }
   }
 }
 
 async function readMediaDb(): Promise<MediaItem[]> {
-  await ensureStorage();
-  const raw = await fs.readFile(mediaDbPath, "utf8");
-  return JSON.parse(raw) as MediaItem[];
+  // If Supabase is configured, read from media_items table
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("media_items")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        return data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          fileName: item.file_name,
+          url: item.url,
+          mimeType: item.mime_type,
+          size: item.size,
+          storageProvider: item.storage_provider,
+          storagePath: item.storage_path,
+          variants: item.variants,
+          created_at: item.created_at,
+        }));
+      } else if (error) {
+        console.warn("Supabase media_items table read failed, falling back to local:", error.message);
+      }
+    } catch (err) {
+      console.warn("Error reading Supabase media_items, falling back:", err);
+    }
+  }
+
+  // Fallback to local file if not on serverless/read-only
+  try {
+    await ensureStorage();
+    const raw = await fs.readFile(mediaDbPath, "utf8");
+    return JSON.parse(raw) as MediaItem[];
+  } catch {
+    return [];
+  }
 }
 
 async function writeMediaDb(items: MediaItem[]) {
-  await fs.writeFile(mediaDbPath, JSON.stringify(items, null, 2), "utf8");
+  try {
+    await ensureStorage();
+    await fs.writeFile(mediaDbPath, JSON.stringify(items, null, 2), "utf8");
+  } catch (err) {
+    console.warn("Could not write to local media database:", err);
+  }
 }
 
 function sanitizeFileName(fileName: string): string {
@@ -73,17 +121,21 @@ function buildVariantName(baseFileName: string, width: number): string {
 async function generateImageVariants(buffer: Buffer, mimeType: string, safeName: string) {
   if (!mimeType.startsWith("image/")) return [] as Array<{ width: number; fileName: string; buffer: Buffer }>;
   const variants: Array<{ width: number; fileName: string; buffer: Buffer }> = [];
-  for (const width of IMAGE_WIDTHS) {
-    const output = await sharp(buffer)
-      .rotate()
-      .resize({ width, withoutEnlargement: true, fit: "inside" })
-      .webp({ quality: 78 })
-      .toBuffer();
-    variants.push({
-      width,
-      fileName: buildVariantName(safeName, width),
-      buffer: output,
-    });
+  try {
+    for (const width of IMAGE_WIDTHS) {
+      const output = await sharp(buffer)
+        .rotate()
+        .resize({ width, withoutEnlargement: true, fit: "inside" })
+        .webp({ quality: 78 })
+        .toBuffer();
+      variants.push({
+        width,
+        fileName: buildVariantName(safeName, width),
+        buffer: output,
+      });
+    }
+  } catch (err) {
+    console.warn("Failed to generate image variants, resizing skipped:", err);
   }
   return variants;
 }
@@ -149,6 +201,8 @@ export async function POST(request: Request) {
 
     if (isSupabaseConfigured && supabase) {
       const storagePath = `uploads/${safeName}`;
+      
+      // Upload raw file to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from(MEDIA_BUCKET)
         .upload(storagePath, buffer, {
@@ -156,59 +210,92 @@ export async function POST(request: Request) {
           upsert: false,
         });
 
-      if (!uploadError) {
-        const uploadedVariants: NonNullable<MediaItem["variants"]> = [];
-        for (const variant of generatedVariants) {
-          const variantStoragePath = `uploads/${variant.fileName}`;
-          const { error: variantError } = await supabase.storage
-            .from(MEDIA_BUCKET)
-            .upload(variantStoragePath, variant.buffer, {
-              contentType: "image/webp",
-              upsert: false,
-            });
-          if (!variantError) {
-            const { data: variantPublicData } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(variantStoragePath);
-            uploadedVariants.push({
-              width: variant.width,
-              format: "webp",
-              url: variantPublicData.publicUrl,
-              fileName: variant.fileName,
-              storagePath: variantStoragePath,
-            });
-          }
+      if (uploadError) {
+        console.error("Supabase Storage raw upload error:", uploadError);
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: `Supabase Storage failed: ${uploadError.message}. Make sure the '${MEDIA_BUCKET}' bucket exists and has correct policies.` 
+          },
+          { status: 500 }
+        );
+      }
+
+      // Upload variants to Supabase storage
+      const uploadedVariants: NonNullable<MediaItem["variants"]> = [];
+      for (const variant of generatedVariants) {
+        const variantStoragePath = `uploads/${variant.fileName}`;
+        const { error: variantError } = await supabase.storage
+          .from(MEDIA_BUCKET)
+          .upload(variantStoragePath, variant.buffer, {
+            contentType: "image/webp",
+            upsert: false,
+          });
+        if (!variantError) {
+          const { data: variantPublicData } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(variantStoragePath);
+          uploadedVariants.push({
+            width: variant.width,
+            format: "webp",
+            url: variantPublicData.publicUrl,
+            fileName: variant.fileName,
+            storagePath: variantStoragePath,
+          });
         }
+      }
 
-        const defaultImageUrl = uploadedVariants.find((v) => v.width === 960)?.url || uploadedVariants[0]?.url;
-        const { data: publicData } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(storagePath);
-        const item: MediaItem = {
-          id: randomUUID(),
-          title: cleanTitle,
-          fileName: safeName,
-          url: defaultImageUrl || publicData.publicUrl,
-          mimeType: file.type,
-          size: file.size,
-          storageProvider: "supabase",
-          storagePath,
-          variants: uploadedVariants,
-          created_at: new Date().toISOString(),
-        };
+      const defaultImageUrl = uploadedVariants.find((v) => v.width === 960)?.url || uploadedVariants[0]?.url;
+      const { data: publicData } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(storagePath);
+      
+      const item: MediaItem = {
+        id: randomUUID(),
+        title: cleanTitle,
+        fileName: safeName,
+        url: defaultImageUrl || publicData.publicUrl,
+        mimeType: file.type,
+        size: file.size,
+        storageProvider: "supabase",
+        storagePath,
+        variants: uploadedVariants,
+        created_at: new Date().toISOString(),
+      };
 
+      // Save item to Supabase media_items table
+      const { error: dbError } = await supabase
+        .from("media_items")
+        .insert({
+          id: item.id,
+          title: item.title,
+          file_name: item.fileName,
+          url: item.url,
+          mime_type: item.mimeType,
+          size: item.size,
+          storage_provider: item.storageProvider,
+          storage_path: item.storagePath,
+          variants: item.variants,
+          created_at: item.created_at,
+        });
+
+      if (dbError) {
+        console.warn("Supabase media_items table save failed, falling back to local JSON:", dbError.message);
+        // Fallback to local JSON save (will fail on Vercel, but safe locally)
         const all = await readMediaDb();
         all.unshift(item);
         await writeMediaDb(all);
-        return NextResponse.json(
-          { success: true, item },
-          {
-            headers: {
-              "X-RateLimit-Remaining": String(limit.remaining),
-              "X-RateLimit-Backend": limit.backend,
-              "Cache-Control": "no-store",
-            },
-          }
-        );
       }
+
+      return NextResponse.json(
+        { success: true, item },
+        {
+          headers: {
+            "X-RateLimit-Remaining": String(limit.remaining),
+            "X-RateLimit-Backend": limit.backend,
+            "Cache-Control": "no-store",
+          },
+        }
+      );
     }
 
+    // ONLY RUN LOCAL FALLBACK IF SUPABASE IS NOT CONFIGURED
     await ensureStorage();
     const absolutePath = path.join(uploadsDir, safeName);
     await fs.writeFile(absolutePath, buffer);
@@ -290,6 +377,22 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: false, error: "id is required" }, { status: 400 });
   }
 
+  if (isSupabaseConfigured && supabase) {
+    // Delete from Supabase media_items table
+    const { data: itemData } = await supabase
+      .from("media_items")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (itemData) {
+      await supabase.from("media_items").delete().eq("id", id);
+      const deletePaths = [itemData.storage_path, ...(itemData.variants?.map((v: any) => v.storagePath) || [])].filter(Boolean);
+      await supabase.storage.from(MEDIA_BUCKET).remove(deletePaths).catch(() => undefined);
+      return NextResponse.json({ success: true });
+    }
+  }
+
   const all = await readMediaDb();
   const target = all.find((item) => item.id === id);
   if (!target) {
@@ -299,21 +402,16 @@ export async function DELETE(request: Request) {
   const next = all.filter((item) => item.id !== id);
   await writeMediaDb(next);
 
-  if (target.storageProvider === "supabase" && target.storagePath && isSupabaseConfigured && supabase) {
-    const deletePaths = [target.storagePath, ...(target.variants?.map((variant) => variant.storagePath) || [])];
-    await supabase.storage.from(MEDIA_BUCKET).remove(deletePaths).catch(() => undefined);
-  } else {
+  try {
+    await fs.unlink(path.join(uploadsDir, target.fileName));
+  } catch {
+    // Ignore missing files.
+  }
+  for (const variant of target.variants || []) {
     try {
-      await fs.unlink(path.join(uploadsDir, target.fileName));
+      await fs.unlink(path.join(uploadsDir, variant.fileName));
     } catch {
       // Ignore missing files.
-    }
-    for (const variant of target.variants || []) {
-      try {
-        await fs.unlink(path.join(uploadsDir, variant.fileName));
-      } catch {
-        // Ignore missing files.
-      }
     }
   }
 
