@@ -24,7 +24,7 @@ interface MediaItem {
   created_at: string;
 }
 
-const MEDIA_BUCKET = process.env.SUPABASE_MEDIA_BUCKET || "media";
+const MEDIA_BUCKET = (process.env.SUPABASE_MEDIA_BUCKET || "media").trim().replace(/\/+$/, "");
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const IMAGE_WIDTHS = [480, 960, 1600];
 
@@ -201,21 +201,24 @@ export async function POST(request: Request) {
 
     if (isSupabaseConfigured && supabase) {
       const storagePath = `uploads/${safeName}`;
+      const fileBlob = new Blob([new Uint8Array(buffer)], { type: file.type });
       
       // Upload raw file to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from(MEDIA_BUCKET)
-        .upload(storagePath, buffer, {
+        .upload(storagePath, fileBlob, {
           contentType: file.type,
           upsert: false,
         });
 
       if (uploadError) {
         console.error("Supabase Storage raw upload error:", uploadError);
+        const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim();
+        const maskedUrl = supabaseUrl ? `${supabaseUrl.substring(0, 15)}...${supabaseUrl.substring(supabaseUrl.length - 4)}` : "not configured";
         return NextResponse.json(
           { 
             success: false, 
-            error: `Supabase Storage failed: ${uploadError.message}. Make sure the '${MEDIA_BUCKET}' bucket exists and has correct policies.` 
+            error: `Supabase Storage failed: ${uploadError.message}. (Bucket: '${MEDIA_BUCKET}', Path: '${storagePath}', Url: '${maskedUrl}'). Please verify your Vercel env variables.` 
           },
           { status: 500 }
         );
@@ -225,9 +228,10 @@ export async function POST(request: Request) {
       const uploadedVariants: NonNullable<MediaItem["variants"]> = [];
       for (const variant of generatedVariants) {
         const variantStoragePath = `uploads/${variant.fileName}`;
+        const variantBlob = new Blob([new Uint8Array(variant.buffer)], { type: "image/webp" });
         const { error: variantError } = await supabase.storage
           .from(MEDIA_BUCKET)
-          .upload(variantStoragePath, variant.buffer, {
+          .upload(variantStoragePath, variantBlob, {
             contentType: "image/webp",
             upsert: false,
           });
