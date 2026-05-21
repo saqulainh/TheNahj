@@ -101,157 +101,168 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const clientKey = `media-write:${getRequestClientIp(request)}`;
-  const limit = await consumeRateLimit({
-    key: clientKey,
-    limit: 20,
-    windowMs: 60_000,
-  });
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { success: false, error: "Too many uploads" },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": String(limit.retryAfterSec),
-        },
-      }
-    );
-  }
-
-  const formData = await request.formData();
-  const file = formData.get("file");
-  const title = String(formData.get("title") || "").trim();
-
-  if (!(file instanceof File)) {
-    return NextResponse.json({ success: false, error: "No file uploaded" }, { status: 400 });
-  }
-
-  if (!allowed.includes(file.type)) {
-    return NextResponse.json(
-      { success: false, error: "Unsupported file type" },
-      { status: 415 }
-    );
-  }
-
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return NextResponse.json(
-      { success: false, error: "File exceeds 10MB upload limit" },
-      { status: 413 }
-    );
-  }
-
-  const safeName = sanitizeFileName(file.name);
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const cleanTitle = sanitizeTitle(title, file.name);
-  const generatedVariants = await generateImageVariants(buffer, file.type, safeName);
-
-  if (isSupabaseConfigured && supabase) {
-    const storagePath = `uploads/${safeName}`;
-    const { error: uploadError } = await supabase.storage
-      .from(MEDIA_BUCKET)
-      .upload(storagePath, buffer, {
-        contentType: file.type,
-        upsert: false,
-      });
-
-    if (!uploadError) {
-      const uploadedVariants: NonNullable<MediaItem["variants"]> = [];
-      for (const variant of generatedVariants) {
-        const variantStoragePath = `uploads/${variant.fileName}`;
-        const { error: variantError } = await supabase.storage
-          .from(MEDIA_BUCKET)
-          .upload(variantStoragePath, variant.buffer, {
-            contentType: "image/webp",
-            upsert: false,
-          });
-        if (!variantError) {
-          const { data: variantPublicData } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(variantStoragePath);
-          uploadedVariants.push({
-            width: variant.width,
-            format: "webp",
-            url: variantPublicData.publicUrl,
-            fileName: variant.fileName,
-            storagePath: variantStoragePath,
-          });
-        }
-      }
-
-      const defaultImageUrl = uploadedVariants.find((v) => v.width === 960)?.url || uploadedVariants[0]?.url;
-      const { data: publicData } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(storagePath);
-      const item: MediaItem = {
-        id: randomUUID(),
-        title: cleanTitle,
-        fileName: safeName,
-        url: defaultImageUrl || publicData.publicUrl,
-        mimeType: file.type,
-        size: file.size,
-        storageProvider: "supabase",
-        storagePath,
-        variants: uploadedVariants,
-        created_at: new Date().toISOString(),
-      };
-
-      const all = await readMediaDb();
-      all.unshift(item);
-      await writeMediaDb(all);
+  try {
+    const clientKey = `media-write:${getRequestClientIp(request)}`;
+    const limit = await consumeRateLimit({
+      key: clientKey,
+      limit: 20,
+      windowMs: 60_000,
+    });
+    if (!limit.allowed) {
       return NextResponse.json(
-        { success: true, item },
+        { success: false, error: "Too many uploads" },
         {
+          status: 429,
           headers: {
-            "X-RateLimit-Remaining": String(limit.remaining),
-            "X-RateLimit-Backend": limit.backend,
-            "Cache-Control": "no-store",
+            "Retry-After": String(limit.retryAfterSec),
           },
         }
       );
     }
-  }
 
-  await ensureStorage();
-  const absolutePath = path.join(uploadsDir, safeName);
-  await fs.writeFile(absolutePath, buffer);
+    const formData = await request.formData();
+    const file = formData.get("file");
+    const title = String(formData.get("title") || "").trim();
 
-  const localVariants: NonNullable<MediaItem["variants"]> = [];
-  for (const variant of generatedVariants) {
-    const variantPath = path.join(uploadsDir, variant.fileName);
-    await fs.writeFile(variantPath, variant.buffer);
-    localVariants.push({
-      width: variant.width,
-      format: "webp",
-      url: `/uploads/${variant.fileName}`,
-      fileName: variant.fileName,
-      storagePath: `/uploads/${variant.fileName}`,
-    });
-  }
-
-  const item: MediaItem = {
-    id: randomUUID(),
-    title: cleanTitle,
-    fileName: safeName,
-    url: localVariants.find((v) => v.width === 960)?.url || localVariants[0]?.url || `/uploads/${safeName}`,
-    mimeType: file.type,
-    size: file.size,
-    storageProvider: "local",
-    storagePath: `/uploads/${safeName}`,
-    variants: localVariants,
-    created_at: new Date().toISOString(),
-  };
-
-  const all = await readMediaDb();
-  all.unshift(item);
-  await writeMediaDb(all);
-
-  return NextResponse.json(
-    { success: true, item },
-    {
-      headers: {
-        "X-RateLimit-Remaining": String(limit.remaining),
-        "X-RateLimit-Backend": limit.backend,
-        "Cache-Control": "no-store",
-      },
+    if (!(file instanceof File)) {
+      return NextResponse.json({ success: false, error: "No file uploaded" }, { status: 400 });
     }
-  );
+
+    if (!allowed.includes(file.type)) {
+      return NextResponse.json(
+        { success: false, error: "Unsupported file type" },
+        { status: 415 }
+      );
+    }
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json(
+        { success: false, error: "File exceeds 10MB upload limit" },
+        { status: 413 }
+      );
+    }
+
+    const safeName = sanitizeFileName(file.name);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const cleanTitle = sanitizeTitle(title, file.name);
+    const generatedVariants = await generateImageVariants(buffer, file.type, safeName);
+
+    if (isSupabaseConfigured && supabase) {
+      const storagePath = `uploads/${safeName}`;
+      const { error: uploadError } = await supabase.storage
+        .from(MEDIA_BUCKET)
+        .upload(storagePath, buffer, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (!uploadError) {
+        const uploadedVariants: NonNullable<MediaItem["variants"]> = [];
+        for (const variant of generatedVariants) {
+          const variantStoragePath = `uploads/${variant.fileName}`;
+          const { error: variantError } = await supabase.storage
+            .from(MEDIA_BUCKET)
+            .upload(variantStoragePath, variant.buffer, {
+              contentType: "image/webp",
+              upsert: false,
+            });
+          if (!variantError) {
+            const { data: variantPublicData } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(variantStoragePath);
+            uploadedVariants.push({
+              width: variant.width,
+              format: "webp",
+              url: variantPublicData.publicUrl,
+              fileName: variant.fileName,
+              storagePath: variantStoragePath,
+            });
+          }
+        }
+
+        const defaultImageUrl = uploadedVariants.find((v) => v.width === 960)?.url || uploadedVariants[0]?.url;
+        const { data: publicData } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(storagePath);
+        const item: MediaItem = {
+          id: randomUUID(),
+          title: cleanTitle,
+          fileName: safeName,
+          url: defaultImageUrl || publicData.publicUrl,
+          mimeType: file.type,
+          size: file.size,
+          storageProvider: "supabase",
+          storagePath,
+          variants: uploadedVariants,
+          created_at: new Date().toISOString(),
+        };
+
+        const all = await readMediaDb();
+        all.unshift(item);
+        await writeMediaDb(all);
+        return NextResponse.json(
+          { success: true, item },
+          {
+            headers: {
+              "X-RateLimit-Remaining": String(limit.remaining),
+              "X-RateLimit-Backend": limit.backend,
+              "Cache-Control": "no-store",
+            },
+          }
+        );
+      }
+    }
+
+    await ensureStorage();
+    const absolutePath = path.join(uploadsDir, safeName);
+    await fs.writeFile(absolutePath, buffer);
+
+    const localVariants: NonNullable<MediaItem["variants"]> = [];
+    for (const variant of generatedVariants) {
+      const variantPath = path.join(uploadsDir, variant.fileName);
+      await fs.writeFile(variantPath, variant.buffer);
+      localVariants.push({
+        width: variant.width,
+        format: "webp",
+        url: `/uploads/${variant.fileName}`,
+        fileName: variant.fileName,
+        storagePath: `/uploads/${variant.fileName}`,
+      });
+    }
+
+    const item: MediaItem = {
+      id: randomUUID(),
+      title: cleanTitle,
+      fileName: safeName,
+      url: localVariants.find((v) => v.width === 960)?.url || localVariants[0]?.url || `/uploads/${safeName}`,
+      mimeType: file.type,
+      size: file.size,
+      storageProvider: "local",
+      storagePath: `/uploads/${safeName}`,
+      variants: localVariants,
+      created_at: new Date().toISOString(),
+    };
+
+    const all = await readMediaDb();
+    all.unshift(item);
+    await writeMediaDb(all);
+
+    return NextResponse.json(
+      { success: true, item },
+      {
+        headers: {
+          "X-RateLimit-Remaining": String(limit.remaining),
+          "X-RateLimit-Backend": limit.backend,
+          "Cache-Control": "no-store",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("CRITICAL: Media upload handler failed:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Internal Server Error in Media API",
+      },
+      { status: 500 }
+    );
+  }
 }
 
 export async function DELETE(request: Request) {
