@@ -110,19 +110,37 @@ export function NarrationsManager({ form }: { form: UseFormReturn<any> }) {
 export function MediaPickerField({ label, currentUrl, onSelect, onUpload, isUploading }: {
   label: string; currentUrl: string | null; onSelect: () => void; onUpload: (file: File) => void; isUploading: boolean;
 }) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   return (
     <div className="space-y-2">
       <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted">{label}</span>
       {currentUrl ? (
-        <div className="relative rounded-xl overflow-hidden border border-border/30">
-          <img src={currentUrl} alt={label} className="h-28 w-full object-cover" />
-          <button type="button" onClick={onSelect}
-            className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-xs opacity-0 hover:opacity-100 transition-opacity">
-            Change Image
+        <div className="relative rounded-xl overflow-hidden border border-border/30 h-28 w-full group">
+          <img src={currentUrl} alt={label} className="h-full w-full object-cover" />
+          <button 
+            type="button" 
+            onClick={() => {
+              onSelect();
+              fileInputRef.current?.click();
+            }}
+            className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity font-medium"
+          >
+            {isUploading ? "Uploading..." : "Change Image"}
           </button>
+          <input 
+            type="file" 
+            ref={fileInputRef}
+            accept="image/*" 
+            className="hidden" 
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onUpload(file);
+            }} 
+          />
         </div>
       ) : (
-        <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-border/40 bg-background p-4 text-center hover:border-gold/30 transition-colors">
+        <label className="flex cursor-pointer flex-col items-center justify-center h-28 w-full rounded-xl border border-dashed border-border/40 bg-background p-4 text-center hover:border-gold/30 transition-colors">
           {isUploading ? <Loader2 className="animate-spin mb-1" size={16} /> : <UploadCloud className="mb-1" size={16} />}
           <span className="text-[11px] text-muted">{isUploading ? "Uploading..." : "Upload or drop image"}</span>
           <input type="file" accept="image/*" className="hidden" onChange={(e) => {
