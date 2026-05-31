@@ -252,7 +252,29 @@ export async function getWisdomByCornerTopic(topicSlug: string): Promise<Wisdom[
 
 export async function getArticlesByCornerTopic(topicSlug: string): Promise<Article[]> {
   const all = await getAllArticles();
-  return all.filter((a) => a.corner_topics?.includes(topicSlug));
+  const matched = all.filter((a) => a.corner_topics?.includes(topicSlug));
+  if (matched.length > 0) return matched;
+
+  const tagFallback: Record<string, string[]> = {
+    "focus-productivity": ["focus", "productivity", "study", "knowledge", "time"],
+    "exam-anxiety": ["anxiety", "patience", "study", "exam", "exams"],
+    "social-media-addiction": ["time", "focus", "social media", "addiction"],
+    laziness: ["study", "knowledge", "laziness"],
+    "career-pressure": ["success", "purpose", "career", "pressure"],
+    "time-management": ["time", "management"],
+    "dopamine-distraction": ["focus", "time", "dopamine", "distraction"],
+    loneliness: ["loneliness", "friendship"],
+    "identity-crisis": ["purpose", "identity", "crisis"],
+    "validation-addiction": ["friendship", "validation", "approval"],
+    overthinking: ["anxiety", "patience", "overthinking"],
+    purpose: ["purpose", "success"],
+    "self-respect": ["character", "discipline", "self-respect", "respect"],
+    "emotional-discipline": ["anger", "patience", "discipline", "emotion", "emotions"],
+    "haram-relationships": ["friendship", "character", "relationship", "relationships", "haram"],
+  };
+
+  const tags = tagFallback[topicSlug] ?? [];
+  return all.filter((a) => a.corner_topics?.some((t) => tags.includes(t.toLowerCase())));
 }
 
 export function getSavedSlugs(): string[] {

@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { youthTopics } from "@/data/mock";
-import { getAllWisdom } from "@/lib/wisdom";
+import { getAllWisdom, getAllArticles } from "@/lib/wisdom";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 
 export const metadata = {
@@ -11,7 +11,12 @@ export const metadata = {
 };
 
 export default async function YouthPage() {
-  const wisdom = await getAllWisdom();
+  const [wisdom, allArticles] = await Promise.all([
+    getAllWisdom(),
+    getAllArticles(),
+  ]);
+
+  const youthArticles = allArticles.filter((a) => a.type === "youth");
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
@@ -40,6 +45,28 @@ export default async function YouthPage() {
         <span className="text-gold-light">Before You Text Them →</span>
         <p className="mt-2 text-sm text-muted">Pause. Reflect. Protect your dignity.</p>
       </Link>
+
+      {youthArticles.length > 0 && (
+        <div className="mt-16">
+          <h2 className="mb-8 text-xl font-medium text-foreground">Latest Youth Articles</h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            {youthArticles.map((article) => (
+              <Link
+                key={article.id}
+                href={`/articles/${article.slug}`}
+                className="block rounded-2xl border border-border/80 bg-surface/50 p-6 hover:border-gold/30 hover:bg-surface transition-all"
+              >
+                <span className="text-[10px] uppercase tracking-[0.15em] text-gold-muted font-medium block">Youth Corner Article</span>
+                <h3 className="mt-2 text-lg font-medium text-foreground">{article.title}</h3>
+                <p className="mt-2 text-sm text-muted line-clamp-2">{article.excerpt}</p>
+                <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-gold">
+                  <span>Read Article</span><span>→</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <h2 className="mt-16 mb-8 text-xl font-medium">Featured wisdom</h2>
       <section className="grid gap-6 md:grid-cols-2">
