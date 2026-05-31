@@ -234,6 +234,20 @@ create table if not exists activity_logs (
   created_at timestamptz default now()
 );
 
+create table if not exists reflection_analytics_events (
+  id uuid primary key default uuid_generate_v4(),
+  article_slug text not null,
+  event_type text not null,
+  question_index integer,
+  step_index integer,
+  checked boolean,
+  completed_steps integer,
+  total_steps integer,
+  client_id text,
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamptz default now()
+);
+
 alter table articles_unified enable row level security;
 alter table article_revisions enable row level security;
 alter table uploads enable row level security;
@@ -241,7 +255,10 @@ alter table seo_metadata enable row level security;
 alter table reflections enable row level security;
 alter table bookmarks enable row level security;
 alter table activity_logs enable row level security;
+alter table reflection_analytics_events enable row level security;
 
 create policy "Public read unified articles" on articles_unified for select using (true);
 create policy "Public read reflections" on reflections for select using (true);
 create policy "Users manage own bookmarks" on bookmarks for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Public read reflection analytics" on reflection_analytics_events for select using (true);
+create policy "Public insert reflection analytics" on reflection_analytics_events for insert with check (true);

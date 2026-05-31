@@ -12,6 +12,47 @@ function buildKey(articleSlug: string) {
   return `thenahj-reflection-practice:${articleSlug}`;
 }
 
+function getClientId() {
+  const key = "thenahj-client-id";
+  try {
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const next = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(key, next);
+    return next;
+  } catch {
+    return "anonymous";
+  }
+}
+
+function sendReflectionEvent(payload: {
+  articleSlug: string;
+  eventType: "question_viewed" | "step_toggled" | "session_completed";
+  questionIndex?: number;
+  stepIndex?: number;
+  checked?: boolean;
+  completedSteps?: number;
+  totalSteps?: number;
+}) {
+  const body = JSON.stringify({
+    ...payload,
+    clientId: getClientId(),
+  });
+
+  if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+    const blob = new Blob([body], { type: "application/json" });
+    navigator.sendBeacon("/api/analytics/reflection", blob);
+    return;
+  }
+
+  fetch("/api/analytics/reflection", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
 export function ReflectionPracticePanel({ articleSlug, questions, actionSteps }: ReflectionPracticePanelProps) {
   const safeQuestions = useMemo(() => questions.filter(Boolean), [questions]);
   const safeSteps = useMemo(() => actionSteps.filter(Boolean), [actionSteps]);
@@ -69,6 +110,27 @@ export function ReflectionPracticePanel({ articleSlug, questions, actionSteps }:
   const currentQuestion = safeQuestions[activeQuestion] || null;
   const completedCount = safeSteps.reduce((count, _, index) => (completedSteps[index] ? count + 1 : count), 0);
 
+  useEffect(() => {
+    if (!currentQuestion) return;
+    sendReflectionEvent({
+      articleSlug,
+      eventType: "question_viewed",
+      questionIndex: activeQuestion,
+      completedSteps: completedCount,
+      totalSteps: safeSteps.length,
+    });
+  }, [activeQuestion, articleSlug, currentQuestion, completedCount, safeSteps.length]);
+
+  useEffect(() => {
+    if (safeSteps.length === 0 || completedCount !== safeSteps.length) return;
+    sendReflectionEvent({
+      articleSlug,
+      eventType: "session_completed",
+      completedSteps: completedCount,
+      totalSteps: safeSteps.length,
+    });
+  }, [articleSlug, completedCount, safeSteps.length]);
+
   return (
     <section className="rounded-[1.75rem] border border-gold/20 bg-[linear-gradient(180deg,_hsl(var(--surface-elevated)/0.9),_hsl(var(--surface)/0.7))] p-5 md:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -115,12 +177,28 @@ export function ReflectionPracticePanel({ articleSlug, questions, actionSteps }:
               <input
                 type="checkbox"
                 checked={Boolean(completedSteps[index])}
-                onChange={(event) =>
-                  setCompletedSteps((prev) => ({
-                    ...prev,
-                    [index]: event.target.checked,
-                  }))
-                }
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  setCompletedSteps((prev) => {
+                    const next = {
+                      ...prev,
+                      [index]: checked,
+                    };
+                    const nextCompletedCount = safeSteps.reduce(
+                      (count, _, stepIndex) => (next[stepIndex] ? count + 1 : count),
+                      0
+                    );
+                    sendReflectionEvent({
+                      articleSlug,
+                      eventType: "step_toggled",
+                      stepIndex: index,
+                      checked,
+                      completedSteps: nextCompletedCount,
+                      totalSteps: safeSteps.length,
+                    });
+                    return next;
+                  });
+                }}
                 className="mt-0.5 h-4 w-4 rounded border-border/30 bg-background"
               />
               <span className={completedSteps[index] ? "text-muted line-through" : "text-foreground/90"}>{step}</span>

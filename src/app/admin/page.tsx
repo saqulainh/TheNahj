@@ -31,6 +31,24 @@ export default function AdminDashboardPage() {
     retry: 1,
   });
 
+  const { data: reflectionSummary } = useQuery({
+    queryKey: ["reflection-analytics-summary"],
+    queryFn: async () => {
+      const response = await fetch("/api/analytics/reflection");
+      const json = await response.json();
+      if (!response.ok || !json.success) {
+        throw new Error(json.error || "Failed to load reflection analytics");
+      }
+      return json.summary as {
+        last7dEvents: number;
+        completedSessions: number;
+        uniqueArticles: number;
+        completionRatePct: number;
+      };
+    },
+    retry: 1,
+  });
+
   return (
     <div className="space-y-8">
       {error && (
@@ -84,6 +102,30 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
+        <div className="rounded-xl border border-border bg-surface">
+          <div className="border-b border-border p-6">
+            <h2 className="font-medium text-foreground">Reflection Analytics (7d)</h2>
+          </div>
+          <div className="grid gap-4 p-6 sm:grid-cols-2">
+            <div className="rounded-lg border border-border/60 bg-background p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-muted">Events</p>
+              <p className="mt-2 text-2xl font-medium text-foreground">{reflectionSummary?.last7dEvents ?? 0}</p>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-muted">Completed Sessions</p>
+              <p className="mt-2 text-2xl font-medium text-foreground">{reflectionSummary?.completedSessions ?? 0}</p>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-muted">Articles Practiced</p>
+              <p className="mt-2 text-2xl font-medium text-foreground">{reflectionSummary?.uniqueArticles ?? 0}</p>
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-muted">Completion Rate</p>
+              <p className="mt-2 text-2xl font-medium text-foreground">{reflectionSummary?.completionRatePct ?? 0}%</p>
+            </div>
+          </div>
+        </div>
+
         <div className="rounded-xl border border-border bg-surface">
           <div className="border-b border-border p-6">
             <h2 className="font-medium text-foreground">Quick Actions</h2>
