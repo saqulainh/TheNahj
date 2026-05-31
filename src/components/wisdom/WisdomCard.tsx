@@ -17,11 +17,17 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    if (!wisdom?.slug) return;
     setSaved(getSavedSlugs().includes(wisdom.slug));
-  }, [wisdom.slug]);
+  }, [wisdom?.slug]);
+
+  if (!wisdom) {
+    return null;
+  }
 
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault();
+    if (!wisdom.slug) return;
     // Optimistic UI update
     setSaved(!saved);
     const isSaved = await toggleSaveAsync(wisdom.slug);

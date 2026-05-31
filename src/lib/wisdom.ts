@@ -141,10 +141,29 @@ export async function getTrendingWisdom(): Promise<Wisdom[]> {
   return all.filter((w) => w.trending).slice(0, 6);
 }
 
+export const fallbackWisdom: Wisdom = {
+  id: "welcome-wisdom",
+  slug: "welcome-to-thenahj",
+  arabic_text: "العِلْمُ كَنْزٌ عَظِيمٌ لاَ يَفْنَى",
+  urdu_translation: "علم ایک ایسا عظیم خزانہ ہے جو کبھی ختم نہیں ہوتا۔",
+  english_translation: "Knowledge is a great treasure that never perishes.",
+  short_reflection: "A single step toward knowledge is a step toward self-discovery.",
+  deep_reflection: "Welcome to TheNahj. Start your journey by publishing your first wisdom cards from the admin Content Studio.",
+  simple_meaning: "Knowledge is a light that guides your path.",
+  why_today: "In a world of noise, seeking authentic knowledge is your greatest strength.",
+  reflection_questions: ["What is one thing I want to learn today?"],
+  action_steps: ["Read one page of a beneficial book today."],
+  source: "Ghurar al-Hikam",
+  category_id: "general",
+  category: { id: "general", name: "General", slug: "general" },
+  created_at: new Date().toISOString(),
+};
+
 export async function getDailyWisdom(): Promise<Wisdom> {
   const all = await getAllWisdom();
+  if (all.length === 0) return fallbackWisdom;
   const dayIndex = new Date().getDate() % all.length;
-  return all[dayIndex] ?? all[0];
+  return all[dayIndex] ?? all[0] ?? fallbackWisdom;
 }
 
 export async function getRelatedWisdom(wisdom: Wisdom): Promise<Wisdom[]> {
