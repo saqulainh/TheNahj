@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 export default async function ArticlesPage() {
-  const articles = await getAllArticles();
+  const articles = (await getAllArticles()).filter((a) => a.type === "reflection");
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 md:px-6 md:py-16">

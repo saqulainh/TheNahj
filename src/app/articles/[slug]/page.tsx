@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { ImmersiveArticleSkeleton } from "@/components/articles/ImmersiveArticleSkeleton";
 import { getRelatedUnifiedArticles, getUnifiedArticleBySlug } from "@/lib/content";
 
-const ImmersiveArticle = dynamic(
+const ImmersiveArticle = nextDynamic(
   () => import("@/components/articles/ImmersiveArticle").then((mod) => mod.ImmersiveArticle),
   {
     loading: () => <ImmersiveArticleSkeleton />,
   }
 );
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
