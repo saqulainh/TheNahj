@@ -32,3 +32,20 @@
 
 ## Immediate Next Steps
 All Phase 1, Phase 2, and Phase 3 tasks are fully complete. TheNahj platform has reached a production-ready feature state.
+
+## Reflection Analytics Migration Rollout
+- [ ] **Apply DB migration in Supabase:**
+  - Run `supabase/migrations/003_reflection_analytics_events.sql` in Supabase SQL Editor.
+  - Confirm `reflection_analytics_events` table, indexes, and policies are created.
+- [ ] **Validate API ingestion and summary:**
+  - Send a test `POST` to `/api/analytics/reflection` with a valid payload.
+  - Confirm `GET /api/analytics/reflection?range=24h` returns non-fallback data.
+- [ ] **Smoke test tracking in UI:**
+  - Open a reflection page, complete a practice step, and navigate questions.
+  - Verify events appear in admin analytics (`/admin`) after refresh.
+- [ ] **Production safety checks:**
+  - Verify rate limiting behavior for repeated event submissions.
+  - Confirm analytics still degrades gracefully if Supabase is unavailable.
+- [ ] **Post-rollout monitoring (24h):**
+  - Check event volume and completion rate trend for sanity.
+  - Review top practiced article slugs/titles for data quality.
