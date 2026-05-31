@@ -7,6 +7,7 @@ import { WisdomHeroActions } from "@/components/wisdom/WisdomHeroActions";
 import { ReflectionPracticePanel } from "@/components/wisdom/ReflectionPracticePanel";
 import ImageRole from "@/components/ui/ImageRole";
 import { getRelatedUnifiedArticles, getUnifiedArticleBySlug } from "@/lib/content";
+import type { RelatedArticlePreview } from "@/lib/content";
 import type { Metadata } from "next";
 
 interface PageProps {
@@ -53,6 +54,7 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
     : "Wisdom Repository";
 
   const related = await getRelatedUnifiedArticles(article.slug, article.category, article.tags ?? []);
+  const relatedWithMeta = related as RelatedArticlePreview[];
   const primaryTopic = article.tags?.[0] || article.category;
   const subcategory = article.tags?.[1] || article.tags?.[0] || article.category;
   const reflectionQuestions = splitLines(article.reflection_questions);
@@ -77,6 +79,21 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
           {paragraph}
         </p>
       ));
+  };
+
+  const reasonLabel: Record<string, string> = {
+    "same-topic": "Same Topic",
+    "same-theme": "Same Theme",
+    "same-audience": "Same Audience",
+    "related-concept": "Related Concept",
+    "shared-tags": "Shared Tags",
+  };
+
+  const getConfidence = (score?: number) => {
+    if (!score) return { label: "Relevant", className: "border-border/20 text-muted" };
+    if (score >= 1000) return { label: "Strong Match", className: "border-gold/30 text-gold-light" };
+    if (score >= 450) return { label: "Good Match", className: "border-gold/20 text-gold/90" };
+    return { label: "Related", className: "border-border/20 text-muted" };
   };
 
   return (
@@ -362,29 +379,44 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
             </div>
           </section>
 
-          {related.length > 0 && (
+          {relatedWithMeta.length > 0 && (
             <section className="rounded-[2rem] border border-border/20 bg-surface/45 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] md:p-8 lg:p-10">
               <div className="mb-8 flex items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-gold">
                 <span>Related Wisdom</span>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {related.map((item, index) => (
-                  <Link
-                    key={item.slug}
-                    href={`/wisdom/${item.slug}`}
-                    className="group rounded-[1.75rem] border border-border/20 bg-background/70 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-gold/30 hover:bg-background"
-                  >
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted">{item.category}</p>
-                    <p className="mt-3 text-base font-medium text-foreground transition-colors group-hover:text-gold-light">{item.title}</p>
-                    {Array.isArray((item as any).reason) && (item as any).reason.length > 0 && (
-                      <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-gold/80">
-                        Match: {String((item as any).reason[0]).replace(/-/g, " ")}
-                      </p>
-                    )}
-                    <p className="mt-4 text-xs uppercase tracking-[0.18em] text-gold/70">Related #{index + 1}</p>
-                  </Link>
-                ))}
+                {relatedWithMeta.map((item, index) => {
+                  const confidence = getConfidence(item.score);
+                  return (
+                    <Link
+                      key={item.slug}
+                      href={`/wisdom/${item.slug}`}
+                      className="group rounded-[1.75rem] border border-border/20 bg-background/70 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-gold/30 hover:bg-background"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-muted">{item.category}</p>
+                        <span className={`rounded-full border px-2.5 py-1 text-[9px] uppercase tracking-[0.16em] ${confidence.className}`}>
+                          {confidence.label}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-base font-medium text-foreground transition-colors group-hover:text-gold-light">{item.title}</p>
+                      {Array.isArray(item.reason) && item.reason.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {item.reason.slice(0, 3).map((reason) => (
+                            <span
+                              key={`${item.slug}-${reason}`}
+                              className="rounded-full border border-border/20 bg-surface/60 px-2.5 py-1 text-[9px] uppercase tracking-[0.15em] text-gold/80"
+                            >
+                              {reasonLabel[reason] || reason.replace(/-/g, " ")}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="mt-4 text-xs uppercase tracking-[0.18em] text-gold/70">Related #{index + 1}</p>
+                    </Link>
+                  );
+                })}
               </div>
             </section>
           )}
