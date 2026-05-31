@@ -13,6 +13,7 @@ import { useContentStudioStore } from "@/lib/stores/contentStudioStore";
 import {
   SectionShell, TextField, TextAreaField,
   NarrationsManager, MediaPickerField, WisdomCardPreview,
+  TopicSelectorField,
 } from "@/components/admin/StudioSections";
 
 const formSchema = wisdomArticleSchema.extend({ tagsInput: z.string().optional() });
@@ -224,7 +225,11 @@ export default function ContentStudioPage() {
                 <input type="datetime-local" {...form.register("schedule_publish_at")} className="w-full rounded-xl border border-border/40 bg-background px-3 py-2 text-sm" />
               </label>
             </div>
-            <TextField label="Tags (comma separated)" register={form.register("tagsInput")} placeholder="discipline, youth, health" />
+            <TopicSelectorField
+              selectedTags={(values.tagsInput || "").split(",").map((t: string) => t.trim()).filter(Boolean)}
+              onChange={(newTags) => form.setValue("tagsInput", newTags.join(", "), { shouldDirty: true })}
+              category={values.category || "Imam Ali Says"}
+            />
           </SectionShell>
 
           {/* Section 2: Original Wisdom Content */}

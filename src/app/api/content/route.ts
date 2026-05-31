@@ -99,6 +99,7 @@ export async function POST(request: Request) {
       slug: normalizeSlug(payload.slug),
       content_blocks: payload.content_blocks,
       tags: payload.tags,
+      schedule_publish_at: payload.schedule_publish_at || null,
       published_at:
         payload.status === "published"
           ? new Date().toISOString()

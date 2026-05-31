@@ -47,6 +47,7 @@ async function ensureStorage() {
 }
 
 async function readMediaDb(): Promise<MediaItem[]> {
+  let dbItems: MediaItem[] = [];
   // If Supabase is configured, read from media_items table
   if (isSupabaseConfigured && supabase) {
     try {
@@ -56,7 +57,7 @@ async function readMediaDb(): Promise<MediaItem[]> {
         .order("created_at", { ascending: false });
 
       if (!error && data) {
-        return data.map((item: any) => ({
+        dbItems = data.map((item: any) => ({
           id: item.id,
           title: item.title,
           fileName: item.file_name,
@@ -69,21 +70,28 @@ async function readMediaDb(): Promise<MediaItem[]> {
           created_at: item.created_at,
         }));
       } else if (error) {
-        console.warn("Supabase media_items table read failed, falling back to local:", error.message);
+        console.warn("Supabase media_items table read failed:", error.message);
       }
     } catch (err) {
-      console.warn("Error reading Supabase media_items, falling back:", err);
+      console.warn("Error reading Supabase media_items:", err);
     }
   }
 
-  // Fallback to local file if not on serverless/read-only
+  let localItems: MediaItem[] = [];
   try {
     await ensureStorage();
     const raw = await fs.readFile(mediaDbPath, "utf8");
-    return JSON.parse(raw) as MediaItem[];
+    localItems = JSON.parse(raw) as MediaItem[];
   } catch {
-    return [];
+    // Ignore if file doesn't exist or is invalid
   }
+
+  // Merge items. Supabase items take precedence if there's an ID conflict.
+  const map = new Map<string, MediaItem>();
+  localItems.forEach((item) => map.set(item.id, item));
+  dbItems.forEach((item) => map.set(item.id, item));
+  
+  return Array.from(map.values()).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
 async function writeMediaDb(items: MediaItem[]) {
@@ -406,16 +414,23 @@ export async function DELETE(request: Request) {
   const next = all.filter((item) => item.id !== id);
   await writeMediaDb(next);
 
-  try {
-    await fs.unlink(path.join(uploadsDir, target.fileName));
-  } catch {
-    // Ignore missing files.
-  }
-  for (const variant of target.variants || []) {
+  if (target.storageProvider === "supabase" && isSupabaseConfigured && supabase) {
+    const deletePaths = [target.storagePath, ...(target.variants?.map((v) => v.storagePath) || [])].filter(Boolean) as string[];
+    if (deletePaths.length > 0) {
+      await supabase.storage.from(MEDIA_BUCKET).remove(deletePaths).catch(() => undefined);
+    }
+  } else {
     try {
-      await fs.unlink(path.join(uploadsDir, variant.fileName));
+      await fs.unlink(path.join(uploadsDir, target.fileName));
     } catch {
       // Ignore missing files.
+    }
+    for (const variant of target.variants || []) {
+      try {
+        await fs.unlink(path.join(uploadsDir, variant.fileName));
+      } catch {
+        // Ignore missing files.
+      }
     }
   }
 

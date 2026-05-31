@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronRight, Plus, Trash2, UploadCloud, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2, UploadCloud, Loader2, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import type { Narration } from "@/lib/content-schema";
 import type { UseFormReturn } from "react-hook-form";
 
@@ -52,6 +53,110 @@ export function TextAreaField({ label, register, placeholder, rows = 3, dir, fon
       {label}
       <textarea {...register} rows={rows} className={`${textareaCls} ${dir === "rtl" ? "text-right" : ""} ${fontClass || ""}`} placeholder={placeholder} dir={dir} />
     </label>
+  );
+}
+
+/* ── Topic Selector (smart tag chips) ── */
+export function TopicSelectorField({ selectedTags, onChange, category }: {
+  selectedTags: string[];
+  onChange: (tags: string[]) => void;
+  category: string;
+}) {
+  const [inputValue, setInputValue] = useState("");
+
+  const { data: suggestedTags = [], isLoading } = useQuery({
+    queryKey: ["tags-by-category", category],
+    queryFn: async () => {
+      const res = await fetch(`/api/tags?category=${encodeURIComponent(category)}`);
+      const json = await res.json();
+      return (json.tags ?? []) as string[];
+    },
+    staleTime: 30_000,
+  });
+
+  const addTag = (tag: string) => {
+    const cleaned = tag.trim();
+    if (!cleaned) return;
+    if (selectedTags.some((t) => t.toLowerCase() === cleaned.toLowerCase())) return;
+    onChange([...selectedTags, cleaned]);
+  };
+
+  const removeTag = (tag: string) => {
+    onChange(selectedTags.filter((t) => t !== tag));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addTag(inputValue);
+      setInputValue("");
+    }
+    if (e.key === "Backspace" && !inputValue && selectedTags.length > 0) {
+      removeTag(selectedTags[selectedTags.length - 1]);
+    }
+  };
+
+  // Suggestions that are not already selected
+  const availableSuggestions = suggestedTags.filter(
+    (tag) => !selectedTags.some((s) => s.toLowerCase() === tag.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-2">
+      <span className={labelCls}>Topic / Tags</span>
+
+      {/* Selected tags as removable chips */}
+      <div className="flex flex-wrap gap-1.5 min-h-[36px] rounded-xl border border-border/40 bg-background px-2 py-2">
+        {selectedTags.map((tag) => (
+          <span
+            key={tag}
+            className="inline-flex items-center gap-1 rounded-lg bg-gold/15 border border-gold/25 px-2.5 py-1 text-xs font-medium text-gold-light"
+          >
+            {tag}
+            <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-400 transition-colors">
+              <X size={11} />
+            </button>
+          </span>
+        ))}
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={selectedTags.length === 0 ? "Type a topic and press Enter..." : "Add more..."}
+          className="flex-1 min-w-[120px] bg-transparent text-sm text-foreground placeholder:text-muted/50 outline-none"
+        />
+      </div>
+
+      {/* Suggested tags from database */}
+      {availableSuggestions.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-gold-muted font-medium">Suggested topics for {category}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {availableSuggestions.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => addTag(tag)}
+                className="inline-flex items-center gap-1 rounded-lg border border-border/35 bg-surface/50 px-2.5 py-1 text-xs text-muted hover:border-gold/30 hover:text-gold-light hover:bg-gold/5 transition-all"
+              >
+                <Plus size={10} /> {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isLoading && (
+        <p className="text-[10px] text-muted flex items-center gap-1.5">
+          <Loader2 size={10} className="animate-spin" /> Loading suggested topics...
+        </p>
+      )}
+
+      {!isLoading && suggestedTags.length === 0 && (
+        <p className="text-[10px] text-muted">No existing topics for "{category}" yet. Type a new one above.</p>
+      )}
+    </div>
   );
 }
 
