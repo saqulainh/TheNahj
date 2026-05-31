@@ -215,14 +215,25 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-muted">No practice data in this range yet.</p>
               ) : (
                 topPracticedArticles.map((item) => (
-                  <Link
-                    key={item.articleSlug}
-                    href={`/admin/studio?slug=${encodeURIComponent(item.articleSlug)}`}
-                    className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-2.5 transition-colors hover:border-gold/40 hover:bg-gold/5"
-                  >
-                    <span className="truncate pr-3 text-sm text-foreground/90">{item.articleTitle}</span>
-                    <span className="shrink-0 text-xs text-muted">{item.events} events · {item.completedSessions} completed</span>
-                  </Link>
+                  <div key={item.articleSlug} className="rounded-lg border border-border/60 bg-background p-2.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <Link
+                        href={`/admin/studio?slug=${encodeURIComponent(item.articleSlug)}`}
+                        className="truncate text-sm text-foreground/90 transition-colors hover:text-gold-light"
+                      >
+                        {item.articleTitle}
+                      </Link>
+                      <Link
+                        href={`/wisdom/${encodeURIComponent(item.articleSlug)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 text-xs text-gold-muted transition-colors hover:text-gold-light"
+                      >
+                        Open Public
+                      </Link>
+                    </div>
+                    <p className="mt-1 text-xs text-muted">{item.events} events · {item.completedSessions} completed</p>
+                  </div>
                 ))
               )}
             </div>
