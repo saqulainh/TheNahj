@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { PrismaHero } from "@/components/ui/prisma-hero";
 import { CornerPreview } from "@/components/home/CornerPreview";

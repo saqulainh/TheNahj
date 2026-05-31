@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { getAllWisdom } from "@/lib/wisdom";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
