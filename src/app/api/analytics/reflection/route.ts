@@ -96,6 +96,25 @@ function buildTopPracticedArticles(rows: Array<{ article_slug?: string | null; e
     .slice(0, limit);
 }
 
+async function fetchArticleTitles(slugs: string[]) {
+  if (!supabase || slugs.length === 0) return new Map<string, string>();
+
+  const { data, error } = await supabase
+    .from("articles_unified")
+    .select("slug,title")
+    .in("slug", slugs);
+
+  if (error || !data) return new Map<string, string>();
+
+  const map = new Map<string, string>();
+  data.forEach((row) => {
+    if (row.slug && row.title) {
+      map.set(row.slug, row.title);
+    }
+  });
+  return map;
+}
+
 export async function POST(request: Request) {
   const limit = await consumeRateLimit({
     key: `analytics-reflection:${getRequestClientIp(request)}`,
@@ -228,6 +247,11 @@ export async function GET(request: Request) {
   const previousSummary = calculateSummary(previousResult.data || []);
   const sparklineEvents = buildSparklineEvents(currentResult.data || [], currentStartMs, rangeMs);
   const topPracticedArticles = buildTopPracticedArticles(currentResult.data || []);
+  const titleMap = await fetchArticleTitles(topPracticedArticles.map((item) => item.articleSlug));
+  const topPracticedArticlesWithTitles = topPracticedArticles.map((item) => ({
+    ...item,
+    articleTitle: titleMap.get(item.articleSlug) ?? item.articleSlug,
+  }));
 
   return NextResponse.json({
     success: true,
@@ -241,7 +265,7 @@ export async function GET(request: Request) {
         completionRateDeltaPct: calculateDeltaPct(currentSummary.completionRatePct, previousSummary.completionRatePct),
       },
       sparklineEvents,
-      topPracticedArticles,
+      topPracticedArticles: topPracticedArticlesWithTitles,
     },
     source: "supabase",
   });

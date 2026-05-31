@@ -64,6 +64,7 @@ export default function AdminDashboardPage() {
         sparklineEvents: number[];
         topPracticedArticles: Array<{
           articleSlug: string;
+          articleTitle: string;
           events: number;
           completedSessions: number;
         }>;
@@ -215,7 +216,7 @@ export default function AdminDashboardPage() {
               ) : (
                 topPracticedArticles.map((item) => (
                   <div key={item.articleSlug} className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-2.5">
-                    <span className="truncate pr-3 text-sm text-foreground/90">{item.articleSlug}</span>
+                    <span className="truncate pr-3 text-sm text-foreground/90">{item.articleTitle}</span>
                     <span className="shrink-0 text-xs text-muted">{item.events} events · {item.completedSessions} completed</span>
                   </div>
                 ))
