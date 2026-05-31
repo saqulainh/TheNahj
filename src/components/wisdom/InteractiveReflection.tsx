@@ -45,7 +45,7 @@ export function InteractiveReflection({
       if (savedS) setCheckedSteps(JSON.parse(savedS));
       if (savedJ) setJournalEntries(JSON.parse(savedJ));
     } catch (e) {
-      console.error("Failed to load interactive states from localStorage", e);
+      console.debug("Failed to load interactive states from localStorage", e);
     }
   }, [wisdomId]);
 

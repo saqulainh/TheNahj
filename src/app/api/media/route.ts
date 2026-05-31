@@ -57,6 +57,7 @@ async function readMediaDb(): Promise<MediaItem[]> {
         .order("created_at", { ascending: false });
 
       if (!error && data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dbItems = data.map((item: any) => ({
           id: item.id,
           title: item.title,
@@ -399,6 +400,7 @@ export async function DELETE(request: Request) {
 
     if (itemData) {
       await supabase.from("media_items").delete().eq("id", id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const deletePaths = [itemData.storage_path, ...(itemData.variants?.map((v: any) => v.storagePath) || [])].filter(Boolean);
       await supabase.storage.from(MEDIA_BUCKET).remove(deletePaths).catch(() => undefined);
       return NextResponse.json({ success: true });

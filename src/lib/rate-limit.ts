@@ -14,7 +14,7 @@ interface RateLimitOptions {
   windowMs: number;
 }
 
-let upstashLimiterCache = new Map<string, Ratelimit>();
+const upstashLimiterCache = new Map<string, Ratelimit>();
 
 function getUpstashLimiter(limit: number, windowMs: number): Ratelimit | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;

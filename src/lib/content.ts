@@ -13,11 +13,43 @@ export interface UnifiedArticle {
   hero_image?: string | null;
   featured_image?: string | null;
   sidebar_banner?: string | null;
+  hero_focal_point?: { x: number; y: number } | null;
+  featured_focal_point?: { x: number; y: number } | null;
+  sidebar_focal_point?: { x: number; y: number } | null;
   content_blocks: ContentBlock[];
   arabic_content?: string | null;
   urdu_content?: string | null;
   english_content?: string | null;
   reading_time?: number;
+  status?: "draft" | "scheduled" | "published";
+  featured?: boolean;
+  schedule_publish_at?: string | null;
+  arabic_text?: string | null;
+  urdu_translation?: string | null;
+  english_translation?: string | null;
+  source?: string | null;
+  source_number?: string | null;
+  book_name?: string | null;
+  main_explanation?: string | null;
+  detailed_explanation?: string | null;
+  tafseer?: string | null;
+  historical_context?: string | null;
+  narrations?: Array<{
+    id: string;
+    narration: string;
+    narrator: string;
+    source: string;
+    explanation: string;
+  }>;
+  current_issues?: string | null;
+  youth_relevance?: string | null;
+  student_relevance?: string | null;
+  practical_application?: string | null;
+  reflection_questions?: string | null;
+  action_steps?: string | null;
+  personal_reflection?: string | null;
+  summary?: string | null;
+  closing_reflection?: string | null;
   created_at?: string;
   published_at?: string | null;
   seo_title?: string | null;
@@ -39,7 +71,8 @@ function fallbackBlocks(text: string): ContentBlock[] {
 /**
  * Dynamically converts the unified structured fields from the Content Studio
  * into beautifully formatted visual block sections that ImmersiveArticle renders.
- */
+*/
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function generateBlocksFromStructured(data: any): ContentBlock[] {
   const blocks: ContentBlock[] = [];
   
@@ -162,6 +195,7 @@ async function fetchUnifiedArticleBySlug(slug: string): Promise<UnifiedArticle |
       return {
         ...data,
         tags: data.tags ?? [],
+        narrations: data.narrations ?? [],
         content_blocks: blocks,
       } as UnifiedArticle;
     }
@@ -197,26 +231,61 @@ export async function getUnifiedArticleBySlug(slug: string): Promise<UnifiedArti
   )();
 }
 
-export async function getRelatedUnifiedArticles(slug: string, category: string) {
+function normalizeTag(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+export async function getRelatedUnifiedArticles(slug: string, category: string, tags: string[] = []) {
+  const normalizedTags = tags.map(normalizeTag).filter(Boolean);
+  const legacyCategory = category.toLowerCase().includes("student")
+    ? "student"
+    : category.toLowerCase().includes("youth")
+    ? "youth"
+    : "reflection";
+
   return unstable_cache(
     async () => {
       if (isSupabaseConfigured && supabase) {
         const { data } = await supabase
           .from("articles_unified")
-          .select("slug,title,category")
+          .select("slug,title,category,tags,published_at")
           .neq("slug", slug)
-          .eq("category", category)
-          .limit(5);
-        if (data?.length) return data;
+          .eq("status", "published");
+
+        if (data?.length) {
+          const scored = data
+            .map((item) => {
+              const itemTags = (item.tags ?? []).map(normalizeTag).filter(Boolean);
+              const sharedTags = itemTags.filter((tag: string) => normalizedTags.includes(tag)).length;
+              const score = (item.category === category ? 8 : 0) + sharedTags * 4 + (itemTags.length > 0 && sharedTags > 0 ? 2 : 0);
+
+              return {
+                ...item,
+                score,
+              };
+            })
+            .filter((item) => item.score > 0)
+            .sort((a, b) => b.score - a.score || String(b.published_at || "").localeCompare(String(a.published_at || "")))
+            .slice(0, 6)
+            .map((it) => ({ slug: it.slug, title: it.title, category: it.category, tags: it.tags, published_at: it.published_at }));
+
+          if (scored.length > 0) return scored;
+        }
       }
 
       const all = await getAllArticles();
       return all
         .filter((item) => item.slug !== slug)
-        .slice(0, 5)
+        .filter(
+          (item) =>
+            item.type === legacyCategory ||
+            item.type === "wisdom" ||
+            item.corner_topics?.some((tag) => normalizedTags.includes(normalizeTag(tag)))
+        )
+        .slice(0, 6)
         .map((item) => ({ slug: item.slug, title: item.title, category: item.type }));
     },
-    [`related:${slug}:${category}`],
+    [`related:${slug}:${category}:${normalizedTags.join("|")}`],
     {
       revalidate: 1, // Set to 1 second to make publishing instant
       tags: ["articles-unified", `article-related:${slug}`],

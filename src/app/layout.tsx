@@ -72,7 +72,7 @@ export default async function RootLayout({
         </Script>
         <AppProviders>
           <Header siteName={cms.brand.siteName} links={cms.navigation.main} />
-          <main className="min-h-[calc(100vh-8rem)]">{children}</main>
+          <main className="min-h-[calc(100vh-8rem)] pt-20 md:pt-24 lg:pt-28">{children}</main>
           <Footer socialLinks={cms.brand.socialLinks} links={cms.navigation.footer} />
           <Analytics />
           <SpeedInsights />

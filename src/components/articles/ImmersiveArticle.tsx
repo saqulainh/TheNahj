@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowUp, Bookmark, Share2 } from "lucide-react";
+import { ImageRole } from "@/components/ui/ImageRole";
 import type { ContentBlock } from "@/lib/content-schema";
 
 interface ImmersiveArticleProps {
@@ -50,13 +51,13 @@ function renderBlock(block: ContentBlock) {
       </p>
     );
   }
-  if (block.type === "english_translation") {
-    return <p className="mt-4 mb-8 text-center font-serif text-lg md:text-xl italic text-gold max-w-xl mx-auto">"{block.value}"</p>;
+    if (block.type === "english_translation") {
+    return <p className="mt-4 mb-8 text-center font-serif text-lg md:text-xl italic text-gold max-w-xl mx-auto">&ldquo;{block.value}&rdquo;</p>;
   }
   if (block.type === "image_block" && block.mediaUrl) {
     return (
       <div className="my-8 overflow-hidden rounded-2xl border border-border/20 shadow-md">
-        <img src={block.mediaUrl} alt={block.value || "Article image"} className="w-full object-cover transition-transform duration-700 hover:scale-[1.03]" />
+        <ImageRole src={block.mediaUrl} alt={block.value || "Article image"} role="card" className="w-full object-cover transition-transform duration-700 hover:scale-[1.03]" />
       </div>
     );
   }
@@ -66,7 +67,7 @@ function renderBlock(block: ContentBlock) {
   if (block.type === "highlight_quote") {
     return (
       <blockquote className="my-10 rounded-2xl border-l-4 border-gold/40 bg-surface-elevated/30 p-6 font-serif text-lg md:text-xl italic text-foreground/90 font-light leading-relaxed max-w-xl mx-auto shadow-sm">
-        "{block.value}"
+        &ldquo;{block.value}&rdquo;
       </blockquote>
     );
   }
@@ -122,11 +123,7 @@ export function ImmersiveArticle({ article, related }: ImmersiveArticleProps) {
     <article className="bg-background pb-20 pt-20">
       <header className="relative overflow-hidden border-b border-border/20">
         <div className="absolute inset-0">
-          <img
-            src={article.hero_image || article.featured_image || "/backgrounds/serene.jpg"}
-            alt={article.title}
-            className="h-full w-full object-cover"
-          />
+          <ImageRole src={article.hero_image || article.featured_image || "/backgrounds/serene.jpg"} alt={article.title} role="hero" className="absolute inset-0" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/25" />
         </div>
         <div className="relative mx-auto max-w-6xl px-5 py-24 md:px-8">
@@ -207,7 +204,7 @@ export function ImmersiveArticle({ article, related }: ImmersiveArticleProps) {
             </p>
           )}
           {article.english_content && (
-            <p className="mt-6 mb-10 text-center font-serif text-lg md:text-xl italic text-gold max-w-xl mx-auto">"{article.english_content}"</p>
+            <p className="mt-6 mb-10 text-center font-serif text-lg md:text-xl italic text-gold max-w-xl mx-auto">&ldquo;{article.english_content}&rdquo;</p>
           )}
 
           <div className="prose-reflection mt-8 max-w-none">
@@ -237,7 +234,7 @@ export function ImmersiveArticle({ article, related }: ImmersiveArticleProps) {
               className="w-full rounded-xl border border-border/30 bg-background px-3 py-2 text-sm"
             />
             {article.sidebar_banner && (
-              <img src={article.sidebar_banner} alt="Sidebar banner" className="w-full rounded-xl object-cover" />
+              <ImageRole src={article.sidebar_banner} alt="Sidebar banner" role="sidebar" className="w-full rounded-xl object-cover" />
             )}
             <section>
               <p className="text-xs uppercase tracking-[0.2em] text-gold-muted">Popular topics</p>

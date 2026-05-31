@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { Users, Shield, UserX, Search, ShieldCheck } from "lucide-react";
 

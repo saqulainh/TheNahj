@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, Heart, ShieldAlert, Sparkles, BookOpen, Compass } from "lucide-react";
+import { Eye, EyeOff, ShieldAlert, Compass } from "lucide-react";
 import Link from "next/link";
 
 interface DetoxReaderProps {
@@ -273,8 +273,8 @@ export function DetoxReader({ article, isDigitalDisease }: DetoxReaderProps) {
             Step Back & Rest
           </h3>
           
-          <p className="mt-4 mx-auto max-w-sm text-sm leading-relaxed text-muted/60 font-light">
-            You've completed this reflection. To ensure it integrates deeply, close this tab. Leave your phone face-down for 5 minutes. Let your eyes adjust to your physical surroundings.
+            <p className="mt-4 mx-auto max-w-sm text-sm leading-relaxed text-muted/60 font-light">
+            You&apos;ve completed this reflection. To ensure it integrates deeply, close this tab. Leave your phone face-down for 5 minutes. Let your eyes adjust to your physical surroundings.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">

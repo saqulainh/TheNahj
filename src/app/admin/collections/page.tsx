@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { Library, Tag, Search, Calendar, Plus, Trash2 } from "lucide-react";
 

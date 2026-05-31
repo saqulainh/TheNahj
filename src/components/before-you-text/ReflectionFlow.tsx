@@ -143,7 +143,7 @@ export function ReflectionFlow() {
               Imam Ali (AS) says:
             </span>
             <p className="font-serif text-base italic leading-relaxed text-gold-light/90">
-              \"Silence is the best answer to anger, and restraint is the ultimate sign of dignity.\"
+              &ldquo;Silence is the best answer to anger, and restraint is the ultimate sign of dignity.&rdquo;
             </p>
             <p className="mt-2 text-[9px] uppercase tracking-widest text-muted/40">
               Ghurar al-Hikam, Saying 492
@@ -270,7 +270,7 @@ export function ReflectionFlow() {
                 <BookOpen size={12} /> Wisdom for Restraint
               </p>
               <p className="font-serif italic text-sm leading-relaxed text-gold-light/80">
-                \"{activeQuote.quote}\"
+                &ldquo;{activeQuote.quote}&rdquo;
               </p>
               <p className="mt-2 text-right text-[9px] tracking-wider text-muted/40">
                 — {activeQuote.source}

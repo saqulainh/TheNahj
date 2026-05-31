@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { ImageRole } from "@/components/ui/ImageRole";
 import { ChevronDown, ChevronRight, Plus, Trash2, UploadCloud, Loader2, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Narration } from "@/lib/content-schema";
@@ -35,6 +36,7 @@ export function SectionShell({ number, title, subtitle, children, defaultOpen = 
 
 /* ── Field helpers ── */
 export function TextField({ label, register, placeholder, dir }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   label: string; register: any; placeholder?: string; dir?: string;
 }) {
   return (
@@ -46,6 +48,7 @@ export function TextField({ label, register, placeholder, dir }: {
 }
 
 export function TextAreaField({ label, register, placeholder, rows = 3, dir, fontClass }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   label: string; register: any; placeholder?: string; rows?: number; dir?: string; fontClass?: string;
 }) {
   return (
@@ -127,7 +130,7 @@ export function TopicSelectorField({ selectedTags, onChange, category }: {
             placeholder={selectedTags.length === 0 ? "Type a topic and press Enter..." : "Add more..."}
             className="w-full bg-transparent text-sm text-foreground placeholder:text-muted/50 outline-none"
           />
-          {inputValue.trim() && (
+            {inputValue.trim() && (
             <button
               type="button"
               onClick={() => {
@@ -136,7 +139,7 @@ export function TopicSelectorField({ selectedTags, onChange, category }: {
               }}
               className="ml-2 shrink-0 inline-flex items-center gap-1 rounded-lg bg-gold/20 border border-gold/30 px-2.5 py-1 text-[11px] font-semibold text-gold-light hover:bg-gold/35 transition-all"
             >
-              <Plus size={11} /> Create "{inputValue.trim()}"
+              <Plus size={11} /> Create &quot;{inputValue.trim()}&quot;
             </button>
           )}
         </div>
@@ -168,13 +171,14 @@ export function TopicSelectorField({ selectedTags, onChange, category }: {
       )}
 
       {!isLoading && suggestedTags.length === 0 && (
-        <p className="text-[10px] text-muted">No existing topics for "{category}" yet. Type a new one above.</p>
+        <p className="text-[10px] text-muted">No existing topics for &quot;{category}&quot; yet. Type a new one above.</p>
       )}
     </div>
   );
 }
 
 /* ── Narrations Manager (Section 4) ── */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function NarrationsManager({ form }: { form: UseFormReturn<any> }) {
   const narrations: Narration[] = form.watch("narrations") || [];
 
@@ -236,7 +240,7 @@ export function MediaPickerField({ label, currentUrl, onSelect, onUpload, isUplo
       <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted">{label}</span>
       {currentUrl ? (
         <div className="relative rounded-xl overflow-hidden border border-border/30 h-28 w-full group">
-          <img src={currentUrl} alt={label} className="h-full w-full object-cover" />
+          <ImageRole src={currentUrl} alt={label} role="sidebar" className="h-full w-full object-cover" />
           <button 
             type="button" 
             onClick={() => {
@@ -274,13 +278,16 @@ export function MediaPickerField({ label, currentUrl, onSelect, onUpload, isUplo
 
 /* ── Live Card Preview ── */
 export function WisdomCardPreview({ data }: {
-  data: { arabic_text: string; urdu_translation: string; english_translation: string; source: string; category: string; reading_time: number; hero_image: string | null; };
+  data: { arabic_text: string; urdu_translation: string; english_translation: string; source: string; category: string; reading_time: number; hero_image: string | null; hero_focal_point?: { x: number; y: number } | null };
 }) {
   return (
     <div className="wisdom-classic-card group relative overflow-hidden" style={{ minHeight: 320 }}>
       {data.hero_image && (
         <div className="absolute inset-0 z-0">
-          <img src={data.hero_image} alt="" className="h-full w-full object-cover opacity-15 mix-blend-luminosity" />
+          <div className="h-full w-full opacity-15 mix-blend-luminosity">
+            { }
+            <ImageRole src={data.hero_image} alt="" role="hero" className="h-full w-full object-cover" focalPoint={data.hero_focal_point || null} />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>
       )}

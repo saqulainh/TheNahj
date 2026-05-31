@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import Link from "next/link";
 import { Bookmark, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -7,6 +9,7 @@ import { useEffect, useState } from "react";
 import type { Wisdom } from "@/lib/types";
 import { SITE_NAME } from "@/lib/brand";
 import { getSavedSlugs, toggleSaveAsync } from "@/lib/wisdom";
+import ImageRole from "@/components/ui/ImageRole";
 
 interface WisdomCardProps {
   wisdom: Wisdom;
@@ -15,6 +18,7 @@ interface WisdomCardProps {
 
 export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
   const [saved, setSaved] = useState(false);
+  const href = wisdom.slug ? `/wisdom/${encodeURIComponent(wisdom.slug)}` : null;
 
   useEffect(() => {
     if (!wisdom?.slug) return;
@@ -27,6 +31,7 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
 
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!wisdom.slug) return;
     // Optimistic UI update
     setSaved(!saved);
@@ -36,6 +41,7 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
 
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     const url = `${window.location.origin}/wisdom/${wisdom.slug}`;
     const text = wisdom.english_translation;
     if (navigator.share) {
@@ -54,11 +60,20 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
       className="wisdom-classic-card group"
     >
       {/* ─── absolute clickable overlay for card ─── */}
-      <Link
-        href={`/wisdom/${wisdom.slug}`}
-        className="absolute inset-0 z-10 cursor-pointer"
-        aria-label={`Read reflection on ${wisdom.english_translation}`}
-      />
+      {href && (
+        <Link
+          href={href}
+          className="absolute inset-0 z-10 cursor-pointer"
+          aria-label={`Read reflection on ${wisdom.english_translation}`}
+        />
+      )}
+
+      {/* Background image */}
+      {(wisdom.featured_image || (wisdom as any).background_image) && (
+        <div className="absolute inset-0 z-0">
+          <ImageRole src={wisdom.featured_image || (wisdom as any).background_image} role="card" className="opacity-15 mix-blend-luminosity" focalPoint={null} />
+        </div>
+      )}
 
       {/* ─── Card Header Wrapper ─── */}
       <div className="wisdom-classic-wrapper justify-end relative z-20">

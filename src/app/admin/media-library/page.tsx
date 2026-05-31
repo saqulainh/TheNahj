@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ImageIcon, Search, UploadCloud, Trash2, Copy, Loader2 } from "lucide-react";
+import { ImageRole } from "@/components/ui/ImageRole";
 
 interface MediaItem {
   id: string;
@@ -162,7 +163,7 @@ export default function MediaLibraryPage() {
               <article key={asset.id} className="overflow-hidden rounded-xl border border-border/30 bg-surface/70">
                 <div className="flex h-36 items-center justify-center bg-background">
                   {asset.mimeType.startsWith("image/") ? (
-                    <img src={asset.url} alt={asset.title} className="h-full w-full object-cover" />
+                    <ImageRole src={asset.url} alt={asset.title} role="card" className="h-full w-full object-cover" />
                   ) : (
                     <div className="text-xs uppercase tracking-[0.2em] text-gold-muted">Audio</div>
                   )}

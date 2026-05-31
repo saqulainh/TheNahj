@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -15,6 +16,8 @@ import {
   NarrationsManager, MediaPickerField, WisdomCardPreview,
   TopicSelectorField,
 } from "@/components/admin/StudioSections";
+import FocalPicker from "@/components/admin/FocalPicker";
+import { ImageRole } from "@/components/ui/ImageRole";
 
 const formSchema = wisdomArticleSchema.extend({ tagsInput: z.string().optional() });
 type FormValues = z.infer<typeof formSchema>;
@@ -289,15 +292,63 @@ export default function ContentStudioPage() {
           {/* Section 9: Media */}
           <SectionShell number={9} title="Media" subtitle="Upload images — no URL inputs, media library only">
             <div className="grid gap-4 md:grid-cols-3">
-              <MediaPickerField label="Hero Image" currentUrl={values.hero_image || null}
-                onSelect={() => setMediaTarget("hero")} isUploading={uploadMutation.isPending && mediaTarget === "hero"}
-                onUpload={(file) => { setMediaTarget("hero"); uploadMutation.mutate(file); }} />
-              <MediaPickerField label="Card Background" currentUrl={values.featured_image || null}
-                onSelect={() => setMediaTarget("featured")} isUploading={uploadMutation.isPending && mediaTarget === "featured"}
-                onUpload={(file) => { setMediaTarget("featured"); uploadMutation.mutate(file); }} />
-              <MediaPickerField label="Sidebar Banner" currentUrl={values.sidebar_banner || null}
-                onSelect={() => setMediaTarget("sidebar")} isUploading={uploadMutation.isPending && mediaTarget === "sidebar"}
-                onUpload={(file) => { setMediaTarget("sidebar"); uploadMutation.mutate(file); }} />
+              <div>
+                <MediaPickerField label="Hero Image" currentUrl={values.hero_image || null}
+                  onSelect={() => setMediaTarget("hero")} isUploading={uploadMutation.isPending && mediaTarget === "hero"}
+                  onUpload={(file) => { setMediaTarget("hero"); uploadMutation.mutate(file); }} />
+                <p className="mt-2 text-[11px] text-muted">Recommended: 16:9 (e.g. 1600×900). Used as full-width hero; will be cropped with object-fit.</p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <label className="space-y-1 text-[11px] text-muted">
+                    Focal X (%)
+                    <input type="number" {...form.register("hero_focal_point.x" as const, { valueAsNumber: true })} min={0} max={100} className="w-full rounded-xl border border-border/40 bg-background px-2 py-1 text-sm" />
+                  </label>
+                  <label className="space-y-1 text-[11px] text-muted">
+                    Focal Y (%)
+                    <input type="number" {...form.register("hero_focal_point.y" as const, { valueAsNumber: true })} min={0} max={100} className="w-full rounded-xl border border-border/40 bg-background px-2 py-1 text-sm" />
+                  </label>
+                </div>
+                {values.hero_image && (
+                  <FocalPicker src={values.hero_image} value={values.hero_focal_point || null} onChange={(p) => form.setValue("hero_focal_point", p, { shouldDirty: true })} />
+                )}
+              </div>
+              <div>
+                <MediaPickerField label="Card Background" currentUrl={values.featured_image || null}
+                  onSelect={() => setMediaTarget("featured")} isUploading={uploadMutation.isPending && mediaTarget === "featured"}
+                  onUpload={(file) => { setMediaTarget("featured"); uploadMutation.mutate(file); }} />
+                <p className="mt-2 text-[11px] text-muted">Recommended: 1:1 (e.g. 1200×1200). Best for card/grid previews and square crops.</p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <label className="space-y-1 text-[11px] text-muted">
+                    Focal X (%)
+                    <input type="number" {...form.register("featured_focal_point.x" as const, { valueAsNumber: true })} min={0} max={100} className="w-full rounded-xl border border-border/40 bg-background px-2 py-1 text-sm" />
+                  </label>
+                  <label className="space-y-1 text-[11px] text-muted">
+                    Focal Y (%)
+                    <input type="number" {...form.register("featured_focal_point.y" as const, { valueAsNumber: true })} min={0} max={100} className="w-full rounded-xl border border-border/40 bg-background px-2 py-1 text-sm" />
+                  </label>
+                </div>
+                {values.featured_image && (
+                  <FocalPicker src={values.featured_image} value={values.featured_focal_point || null} onChange={(p) => form.setValue("featured_focal_point", p, { shouldDirty: true })} />
+                )}
+              </div>
+              <div>
+                <MediaPickerField label="Sidebar Banner" currentUrl={values.sidebar_banner || null}
+                  onSelect={() => setMediaTarget("sidebar")} isUploading={uploadMutation.isPending && mediaTarget === "sidebar"}
+                  onUpload={(file) => { setMediaTarget("sidebar"); uploadMutation.mutate(file); }} />
+                <p className="mt-2 text-[11px] text-muted">Recommended: 3:4 or 4:5 (e.g. 1200×1600). Tall banners for sidebars and promo blocks.</p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <label className="space-y-1 text-[11px] text-muted">
+                    Focal X (%)
+                    <input type="number" {...form.register("sidebar_focal_point.x" as const, { valueAsNumber: true })} min={0} max={100} className="w-full rounded-xl border border-border/40 bg-background px-2 py-1 text-sm" />
+                  </label>
+                  <label className="space-y-1 text-[11px] text-muted">
+                    Focal Y (%)
+                    <input type="number" {...form.register("sidebar_focal_point.y" as const, { valueAsNumber: true })} min={0} max={100} className="w-full rounded-xl border border-border/40 bg-background px-2 py-1 text-sm" />
+                  </label>
+                </div>
+                {values.sidebar_banner && (
+                  <FocalPicker src={values.sidebar_banner} value={values.sidebar_focal_point || null} onChange={(p) => form.setValue("sidebar_focal_point", p, { shouldDirty: true })} />
+                )}
+              </div>
             </div>
 
             {/* Media Library */}
@@ -320,7 +371,7 @@ export default function ContentStudioPage() {
                       }
                     }}
                     className="flex w-full items-center gap-3 rounded-xl border border-border/30 bg-background p-2 text-left hover:border-gold/35">
-                    <img src={item.url} alt={item.title} className="h-10 w-10 rounded-lg object-cover" />
+                    <ImageRole src={item.url} alt={item.title} role="card" className="h-10 w-10 rounded-lg object-cover" />
                     <div className="min-w-0">
                       <p className="truncate text-xs text-foreground">{item.title}</p>
                       <p className="text-[10px] text-muted">{Math.round(item.size / 1024)} KB</p>
@@ -352,6 +403,7 @@ export default function ContentStudioPage() {
               category: values.category || "",
               reading_time: estimateReadingTime(values as any),
               hero_image: values.hero_image || null,
+              hero_focal_point: values.hero_focal_point || null,
             }} />
           </section>
 

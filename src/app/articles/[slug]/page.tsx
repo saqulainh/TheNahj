@@ -55,7 +55,7 @@ export default async function ArticlePage({ params }: PageProps) {
   const article = await getUnifiedArticleBySlug(slug);
   if (!article) notFound();
 
-  const related = await getRelatedUnifiedArticles(article.slug, article.category);
+  const related = await getRelatedUnifiedArticles(article.slug, article.category, article.tags || []);
 
   const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.org";
   const image = article.hero_image || article.featured_image || "/backgrounds/serene.jpg";

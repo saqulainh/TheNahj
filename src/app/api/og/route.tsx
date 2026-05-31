@@ -1,5 +1,4 @@
 import { ImageResponse } from "next/og";
-import { getWisdomBySlug } from "@/lib/wisdom";
 
 export const runtime = "edge";
 
@@ -13,11 +12,14 @@ export async function GET(request: Request) {
       return new Response("Missing slug", { status: 400 });
     }
 
-    const wisdom = await getWisdomBySlug(slug);
-
-    if (!wisdom) {
-      return new Response("Wisdom not found", { status: 404 });
-    }
+    // Fetch published article data via the internal API to avoid importing
+    // the Supabase client inside an Edge runtime (which causes bundling/vendor issues).
+    const origin = new URL(request.url).origin;
+    const res = await fetch(`${origin}/api/content?slug=${encodeURIComponent(slug)}`);
+    if (!res.ok) return new Response("Wisdom not found", { status: 404 });
+    const json = await res.json();
+    const wisdom = (json.items && json.items[0]) || null;
+    if (!wisdom) return new Response("Wisdom not found", { status: 404 });
 
     const isStory = type === "story";
     const width = isStory ? 1080 : 1200;
@@ -89,7 +91,7 @@ export async function GET(request: Request) {
                 display: "flex",
               }}
             >
-              "{wisdom.english_translation}"
+              &quot;{wisdom.english_translation}&quot;
             </p>
 
             <div
@@ -112,6 +114,7 @@ export async function GET(request: Request) {
         height,
       }
     );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
     console.error(e);
     return new Response(`Failed to generate image`, { status: 500 });

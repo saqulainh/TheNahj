@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
-import { CinematicButton } from "@/components/ui/CinematicButton";
 import { StarBorder } from "@/components/ui/StarBorder";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
@@ -37,9 +36,9 @@ export function Header({
 
   useEffect(() => {
     // Only run on client mount
-    import("@/lib/wisdom").then((mod) => {
-      mod.syncSavedSlugs().catch(console.error);
-    });
+      import("@/lib/wisdom").then((mod) => {
+        mod.syncSavedSlugs().catch(console.error);
+      });
   }, []);
 
   const isAdmin = pathname.startsWith("/admin");
@@ -59,20 +58,20 @@ export function Header({
             }`
       }`}
     >
-      <div className={`${isHome ? 'w-full md:w-auto flex items-center justify-between rounded-[2rem] border border-border/25 bg-surface/65 px-6 md:px-10 py-4 backdrop-blur-xl shadow-[0_14px_50px_-24px_rgba(0,0,0,0.55)]' : 'mx-auto flex max-w-7xl items-center justify-between px-6 py-5'}`}>
+      <div className={`${isHome ? 'w-full md:w-auto flex items-center justify-between rounded-[2rem] border border-border/25 bg-surface/65 px-6 md:px-10 py-4 backdrop-blur-xl shadow-[0_14px_50px_-24px_rgba(0,0,0,0.55)]' : 'mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 md:px-6 md:py-4'}`}>
         {/* Site Name (Hidden on Desktop Home) */}
         <Link 
           href="/" 
-          className={`group flex items-center gap-2 ${isHome ? 'md:hidden' : ''}`}
+          className={`group flex shrink-0 items-center gap-2 whitespace-nowrap ${isHome ? 'md:hidden' : ''}`}
         >
-          <span className="text-xl font-medium tracking-wide text-foreground">
+          <span className="text-[1.1rem] font-semibold tracking-tight text-foreground md:text-[1.25rem] lg:text-[1.3rem]">
             {siteName}
           </span>
-          <div className="h-1 w-1 rounded-full bg-gold transition-all duration-300 group-hover:scale-[2.5]" />
+          <div className="h-1.5 w-1.5 rounded-full bg-gold transition-all duration-300 group-hover:scale-[2.2]" />
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className={`hidden items-center md:flex ${isHome ? 'gap-4' : 'gap-6'}`}>
+        <nav className={`hidden items-center md:flex ${isHome ? 'gap-4' : 'gap-5 lg:gap-6'}`}>
           {links && links.map((link) => (
             link.href === "/focus" ? (
               <Link

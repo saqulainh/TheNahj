@@ -42,6 +42,7 @@ export default function CategoriesPage() {
       if (!res.ok) throw new Error(data.error ?? "Failed");
       setStatus("Category saved successfully in database!");
       setForm(initialForm);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setStatus(err.message ?? "Save failed");
     }

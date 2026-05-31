@@ -49,7 +49,7 @@ export default function AboutPage() {
 
           <blockquote className="text-center">
             <p className="font-serif text-lg md:text-xl leading-relaxed text-foreground/90 italic max-w-xl mx-auto">
-              "Trying my best to be the one my Imam (a.t.f.s.) wants, striving to serve the community with every skill I have, working to unite the youth, and aiming to see every student of the Ahlulbayt succeed. Indeed, they are succeeding and will continue to do so."
+              &ldquo;Trying my best to be the one my Imam (a.t.f.s.) wants, striving to serve the community with every skill I have, working to unite the youth, and aiming to see every student of the Ahlulbayt succeed. Indeed, they are succeeding and will continue to do so.&rdquo;
             </p>
             <cite className="mt-8 block not-italic">
               <span className="text-[10px] uppercase tracking-[0.25em] text-muted/60 block mb-2">Developed & Maintained by</span>

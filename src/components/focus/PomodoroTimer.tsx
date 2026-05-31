@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pause, Play, RotateCcw, Maximize, Minimize, Volume2, VolumeX, Music, Square } from "lucide-react";
+import { Pause, Play, RotateCcw, Maximize, Minimize, Square } from "lucide-react";
 
 const FOCUS_SECONDS = 25 * 60;
 const BREAK_SECONDS = 5 * 60;
@@ -77,7 +77,7 @@ export function PomodoroTimer() {
         audioRef.current = new Audio(sound.src);
         audioRef.current.loop = true;
         audioRef.current.volume = 0.3;
-        audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+        audioRef.current.play().catch((e) => console.debug("Audio play failed:", e));
       }
     }
 

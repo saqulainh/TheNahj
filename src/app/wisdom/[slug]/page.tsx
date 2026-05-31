@@ -2,10 +2,10 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { WisdomCard } from "@/components/wisdom/WisdomCard";
-import { getRelatedWisdom, getWisdomBySlug } from "@/lib/wisdom";
-import { InteractiveReflection } from "@/components/wisdom/InteractiveReflection";
-import GradualBlur from "@/components/ui/GradualBlur";
+import { WisdomReadingProgress } from "@/components/wisdom/WisdomReadingProgress";
+import { WisdomHeroActions } from "@/components/wisdom/WisdomHeroActions";
+import ImageRole from "@/components/ui/ImageRole";
+import { getRelatedUnifiedArticles, getUnifiedArticleBySlug } from "@/lib/content";
 import type { Metadata } from "next";
 
 interface PageProps {
@@ -14,127 +14,348 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const wisdom = await getWisdomBySlug(slug);
-  if (!wisdom) return { title: "Not Found" };
+  const article = await getUnifiedArticleBySlug(slug);
+  if (!article) return { title: "Not Found" };
+
+  const title = article.seo_title || article.title;
+  const description = article.seo_description || article.excerpt;
   return {
-    title: wisdom.english_translation.slice(0, 60),
-    description: wisdom.short_reflection,
+    title,
+    description,
     openGraph: {
-      title: wisdom.english_translation.slice(0, 80),
-      description: wisdom.short_reflection,
+      title,
+      description,
     },
   };
 }
 
 export default async function ReflectionPage({ params }: PageProps) {
   const { slug } = await params;
-  const wisdom = await getWisdomBySlug(slug);
-  if (!wisdom) notFound();
+  const article = await getUnifiedArticleBySlug(slug);
+  if (!article) notFound();
 
-  const related = await getRelatedWisdom(wisdom);
+  const related = await getRelatedUnifiedArticles(article.slug, article.category, article.tags ?? []);
+  const primaryTopic = article.tags?.[0] || article.category;
+  const subcategory = article.tags?.[1] || article.tags?.[0] || article.category;
+  const sections = [
+    { href: "/wisdom", label: "Wisdom" },
+    { id: "narrations", label: "Narrations" },
+    { id: "relevance", label: "Modern Relevance" },
+    { id: "reflection", label: "Reflection" },
+    { id: "conclusion", label: "Conclusion" },
+  ];
+
+  const splitLines = (text?: string | null) =>
+    (text || "")
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+  const renderParagraphs = (text?: string | null) => {
+    if (!text) return null;
+
+    return text
+      .split(/\n\s*\n/)
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean)
+      .map((paragraph, index) => (
+        <p key={`${paragraph.slice(0, 24)}-${index}`} className="whitespace-pre-wrap leading-relaxed text-secondary/85 md:text-[1.05rem]">
+          {paragraph}
+        </p>
+      ));
+  };
 
   return (
-    <article className="selection:bg-gold/30 selection:text-white bg-background min-h-screen">
-      {/* 1. High-Fidelity Immersive Hero */}
-      <div className="relative h-[65vh] min-h-[450px] w-full overflow-hidden border-b border-border/30">
-        {/* Cinematic Backdrop Layer */}
-        {wisdom.featured_image ? (
-          <div 
-            className="h-full w-full opacity-25 mix-blend-luminosity filter contrast-125 scale-105"
-            style={{ 
-              backgroundImage: `url('${wisdom.featured_image}')`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat"
-            }}
-          />
-        ) : (
-          <div className="h-full w-full bg-background" />
-        )}
-
-        {/* Dynamic Visual Overlays */}
-        <div className="pointer-events-none absolute inset-0 z-10">
-          {/* Main Adaptive Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-transparent" />
-          {/* Subtle vignette blur overlay */}
-          <div className="absolute inset-0 backdrop-blur-[2px]" />
-          {/* Ambient Gold Glows */}
-          <div className="absolute -left-1/4 bottom-0 h-[400px] w-[400px] rounded-full bg-gold/[0.04] blur-[100px]" />
-          {/* Fine Noise Texture */}
-          <div
-            className="absolute inset-0 opacity-[0.2] mix-blend-overlay"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-            }}
-          />
-          {/* Gradual Blur for a smooth glassmorphic fade out */}
-          <GradualBlur
-            target="parent"
-            position="bottom"
-            height="12rem"
-            strength={3}
-            divCount={6}
-            curve="bezier"
-            exponential={true}
-            opacity={0.9}
-          />
+    <article className="min-h-screen bg-background selection:bg-gold/30 selection:text-white">
+      <header className="relative overflow-hidden border-b border-border/20">
+        <div className="absolute inset-0">
+          {article.hero_image || article.featured_image ? (
+            <ImageRole src={article.hero_image || article.featured_image || "/backgrounds/serene.jpg"} alt={article.title} role="hero" className="opacity-35" focalPoint={article.hero_focal_point ?? null} />
+          ) : (
+            <div className="h-full w-full bg-[radial-gradient(circle_at_top,_hsla(var(--gold)/0.18),_transparent_38%),linear-gradient(180deg,_hsl(var(--surface-elevated)),_hsl(var(--background)))]" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/65 to-background" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,_hsla(var(--gold)/0.12),_transparent_28%),radial-gradient(circle_at_80%_20%,_hsla(var(--gold)/0.08),_transparent_20%)]" />
         </div>
-        
-        {/* Core Hero Content (Centered scripts) */}
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-6 pt-24 text-center">
-          <Link href="/wisdom" className="absolute left-6 top-10 text-[10px] uppercase tracking-[0.25em] text-secondary hover:text-gold md:left-12 transition-colors">
-            ← Wisdom Repository
-          </Link>
 
-          <p
-            className="max-w-4xl font-arabic text-center text-[clamp(2rem,5vw,4.5rem)] leading-[1.8] md:leading-[2] text-foreground drop-shadow-[0_10px_20px_rgba(0,0,0,0.05)]"
-            dir="rtl"
-            lang="ar"
-          >
-            {wisdom.arabic_text}
-          </p>
-          
-          <div className="mt-10 flex items-center gap-5 text-[10px] uppercase tracking-[0.25em] font-medium text-gold">
-            <span>{wisdom.category?.name}</span>
-            <div className="h-1 w-1 rounded-full bg-gold/30" />
-            <span>{wisdom.source}</span>
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-16 md:px-6 md:py-24 lg:grid-cols-[minmax(0,1.08fr)_minmax(300px,0.92fr)] lg:items-end">
+          <div className="space-y-7">
+            <Link href="/wisdom" className="inline-flex items-center text-xs uppercase tracking-[0.25em] text-secondary transition-colors hover:text-gold">
+              ← Wisdom Repository
+            </Link>
+
+            <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.22em] text-gold-light">
+              <span className="rounded-full border border-gold/25 bg-gold/10 px-3 py-1">{article.category}</span>
+              <span className="rounded-full border border-border/30 bg-background/60 px-3 py-1">Primary Topic: {primaryTopic}</span>
+              <span className="rounded-full border border-border/30 bg-background/60 px-3 py-1">Subcategory: {subcategory}</span>
+            </div>
+
+            <h1 className="max-w-4xl text-4xl font-light tracking-tight text-foreground md:text-6xl lg:text-7xl">
+              {article.title}
+            </h1>
+
+            <p className="max-w-3xl text-base leading-relaxed text-secondary/85 md:text-lg lg:text-xl">
+              {article.excerpt}
+            </p>
+
+            <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.2em] text-muted">
+              <span>{article.reading_time || 1} min read</span>
+              {article.source && <span>{article.source}</span>}
+              {article.source_number && <span>Ref {article.source_number}</span>}
+              {article.book_name && <span>{article.book_name}</span>}
+            </div>
+
+            <WisdomHeroActions slug={article.slug} title={article.title} />
           </div>
+
+          <aside className="rounded-[2rem] border border-border/20 bg-surface/55 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.12)] backdrop-blur-md md:p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.25em] text-gold">Reading Journey</p>
+                <p className="mt-1 text-lg text-foreground">Guided reflection</p>
+              </div>
+              <span className="rounded-full border border-border/20 bg-background/70 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-muted">Immersive</span>
+            </div>
+
+            <div className="space-y-3 text-sm text-secondary/80">
+              <p>Use the journey to return to the wisdom repository first, then continue through narration, relevance, reflection, and conclusion.</p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                {sections.map((section) => (
+                  section.href ? (
+                    <Link
+                      key={section.href}
+                      href={section.href}
+                      className="flex items-center justify-between rounded-2xl border border-border/20 bg-background/60 px-4 py-3 text-xs uppercase tracking-[0.18em] text-foreground transition-colors hover:border-gold/30 hover:text-gold-light"
+                    >
+                      <span>{section.label}</span>
+                      <span className="text-gold/80">↩</span>
+                    </Link>
+                  ) : (
+                    <a
+                      key={section.id}
+                      href={`#${section.id}`}
+                      className="flex items-center justify-between rounded-2xl border border-border/20 bg-background/60 px-4 py-3 text-xs uppercase tracking-[0.18em] text-foreground transition-colors hover:border-gold/30 hover:text-gold-light"
+                    >
+                      <span>{section.label}</span>
+                      <span className="text-gold/80">↘</span>
+                    </a>
+                  )
+                ))}
+              </div>
+            </div>
+          </aside>
         </div>
-      </div>
+      </header>
 
-      {/* 2. Interactive Reflection Hub */}
-      <div className="mx-auto max-w-2xl px-6 py-12 md:py-20 relative z-20">
-        <p className="font-urdu text-center text-[clamp(1.25rem,2.5vw,1.75rem)] leading-[2.2] text-foreground/90 border-b border-border/30 pb-10" dir="rtl">
-          {wisdom.urdu_translation}
-        </p>
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-8 md:px-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <main className="space-y-8">
+          <WisdomReadingProgress readingTime={article.reading_time || 1} />
 
-        <p className="my-10 text-center text-[clamp(1.1rem,2vw,1.35rem)] leading-relaxed text-secondary/80 font-light italic">
-          "{wisdom.english_translation}"
-        </p>
+          <section id="explanation" className="scroll-mt-28 rounded-[2rem] border border-border/20 bg-surface/45 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] md:p-8 lg:p-10">
+            <div className="mb-6 flex flex-col gap-2">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-gold">Explanation</p>
+              <p className="max-w-3xl text-sm leading-relaxed text-secondary/80">
+                Start here if you came to understand the meaning and context before moving into the original wording.
+              </p>
+            </div>
 
-        <InteractiveReflection
-          wisdomId={wisdom.id}
-          reflectionQuestions={wisdom.reflection_questions || []}
-          actionSteps={wisdom.action_steps || []}
-          simpleMeaning={wisdom.simple_meaning}
-          whyToday={wisdom.why_today}
-          deepReflection={wisdom.deep_reflection}
-        />
-
-        {/* Related wisdom block */}
-        {related.length > 0 && (
-          <section className="mt-24 border-t border-border/30 pt-16">
-            <span className="text-[10px] uppercase tracking-[0.25em] text-gold font-medium block mb-8">
-              Keep Reflecting
-            </span>
-            <h2 className="mb-10 text-2xl font-light text-foreground">Related Wisdom</h2>
-            <div className="space-y-8">
-              {related.map((w, i) => (
-                <WisdomCard key={w.id} wisdom={w} index={i} />
-              ))}
+            <div className="grid gap-4 lg:grid-cols-2">
+              {article.main_explanation && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6 lg:col-span-2">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Main Explanation</p>
+                  <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.main_explanation)}</div>
+                </article>
+              )}
+              {article.detailed_explanation && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Detailed Explanation</p>
+                  <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.detailed_explanation)}</div>
+                </article>
+              )}
+              {article.tafseer && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Tafseer</p>
+                  <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.tafseer)}</div>
+                </article>
+              )}
+              {article.historical_context && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6 lg:col-span-2">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Historical Context</p>
+                  <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.historical_context)}</div>
+                </article>
+              )}
             </div>
           </section>
-        )}
+
+          {Array.isArray(article.narrations) && article.narrations.length > 0 && (
+            <section id="narrations" className="scroll-mt-28 rounded-[2rem] border border-border/20 bg-surface/45 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] md:p-8 lg:p-10">
+              <div className="mb-8 flex items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-gold">
+                <span>Related Narrations</span>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                {article.narrations.map((narration) => (
+                  <article key={narration.id} className="rounded-[1.75rem] border border-border/20 bg-background/75 p-5 shadow-sm md:p-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Supporting Narration</p>
+                      <span className="rounded-full border border-border/20 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-muted">Quote card</span>
+                    </div>
+                    <p className="mt-4 whitespace-pre-wrap text-[1rem] leading-relaxed text-foreground/90 md:text-[1.05rem]">
+                      {narration.narration}
+                    </p>
+                    <div className="mt-5 grid gap-4 border-t border-border/15 pt-5 text-sm text-secondary md:grid-cols-3">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-muted">Narrator</p>
+                        <p className="mt-1 text-foreground">{narration.narrator || "Not provided"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-muted">Source</p>
+                        <p className="mt-1 text-foreground">{narration.source || "Not provided"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-muted">Explanation</p>
+                        <p className="mt-1 text-foreground">{narration.explanation || "Not provided"}</p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section id="relevance" className="scroll-mt-28 rounded-[2rem] border border-border/20 bg-surface/45 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] md:p-8 lg:p-10">
+            <div className="mb-8 flex items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-gold">
+              <span>Modern Relevance</span>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {article.current_issues && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6 md:col-span-2">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Why This Matters Today</p>
+                  <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.current_issues)}</div>
+                </article>
+              )}
+              {article.youth_relevance && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Youth Relevance</p>
+                  <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.youth_relevance)}</div>
+                </article>
+              )}
+              {article.student_relevance && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Student Relevance</p>
+                  <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.student_relevance)}</div>
+                </article>
+              )}
+              {article.practical_application && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6 md:col-span-2">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Practical Response</p>
+                  <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.practical_application)}</div>
+                </article>
+              )}
+            </div>
+          </section>
+
+          <section id="reflection" className="scroll-mt-28 rounded-[2rem] border border-border/20 bg-surface/45 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] md:p-8 lg:p-10">
+            <div className="mb-8 flex items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-gold">
+              <span>Reflection Experience</span>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3">
+              {splitLines(article.reflection_questions).length > 0 && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6 lg:col-span-2">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Reflection Questions</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {splitLines(article.reflection_questions).map((question, index) => (
+                      <div key={`${question}-${index}`} className="rounded-2xl border border-border/20 bg-surface/60 p-4 shadow-sm">
+                        <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Question {index + 1}</p>
+                        <p className="mt-3 leading-relaxed text-foreground/90">{question}</p>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              )}
+
+              {splitLines(article.action_steps).length > 0 && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6 lg:row-span-2">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Action Steps</p>
+                  <div className="mt-4 space-y-3">
+                    {splitLines(article.action_steps).map((step, index) => (
+                      <div key={`${step}-${index}`} className="flex gap-3 rounded-2xl border border-border/20 bg-surface/60 p-4">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold/15 text-xs font-semibold text-gold">{index + 1}</span>
+                        <p className="leading-relaxed text-foreground/90">{step}</p>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              )}
+
+              {article.personal_reflection && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-[linear-gradient(180deg,_hsl(var(--surface-elevated)/0.9),_hsl(var(--surface)/0.65))] p-5 md:p-6 lg:col-span-2">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Personal Reflection</p>
+                  <div className="mt-4 rounded-[1.5rem] border border-border/20 bg-background/70 p-5">
+                    <p className="text-sm uppercase tracking-[0.18em] text-muted">Journal space</p>
+                    <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.personal_reflection)}</div>
+                  </div>
+                </article>
+              )}
+            </div>
+          </section>
+
+          <section id="conclusion" className="scroll-mt-28 rounded-[2rem] border border-border/20 bg-surface/45 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] md:p-8 lg:p-10">
+            <div className="mb-8 flex items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-gold">
+              <span>Conclusion</span>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              {article.summary && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Summary & Key Takeaways</p>
+                  <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.summary)}</div>
+                </article>
+              )}
+              {article.closing_reflection && (
+                <article className="rounded-[1.75rem] border border-border/20 bg-[linear-gradient(180deg,_hsl(var(--surface-elevated)/0.85),_hsl(var(--surface)/0.65))] p-5 md:p-6">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Closing Reflection</p>
+                  <div className="mt-4 rounded-[1.5rem] border border-gold/15 bg-background/70 p-5">
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-muted">Final thought</p>
+                    <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.closing_reflection)}</div>
+                  </div>
+                </article>
+              )}
+            </div>
+          </section>
+
+          {related.length > 0 && (
+            <section className="rounded-[2rem] border border-border/20 bg-surface/45 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] md:p-8 lg:p-10">
+              <div className="mb-8 flex items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-gold">
+                <span>Related Wisdom</span>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {related.map((item, index) => (
+                  <Link
+                    key={item.slug}
+                    href={`/wisdom/${item.slug}`}
+                    className="group rounded-[1.75rem] border border-border/20 bg-background/70 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-gold/30 hover:bg-background"
+                  >
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted">{item.category}</p>
+                    <p className="mt-3 text-base font-medium text-foreground transition-colors group-hover:text-gold-light">{item.title}</p>
+                    <p className="mt-4 text-xs uppercase tracking-[0.18em] text-gold/70">Related #{index + 1}</p>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+        </main>
+
+        <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+          <div className="rounded-[2rem] border border-border/20 bg-surface/55 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.08)] backdrop-blur-md">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-gold">Reading</p>
+            <p className="mt-2 text-xl text-foreground">{article.reading_time || 1} min read</p>
+            <p className="mt-2 text-sm leading-relaxed text-secondary/75">The page now keeps the journey minimal and sends you back to the main wisdom surface instead of duplicating navigation.</p>
+          </div>
+        </aside>
       </div>
     </article>
   );

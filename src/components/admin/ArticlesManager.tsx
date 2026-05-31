@@ -18,6 +18,7 @@ import {
   Loader2 
 } from "lucide-react";
 import Link from "next/link";
+import ImageRole from "@/components/ui/ImageRole";
 
 interface ArticleItem {
   id: string;
@@ -243,11 +244,7 @@ export function ArticlesManager({ categoryFilter, title, description }: Articles
                     <td className="p-4 pl-6 max-w-md">
                       <div className="flex items-center gap-3">
                         {item.featured_image ? (
-                          <img 
-                            src={item.featured_image} 
-                            alt="" 
-                            className="h-10 w-10 shrink-0 rounded-lg object-cover border border-border/30"
-                          />
+                          <ImageRole src={item.featured_image} alt={item.title || ""} role="card" className="h-10 w-10 shrink-0 rounded-lg object-cover border border-border/30" focalPoint={null} />
                         ) : (
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background border border-border/30 text-gold/40">
                             <BookOpen size={16} />
