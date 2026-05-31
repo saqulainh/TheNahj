@@ -41,7 +41,7 @@ export async function GET(request: Request) {
 
     if (error) {
       // Table may not exist yet — return empty gracefully
-      if (error.message.includes("Invalid path") || error.message.includes("relation") || error.code === "PGRST204") {
+      if (error.message.includes("Invalid path") || error.message.includes("relation") || error.message.includes("schema cache") || error.code === "PGRST204" || error.code === "PGRST116") {
         return NextResponse.json({
           items: [],
           source: "supabase",

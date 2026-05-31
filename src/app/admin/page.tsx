@@ -1,8 +1,9 @@
 "use client";
 
 import { SITE_NAME } from "@/lib/brand";
-import { BookOpen, Users, FileText, Headphones, ArrowRight, Home } from "lucide-react";
+import { BookOpen, Users, FileText, Headphones, ArrowRight, Home, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 
 const stats = [
   { label: "Total Wisdom Cards", value: "142", icon: BookOpen, change: "+12 this week", trend: "up" },
@@ -19,8 +20,42 @@ const recentActivity = [
 ];
 
 export default function AdminDashboardPage() {
+  const { error } = useQuery({
+    queryKey: ["content-list-check"],
+    queryFn: async () => {
+      const res = await fetch("/api/content");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to load content");
+      return json.items;
+    },
+    retry: 1,
+  });
+
   return (
     <div className="space-y-8">
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-5 text-red-200">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+            <div className="space-y-2">
+              <h3 className="font-semibold text-red-400">Database Connection Issue Detected</h3>
+              <p className="text-sm text-red-300/90">
+                Failed to load articles: <code className="bg-black/30 px-1.5 py-0.5 rounded font-mono text-red-300">{error instanceof Error ? error.message : String(error)}</code>
+              </p>
+              <div className="text-xs text-red-300/80 space-y-1 mt-2 border-t border-red-500/10 pt-2">
+                <p className="font-medium text-red-300">How to solve this:</p>
+                <ol className="list-decimal pl-4 space-y-1">
+                  <li>Open your <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline hover:text-white font-medium">Supabase Dashboard</a></li>
+                  <li>Go to the <strong>SQL Editor</strong> tab</li>
+                  <li>Copy and paste the contents of the file <code className="bg-black/30 px-1 py-0.2 rounded font-mono">supabase/migrations/001_articles_unified.sql</code></li>
+                  <li>Click <strong>Run</strong> to create the <code className="bg-black/30 px-1 py-0.2 rounded font-mono">articles_unified</code> table and its supporting relations.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
         <h1 className="text-3xl font-medium tracking-tight text-foreground">Dashboard</h1>
         <p className="mt-2 text-sm text-muted">

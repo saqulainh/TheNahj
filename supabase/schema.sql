@@ -108,28 +108,70 @@ create policy "Public read audio tracks" on audio_tracks for select using (true)
 -- Unified Content Engine (single source for all categories)
 create table if not exists articles_unified (
   id uuid primary key default uuid_generate_v4(),
+
+  -- Section 1: Basic Information
   title text not null,
-  slug text not null unique,
-  excerpt text not null,
-  category text not null,
+  slug text unique not null,
+  excerpt text not null default '',
+  category text not null default 'Imam Ali Says',
   tags text[] default '{}',
-  layout_type text not null default 'editorial',
   featured_image text,
   hero_image text,
   sidebar_banner text,
-  content_blocks jsonb not null default '[]',
+  reading_time integer default 0,
+  status text not null default 'draft' check (status in ('draft', 'scheduled', 'published')),
+  featured boolean default false,
+  schedule_publish_at timestamptz,
+
+  -- Section 2: Original Wisdom Content
+  arabic_text text default '',
+  urdu_translation text default '',
+  english_translation text default '',
+  source text default '',
+  source_number text default '',
+  book_name text default '',
+
+  -- Section 3: Explanation Area
+  main_explanation text default '',
+  detailed_explanation text default '',
+  tafseer text default '',
+  historical_context text default '',
+
+  -- Section 4: Related Narrations (stored as JSONB array)
+  narrations jsonb default '[]'::jsonb,
+
+  -- Section 5: Modern Relevance
+  current_issues text default '',
+  youth_relevance text default '',
+  student_relevance text default '',
+  practical_application text default '',
+
+  -- Section 6: Reflection
+  reflection_questions text default '',
+  action_steps text default '',
+  personal_reflection text default '',
+
+  -- Section 7: Conclusion
+  summary text default '',
+  closing_reflection text default '',
+
+  -- Section 8: SEO
+  seo_title text,
+  seo_description text,
+
+  -- Legacy compat
+  layout_type text default 'wisdom-editorial',
+  content_blocks jsonb default '[]'::jsonb,
   arabic_content text,
   english_content text,
   urdu_content text,
-  reading_time integer default 0,
-  featured boolean default false,
-  seo_title text,
-  seo_description text,
-  status text not null default 'draft',
+
+  -- Timestamps
   published_at timestamptz,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
 
 create table if not exists article_revisions (
   id uuid primary key default uuid_generate_v4(),
