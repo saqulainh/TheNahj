@@ -17,7 +17,7 @@ interface ImageRoleProps {
   forceNative?: boolean;
 }
 
-export function ImageRole({ src, alt = "", role = "hero", className = "", focalPoint = null }: ImageRoleProps) {
+export function ImageRole({ src, alt = "", role = "hero", className = "", focalPoint = null, getImgRef, forceNative = false }: ImageRoleProps) {
   const missing = !src;
 
   // Decide sizes and object-fit defaults per role
@@ -62,10 +62,6 @@ export function ImageRole({ src, alt = "", role = "hero", className = "", focalP
 
   // If variants are available, render a native img with srcset for responsive delivery
   // Note: allow callers to force a native <img> (useful for editors that need a DOM ref).
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ext: any = arguments[0] || {};
-  const getImgRef = ext.getImgRef as ((el: HTMLImageElement | null) => void) | undefined;
-  const forceNative = !!ext.forceNative;
 
   if ((variants && variants.length > 0) || forceNative) {
     const srcset = variants ? variants.map((v) => `${v.url} ${v.width}w`).join(", ") : "";
@@ -73,7 +69,7 @@ export function ImageRole({ src, alt = "", role = "hero", className = "", focalP
     return (
       <div className={`relative overflow-hidden ${className}`} style={{ aspectRatio: opts.aspect }}>
         <img
-          ref={(el) => { if (getImgRef) getImgRef(el); }}
+          ref={(el) => { if (getImgRef) getImgRef?.(el); }}
           src={fallback as string}
           srcSet={srcset}
           sizes={opts.sizes}
