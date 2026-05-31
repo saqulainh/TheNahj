@@ -5,7 +5,7 @@
   - Update `WisdomCard.tsx` to support background images with dark matte overlays and blur effects.
   - Implement Type 1 (Cinematic), Type 2 (Abstract), and Type 3 (Architectural) background styles.
   - Ensure typography remains dynamic HTML for SEO and accessibility.
-- [ ] **Enhanced Reflection Pages:**
+- [x] **Enhanced Reflection Pages:**
   - Update `src/app/wisdom/[slug]/page.tsx` to expand the card's background into an immersive hero section.
   - Add "Reflection Questions" and "Practical Action Steps" as interactive elements.
 - [x] **Digital Diseases Reflection System:**

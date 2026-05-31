@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { WisdomReadingProgress } from "@/components/wisdom/WisdomReadingProgress";
 import { WisdomHeroActions } from "@/components/wisdom/WisdomHeroActions";
+import { ReflectionPracticePanel } from "@/components/wisdom/ReflectionPracticePanel";
 import ImageRole from "@/components/ui/ImageRole";
 import { getRelatedUnifiedArticles, getUnifiedArticleBySlug } from "@/lib/content";
 import type { Metadata } from "next";
@@ -48,6 +49,8 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
   const related = await getRelatedUnifiedArticles(article.slug, article.category, article.tags ?? []);
   const primaryTopic = article.tags?.[0] || article.category;
   const subcategory = article.tags?.[1] || article.tags?.[0] || article.category;
+  const reflectionQuestions = splitLines(article.reflection_questions);
+  const actionSteps = splitLines(article.action_steps);
   const sections = [
     { href: "/wisdom", label: "Wisdom" },
     { id: "narrations", label: "Narrations" },
@@ -289,11 +292,11 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
             </div>
 
             <div className="grid gap-4 lg:grid-cols-3">
-              {splitLines(article.reflection_questions).length > 0 && (
+              {reflectionQuestions.length > 0 && (
                 <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6 lg:col-span-2">
                   <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Reflection Questions</p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {splitLines(article.reflection_questions).map((question, index) => (
+                    {reflectionQuestions.map((question, index) => (
                       <div key={`${question}-${index}`} className="rounded-2xl border border-border/20 bg-surface/60 p-4 shadow-sm">
                         <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Question {index + 1}</p>
                         <p className="mt-3 leading-relaxed text-foreground/90">{question}</p>
@@ -303,11 +306,11 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
                 </article>
               )}
 
-              {splitLines(article.action_steps).length > 0 && (
+              {actionSteps.length > 0 && (
                 <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6 lg:row-span-2">
                   <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Action Steps</p>
                   <div className="mt-4 space-y-3">
-                    {splitLines(article.action_steps).map((step, index) => (
+                    {actionSteps.map((step, index) => (
                       <div key={`${step}-${index}`} className="flex gap-3 rounded-2xl border border-border/20 bg-surface/60 p-4">
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold/15 text-xs font-semibold text-gold">{index + 1}</span>
                         <p className="leading-relaxed text-foreground/90">{step}</p>
@@ -325,6 +328,12 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
                     <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.personal_reflection)}</div>
                   </div>
                 </article>
+              )}
+
+              {(reflectionQuestions.length > 0 || actionSteps.length > 0) && (
+                <div className="lg:col-span-3">
+                  <ReflectionPracticePanel questions={reflectionQuestions} actionSteps={actionSteps} />
+                </div>
               )}
             </div>
           </section>
