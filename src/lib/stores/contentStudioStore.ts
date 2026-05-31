@@ -8,6 +8,9 @@ interface WisdomDraft {
   slug: string;
   excerpt: string;
   category: string;
+  theme: string | null;
+  topic: string | null;
+  audiences: Array<"student" | "youth" | "general">;
   tags: string[];
   featured_image: string | null;
   hero_image: string | null;
@@ -74,6 +77,9 @@ export const createInitialDraft = (category: string = "Imam Ali Says"): WisdomDr
   slug: "",
   excerpt: "",
   category,
+  theme: null,
+  topic: null,
+  audiences: ["general"],
   tags: [],
   featured_image: null,
   hero_image: null,

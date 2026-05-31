@@ -11,6 +11,7 @@ import { z } from "zod";
 import { Save, Loader2, RefreshCw, History, RotateCcw, Bookmark, Share2 } from "lucide-react";
 import { wisdomArticleSchema, unifiedCategories } from "@/lib/content-schema";
 import { createInitialDraft, useContentStudioStore } from "@/lib/stores/contentStudioStore";
+import { IMAM_ALI_THEMES, THEME_TOPICS } from "@/lib/taxonomy";
 import {
   SectionShell, TextField, TextAreaField,
   NarrationsManager, MediaPickerField, WisdomCardPreview,
@@ -238,6 +239,9 @@ export default function ContentStudioPage() {
   );
 
   const mediaCards = useMemo(() => mediaQuery.data || [], [mediaQuery.data]);
+  const structuredCategory = ["Imam Ali Says", "Student Corner", "Youth Corner", "Nahjul Balagha"].includes(values.category || "");
+  const selectedTheme = (values.theme || "") as string;
+  const selectedThemeTopics = selectedTheme ? (THEME_TOPICS[selectedTheme] || []) : [];
 
   return (
     <div className="space-y-6">
@@ -305,6 +309,75 @@ export default function ContentStudioPage() {
                 <input type="datetime-local" {...form.register("schedule_publish_at")} className="w-full rounded-xl border border-border/40 bg-background px-3 py-2 text-sm" />
               </label>
             </div>
+
+            {structuredCategory && (
+              <div className="rounded-2xl border border-border/30 bg-background/50 p-4 space-y-4">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-gold-muted">Taxonomy Mapping (Required)</p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="space-y-1.5 text-xs font-medium uppercase tracking-[0.15em] text-muted block">
+                    Theme
+                    <select
+                      value={values.theme || ""}
+                      onChange={(e) => {
+                        const nextTheme = e.target.value;
+                        form.setValue("theme", nextTheme || null, { shouldDirty: true, shouldValidate: true });
+                        const validTopics = THEME_TOPICS[nextTheme] || [];
+                        if (!validTopics.includes(values.topic || "")) {
+                          form.setValue("topic", null, { shouldDirty: true, shouldValidate: true });
+                        }
+                      }}
+                      className="w-full rounded-xl border border-border/40 bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">Select Theme</option>
+                      {IMAM_ALI_THEMES.map((theme) => <option key={theme} value={theme}>{theme}</option>)}
+                    </select>
+                  </label>
+
+                  <label className="space-y-1.5 text-xs font-medium uppercase tracking-[0.15em] text-muted block">
+                    Topic
+                    <select
+                      value={values.topic || ""}
+                      onChange={(e) => form.setValue("topic", e.target.value || null, { shouldDirty: true, shouldValidate: true })}
+                      disabled={!selectedTheme}
+                      className="w-full rounded-xl border border-border/40 bg-background px-3 py-2 text-sm disabled:opacity-60"
+                    >
+                      <option value="">Select Topic</option>
+                      {selectedThemeTopics.map((topic) => <option key={topic} value={topic}>{topic}</option>)}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium uppercase tracking-[0.15em] text-muted">Audience Mapping</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { key: "general", label: "General" },
+                      { key: "student", label: "Student" },
+                      { key: "youth", label: "Youth" },
+                    ].map((opt) => {
+                      const current = values.audiences || ["general"];
+                      const active = current.includes(opt.key as any);
+                      return (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => {
+                            const next = active
+                              ? current.filter((a: string) => a !== opt.key)
+                              : [...current, opt.key];
+                            form.setValue("audiences", next.length ? (Array.from(new Set(next)) as any) : ["general"], { shouldDirty: true, shouldValidate: true });
+                          }}
+                          className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${active ? "border-gold/40 bg-gold/15 text-gold-light" : "border-border/40 bg-surface text-muted hover:text-foreground"}`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <TopicSelectorField
               selectedTags={(values.tagsInput || "").split(",").map((t: string) => t.trim()).filter(Boolean)}
               onChange={(newTags) => form.setValue("tagsInput", newTags.join(", "), { shouldDirty: true })}

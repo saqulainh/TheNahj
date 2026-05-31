@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { IMAM_ALI_THEMES, THEME_TOPICS, normalizeTheme } from "@/lib/taxonomy";
 
 // Smart default fallbacks for each category page to guide the user's initial choices.
 const defaultTagsByCategory: Record<string, string[]> = {
@@ -69,9 +70,20 @@ const defaultTagsByCategory: Record<string, string[]> = {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
+  const theme = searchParams.get("theme");
+
+  if (theme) {
+    const resolved = normalizeTheme(theme);
+    if (!resolved) return NextResponse.json({ tags: [] });
+    return NextResponse.json({ tags: THEME_TOPICS[resolved] || [] });
+  }
 
   // Load defaults for this category
   const defaults = category ? (defaultTagsByCategory[category] || []) : [];
+
+  if (category === "Imam Ali Says") {
+    return NextResponse.json({ tags: IMAM_ALI_THEMES as unknown as string[] });
+  }
 
   if (!isSupabaseConfigured || !supabase) {
     return NextResponse.json({ tags: defaults });

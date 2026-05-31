@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { articlePayloadSchema } from "@/lib/content-schema";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
+import { inferThemeTopicFromTags, isValidThemeTopic, normalizeTheme, normalizeTopic, uniqueTagsWithTaxonomy } from "@/lib/taxonomy";
 
 function normalizeSlug(input: string): string {
   return input
@@ -118,17 +119,41 @@ export async function POST(request: Request) {
 
     const payload = articlePayloadSchema.parse(normalized);
 
+    const needsStructuredTaxonomy = ["Imam Ali Says", "Student Corner", "Youth Corner", "Nahjul Balagha"].includes(payload.category);
+    const inferred = inferThemeTopicFromTags(payload.tags || []);
+    const resolvedTheme = normalizeTheme(payload.theme || inferred.theme);
+    const resolvedTopic = normalizeTopic(resolvedTheme, payload.topic || inferred.topic);
+
+    if (needsStructuredTaxonomy && !isValidThemeTopic(resolvedTheme, resolvedTopic)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Validation failed",
+          details: {
+            message: "A valid Theme -> Topic mapping is required for this category.",
+            category: payload.category,
+            theme: payload.theme || null,
+            topic: payload.topic || null,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const { theme, topic, audiences, ...persistablePayload } = payload;
+    const normalizedTags = uniqueTagsWithTaxonomy(persistablePayload.tags || [], resolvedTheme, resolvedTopic);
+
     const record = {
-      ...payload,
-      slug: normalizeSlug(payload.slug),
-      content_blocks: payload.content_blocks,
-      tags: payload.tags,
-      schedule_publish_at: payload.schedule_publish_at || null,
+      ...persistablePayload,
+      slug: normalizeSlug(persistablePayload.slug),
+      content_blocks: persistablePayload.content_blocks,
+      tags: normalizedTags,
+      schedule_publish_at: persistablePayload.schedule_publish_at || null,
       published_at:
-        payload.status === "published"
+        persistablePayload.status === "published"
           ? new Date().toISOString()
-          : payload.status === "scheduled" && payload.schedule_publish_at
-          ? payload.schedule_publish_at
+          : persistablePayload.status === "scheduled" && persistablePayload.schedule_publish_at
+          ? persistablePayload.schedule_publish_at
           : null,
       updated_at: new Date().toISOString(),
     };
