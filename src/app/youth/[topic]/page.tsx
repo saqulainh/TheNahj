@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { youthTopics } from "@/data/mock";
 import { getWisdomByCornerTopic, getArticlesByCornerTopic } from "@/lib/wisdom";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
+import { topicExperienceBySlug } from "@/lib/content-experience";
 
 interface PageProps {
   params: Promise<{ topic: string }>;
@@ -25,14 +26,46 @@ export default async function YouthTopicPage({ params }: PageProps) {
     getWisdomByCornerTopic(topic),
     getArticlesByCornerTopic(topic),
   ]);
+  const exp = topicExperienceBySlug[topic];
+  const relatedTopics = (exp?.relatedTopics || []).filter((slug) => slug !== topic);
 
   return (
-    <section className="mx-auto max-w-3xl px-4 py-12 md:px-6 md:py-16">
+    <section className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
       <Link href="/youth" className="text-sm text-muted hover:text-gold-light">
         ← Youth Corner
       </Link>
-      <h1 className="mt-8 text-3xl font-medium text-foreground">{item.title}</h1>
-      <p className="mt-4 text-muted">{item.description}</p>
+
+      <div className="mt-6 rounded-3xl border border-border/30 bg-[linear-gradient(150deg,_hsl(var(--surface-elevated)/0.72),_hsl(var(--surface)/0.5))] p-6 md:p-8">
+        <p className="text-[11px] uppercase tracking-[0.2em] text-gold-muted">Topic Hub</p>
+        <h1 className="mt-3 text-3xl font-medium text-foreground md:text-4xl">{item.title}</h1>
+        <p className="mt-4 max-w-3xl text-muted">{exp?.intro || item.description}</p>
+      </div>
+
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <article className="rounded-2xl border border-border/30 bg-surface/55 p-5">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-gold-muted">Why This Matters Today</p>
+          <p className="mt-3 text-sm leading-relaxed text-muted">{exp?.whyMattersToday || item.description}</p>
+        </article>
+        <article className="rounded-2xl border border-border/30 bg-surface/55 p-5">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-gold-muted">Current Challenges</p>
+          <ul className="mt-3 space-y-2 text-sm text-muted">
+            {(exp?.currentChallenges || ["Identity pressure", "Validation seeking", "Emotional impulsiveness"]).map((c) => (
+              <li key={c}>• {c}</li>
+            ))}
+          </ul>
+        </article>
+      </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <article className="rounded-2xl border border-border/30 bg-background/60 p-5">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-gold-muted">Student Relevance</p>
+          <p className="mt-3 text-sm text-muted">{exp?.studentRelevance || "This topic helps students protect focus, boundaries, and emotional consistency."}</p>
+        </article>
+        <article className="rounded-2xl border border-border/30 bg-background/60 p-5">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-gold-muted">Youth Relevance</p>
+          <p className="mt-3 text-sm text-muted">{exp?.youthRelevance || "It supports healthy identity, relationships, and purpose under modern pressure."}</p>
+        </article>
+      </div>
 
       {topic === "haram-relationships" && (
         <Link
@@ -45,10 +78,12 @@ export default async function YouthTopicPage({ params }: PageProps) {
 
       {wisdom.length > 0 && (
         <section className="mt-12 space-y-8">
-          <h2 className="text-sm uppercase tracking-wider text-gold-muted">Wisdom</h2>
-          {wisdom.map((w, i) => (
-            <WisdomCard key={w.id} wisdom={w} index={i} />
-          ))}
+          <h2 className="text-sm uppercase tracking-wider text-gold-muted">Wisdom Collection</h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            {wisdom.map((w, i) => (
+              <WisdomCard key={w.id} wisdom={w} index={i} />
+            ))}
+          </div>
         </section>
       )}
 
@@ -69,6 +104,21 @@ export default async function YouthTopicPage({ params }: PageProps) {
           </div>
         </section>
       )}
+
+      <section className="mt-12">
+        <h2 className="text-sm uppercase tracking-wider text-gold-muted">Related Topics</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {relatedTopics.length > 0 ? relatedTopics.map((slug) => (
+            <Link key={slug} href={`/youth/${slug}`} className="rounded-full border border-border/40 bg-background/70 px-3 py-1.5 text-xs text-muted hover:border-gold/30 hover:text-foreground">
+              {slug.replace(/-/g, " ")}
+            </Link>
+          )) : youthTopics.filter((t) => t.slug !== topic).slice(0, 4).map((t) => (
+            <Link key={t.slug} href={`/youth/${t.slug}`} className="rounded-full border border-border/40 bg-background/70 px-3 py-1.5 text-xs text-muted hover:border-gold/30 hover:text-foreground">
+              {t.title}
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {wisdom.length === 0 && articles.length === 0 && (
         <p className="mt-12 text-center text-muted">More content for this topic is coming soon.</p>
