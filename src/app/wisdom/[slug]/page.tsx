@@ -37,6 +37,12 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
   const article = await getUnifiedArticleBySlug(slug);
   if (!article) notFound();
 
+  const splitLines = (text?: string | null) =>
+    (text || "")
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
   const safeFrom = from && from.startsWith("/") ? from : "/wisdom";
   const backLabel = safeFrom.startsWith("/student")
     ? "Student Corner"
@@ -58,12 +64,6 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
     { id: "reflection", label: "Reflection" },
     { id: "conclusion", label: "Conclusion" },
   ];
-
-  const splitLines = (text?: string | null) =>
-    (text || "")
-      .split(/\n+/)
-      .map((line) => line.trim())
-      .filter(Boolean);
 
   const renderParagraphs = (text?: string | null) => {
     if (!text) return null;
@@ -332,7 +332,7 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
 
               {(reflectionQuestions.length > 0 || actionSteps.length > 0) && (
                 <div className="lg:col-span-3">
-                  <ReflectionPracticePanel questions={reflectionQuestions} actionSteps={actionSteps} />
+                  <ReflectionPracticePanel articleSlug={article.slug} questions={reflectionQuestions} actionSteps={actionSteps} />
                 </div>
               )}
             </div>

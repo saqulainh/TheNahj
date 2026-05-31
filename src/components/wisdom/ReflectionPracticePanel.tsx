@@ -1,17 +1,68 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface ReflectionPracticePanelProps {
+  articleSlug: string;
   questions: string[];
   actionSteps: string[];
 }
 
-export function ReflectionPracticePanel({ questions, actionSteps }: ReflectionPracticePanelProps) {
+function buildKey(articleSlug: string) {
+  return `thenahj-reflection-practice:${articleSlug}`;
+}
+
+export function ReflectionPracticePanel({ articleSlug, questions, actionSteps }: ReflectionPracticePanelProps) {
   const safeQuestions = useMemo(() => questions.filter(Boolean), [questions]);
   const safeSteps = useMemo(() => actionSteps.filter(Boolean), [actionSteps]);
   const [activeQuestion, setActiveQuestion] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(buildKey(articleSlug));
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw) as {
+        activeQuestion?: number;
+        completedSteps?: Record<number, boolean>;
+      };
+
+      if (typeof parsed.activeQuestion === "number" && Number.isFinite(parsed.activeQuestion)) {
+        setActiveQuestion(Math.max(0, Math.min(parsed.activeQuestion, Math.max(0, safeQuestions.length - 1))));
+      }
+
+      if (parsed.completedSteps && typeof parsed.completedSteps === "object") {
+        const allowedIndexes = new Set(safeSteps.map((_, index) => index));
+        const sanitized: Record<number, boolean> = {};
+        Object.entries(parsed.completedSteps).forEach(([key, value]) => {
+          const index = Number(key);
+          if (allowedIndexes.has(index) && value === true) sanitized[index] = true;
+        });
+        setCompletedSteps(sanitized);
+      }
+    } catch {
+      // Ignore invalid cached state.
+    }
+  }, [articleSlug, safeQuestions.length, safeSteps]);
+
+  useEffect(() => {
+    try {
+      const payload = JSON.stringify({
+        activeQuestion,
+        completedSteps,
+      });
+      localStorage.setItem(buildKey(articleSlug), payload);
+    } catch {
+      // Ignore storage failures (private mode/quota).
+    }
+  }, [articleSlug, activeQuestion, completedSteps]);
+
+  useEffect(() => {
+    if (activeQuestion > safeQuestions.length - 1) {
+      setActiveQuestion(Math.max(0, safeQuestions.length - 1));
+    }
+  }, [activeQuestion, safeQuestions.length]);
 
   if (safeQuestions.length === 0 && safeSteps.length === 0) return null;
 
