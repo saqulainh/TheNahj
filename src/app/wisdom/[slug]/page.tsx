@@ -368,6 +368,11 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
                   >
                     <p className="text-[10px] uppercase tracking-[0.2em] text-muted">{item.category}</p>
                     <p className="mt-3 text-base font-medium text-foreground transition-colors group-hover:text-gold-light">{item.title}</p>
+                    {Array.isArray((item as any).reason) && (item as any).reason.length > 0 && (
+                      <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-gold/80">
+                        Match: {String((item as any).reason[0]).replace(/-/g, " ")}
+                      </p>
+                    )}
                     <p className="mt-4 text-xs uppercase tracking-[0.18em] text-gold/70">Related #{index + 1}</p>
                   </Link>
                 ))}

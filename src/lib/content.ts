@@ -2,6 +2,8 @@ import { getAllArticles, getArticleBySlug } from "@/lib/wisdom";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type { ContentBlock } from "@/lib/content-schema";
 import { unstable_cache } from "next/cache";
+import { inferThemeTopicFromTags, slugifyTaxonomy } from "@/lib/taxonomy";
+import { topicExperienceBySlug } from "@/lib/content-experience";
 
 export interface UnifiedArticle {
   id?: string;
@@ -235,13 +237,94 @@ function normalizeTag(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-export async function getRelatedUnifiedArticles(slug: string, category: string, tags: string[] = []) {
+type Audience = "student" | "youth" | "general";
+
+export interface RelatedArticlePreview {
+  slug: string;
+  title: string;
+  category: string;
+  tags?: string[];
+  published_at?: string | null;
+  score?: number;
+  reason?: string[];
+}
+
+function inferAudiences(category: string, tags: string[] = []): Audience[] {
+  const set = new Set<Audience>();
+  const lowerCategory = category.toLowerCase();
+  const normalizedTags = tags.map((tag) => normalizeTag(tag));
+
+  if (lowerCategory.includes("student") || normalizedTags.includes("student")) set.add("student");
+  if (lowerCategory.includes("youth") || normalizedTags.includes("youth")) set.add("youth");
+  if (set.size === 0) set.add("general");
+
+  return Array.from(set);
+}
+
+function scoreRelatedCandidate(params: {
+  currentSlug: string;
+  currentCategory: string;
+  currentTags: string[];
+  candidate: { slug: string; category: string; tags?: string[] | null; published_at?: string | null };
+}) {
+  const { currentSlug, currentCategory, currentTags, candidate } = params;
+  if (candidate.slug === currentSlug) return { score: 0, reasons: [] as string[] };
+
+  const reasons: string[] = [];
+  const currentNormTags = currentTags.map(normalizeTag).filter(Boolean);
+  const candidateNormTags = (candidate.tags || []).map(normalizeTag).filter(Boolean);
+
+  const currentTax = inferThemeTopicFromTags(currentTags);
+  const candidateTax = inferThemeTopicFromTags(candidate.tags || []);
+
+  const currentTopicSlug = currentTax.topic ? slugifyTaxonomy(currentTax.topic) : null;
+  const candidateTopicSlug = candidateTax.topic ? slugifyTaxonomy(candidateTax.topic) : null;
+  const currentThemeSlug = currentTax.theme ? slugifyTaxonomy(currentTax.theme) : null;
+  const candidateThemeSlug = candidateTax.theme ? slugifyTaxonomy(candidateTax.theme) : null;
+
+  const currentAudiences = inferAudiences(currentCategory, currentTags);
+  const candidateAudiences = inferAudiences(candidate.category, candidate.tags || []);
+
+  let score = 0;
+
+  // Priority 1: same topic
+  if (currentTopicSlug && candidateTopicSlug && currentTopicSlug === candidateTopicSlug) {
+    score += 1000;
+    reasons.push("same-topic");
+  }
+
+  // Priority 2: same theme
+  if (currentThemeSlug && candidateThemeSlug && currentThemeSlug === candidateThemeSlug) {
+    score += 450;
+    reasons.push("same-theme");
+  }
+
+  // Priority 3: same audience
+  const sharedAudience = currentAudiences.filter((a) => candidateAudiences.includes(a));
+  if (sharedAudience.length > 0) {
+    const audienceWeight = sharedAudience.includes("student") || sharedAudience.includes("youth") ? 240 : 80;
+    score += audienceWeight;
+    reasons.push("same-audience");
+  }
+
+  // Priority 4: related concepts (topic graph) + shared tags
+  const relatedTopicSlugs = currentTopicSlug ? (topicExperienceBySlug[currentTopicSlug]?.relatedTopics || []) : [];
+  if (relatedTopicSlugs.length > 0 && candidateTopicSlug && relatedTopicSlugs.includes(candidateTopicSlug)) {
+    score += 140;
+    reasons.push("related-concept");
+  }
+
+  const sharedTags = candidateNormTags.filter((tag) => currentNormTags.includes(tag));
+  if (sharedTags.length > 0) {
+    score += Math.min(sharedTags.length, 4) * 28;
+    reasons.push("shared-tags");
+  }
+
+  return { score, reasons };
+}
+
+export async function getRelatedUnifiedArticles(slug: string, category: string, tags: string[] = []): Promise<RelatedArticlePreview[]> {
   const normalizedTags = tags.map(normalizeTag).filter(Boolean);
-  const legacyCategory = category.toLowerCase().includes("student")
-    ? "student"
-    : category.toLowerCase().includes("youth")
-    ? "youth"
-    : "reflection";
 
   return unstable_cache(
     async () => {
@@ -255,19 +338,28 @@ export async function getRelatedUnifiedArticles(slug: string, category: string, 
         if (data?.length) {
           const scored = data
             .map((item) => {
-              const itemTags = (item.tags ?? []).map(normalizeTag).filter(Boolean);
-              const sharedTags = itemTags.filter((tag: string) => normalizedTags.includes(tag)).length;
-              const score = (item.category === category ? 8 : 0) + sharedTags * 4 + (itemTags.length > 0 && sharedTags > 0 ? 2 : 0);
+              const { score, reasons } = scoreRelatedCandidate({
+                currentSlug: slug,
+                currentCategory: category,
+                currentTags: tags,
+                candidate: {
+                  slug: item.slug,
+                  category: item.category,
+                  tags: item.tags,
+                  published_at: item.published_at,
+                },
+              });
 
               return {
                 ...item,
                 score,
+                reasons,
               };
             })
             .filter((item) => item.score > 0)
             .sort((a, b) => b.score - a.score || String(b.published_at || "").localeCompare(String(a.published_at || "")))
             .slice(0, 6)
-            .map((it) => ({ slug: it.slug, title: it.title, category: it.category, tags: it.tags, published_at: it.published_at }));
+            .map((it) => ({ slug: it.slug, title: it.title, category: it.category, tags: it.tags, published_at: it.published_at, score: it.score, reason: it.reasons }));
 
           if (scored.length > 0) return scored;
         }
@@ -276,14 +368,35 @@ export async function getRelatedUnifiedArticles(slug: string, category: string, 
       const all = await getAllArticles();
       return all
         .filter((item) => item.slug !== slug)
-        .filter(
-          (item) =>
-            item.type === legacyCategory ||
-            item.type === "wisdom" ||
-            item.corner_topics?.some((tag) => normalizedTags.includes(normalizeTag(tag)))
-        )
+        .map((item) => {
+          const candidateCategory = item.type === "student" ? "Student Corner" : item.type === "youth" ? "Youth Corner" : "Imam Ali Says";
+          const candidateTags = item.corner_topics || [];
+          const { score, reasons } = scoreRelatedCandidate({
+            currentSlug: slug,
+            currentCategory: category,
+            currentTags: tags,
+            candidate: {
+              slug: item.slug,
+              category: candidateCategory,
+              tags: candidateTags,
+              published_at: item.created_at,
+            },
+          });
+
+          return {
+            slug: item.slug,
+            title: item.title,
+            category: item.type,
+            tags: candidateTags,
+            score,
+            reason: reasons,
+            published_at: item.created_at,
+          };
+        })
+        .filter((item) => item.score > 0)
+        .sort((a, b) => (b.score || 0) - (a.score || 0) || String(b.published_at || "").localeCompare(String(a.published_at || "")))
         .slice(0, 6)
-        .map((item) => ({ slug: item.slug, title: item.title, category: item.type }));
+        .map((item) => ({ slug: item.slug, title: item.title, category: item.category, tags: item.tags, score: item.score, reason: item.reason, published_at: item.published_at }));
     },
     [`related:${slug}:${category}:${normalizedTags.join("|")}`],
     {
