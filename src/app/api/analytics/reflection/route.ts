@@ -23,6 +23,13 @@ function tableMissing(message: string, code?: string) {
   return message.includes("relation") || message.includes("schema cache") || code === "PGRST204" || code === "PGRST116";
 }
 
+function parseRangeHours(url: URL): { hours: number; label: "24h" | "7d" | "30d" } {
+  const raw = url.searchParams.get("range") || "7d";
+  if (raw === "24h") return { hours: 24, label: "24h" };
+  if (raw === "30d") return { hours: 30 * 24, label: "30d" };
+  return { hours: 7 * 24, label: "7d" };
+}
+
 export async function POST(request: Request) {
   const limit = await consumeRateLimit({
     key: `analytics-reflection:${getRequestClientIp(request)}`,
@@ -78,21 +85,25 @@ export async function POST(request: Request) {
   return NextResponse.json({ success: true, stored: true });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const range = parseRangeHours(url);
+
   if (!isSupabaseConfigured || !supabase) {
     return NextResponse.json({
       success: true,
       summary: {
-        last7dEvents: 0,
+        periodEvents: 0,
         completedSessions: 0,
         uniqueArticles: 0,
         completionRatePct: 0,
+        range: range.label,
       },
       source: "fallback",
     });
   }
 
-  const sinceIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const sinceIso = new Date(Date.now() - range.hours * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from("reflection_analytics_events")
     .select("event_type,article_slug")
@@ -103,10 +114,11 @@ export async function GET() {
       return NextResponse.json({
         success: true,
         summary: {
-          last7dEvents: 0,
+          periodEvents: 0,
           completedSessions: 0,
           uniqueArticles: 0,
           completionRatePct: 0,
+          range: range.label,
         },
         source: "table-missing",
       });
@@ -122,10 +134,11 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     summary: {
-      last7dEvents: rows.length,
+      periodEvents: rows.length,
       completedSessions,
       uniqueArticles,
       completionRatePct,
+      range: range.label,
     },
     source: "supabase",
   });

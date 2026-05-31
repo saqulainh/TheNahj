@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { SITE_NAME } from "@/lib/brand";
 import { BookOpen, Users, FileText, Headphones, ArrowRight, Home, AlertCircle } from "lucide-react";
 import Link from "next/link";
@@ -19,7 +20,11 @@ const recentActivity = [
   { action: "Published Article", target: "Understanding Digital Diseases", time: "2 days ago" },
 ];
 
+type ReflectionRange = "24h" | "7d" | "30d";
+
 export default function AdminDashboardPage() {
+  const [reflectionRange, setReflectionRange] = useState<ReflectionRange>("7d");
+
   const { error } = useQuery({
     queryKey: ["content-list-check"],
     queryFn: async () => {
@@ -32,18 +37,19 @@ export default function AdminDashboardPage() {
   });
 
   const { data: reflectionSummary } = useQuery({
-    queryKey: ["reflection-analytics-summary"],
+    queryKey: ["reflection-analytics-summary", reflectionRange],
     queryFn: async () => {
-      const response = await fetch("/api/analytics/reflection");
+      const response = await fetch(`/api/analytics/reflection?range=${reflectionRange}`);
       const json = await response.json();
       if (!response.ok || !json.success) {
         throw new Error(json.error || "Failed to load reflection analytics");
       }
       return json.summary as {
-        last7dEvents: number;
+        periodEvents: number;
         completedSessions: number;
         uniqueArticles: number;
         completionRatePct: number;
+        range: ReflectionRange;
       };
     },
     retry: 1,
@@ -104,12 +110,30 @@ export default function AdminDashboardPage() {
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-surface">
           <div className="border-b border-border p-6">
-            <h2 className="font-medium text-foreground">Reflection Analytics (7d)</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-medium text-foreground">Reflection Analytics</h2>
+              <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/70 p-1">
+                {(["24h", "7d", "30d"] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setReflectionRange(option)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      reflectionRange === option
+                        ? "bg-gold/20 text-gold-light"
+                        : "text-muted hover:bg-background hover:text-foreground"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="grid gap-4 p-6 sm:grid-cols-2">
             <div className="rounded-lg border border-border/60 bg-background p-4">
-              <p className="text-xs uppercase tracking-[0.14em] text-muted">Events</p>
-              <p className="mt-2 text-2xl font-medium text-foreground">{reflectionSummary?.last7dEvents ?? 0}</p>
+              <p className="text-xs uppercase tracking-[0.14em] text-muted">Events ({reflectionSummary?.range ?? reflectionRange})</p>
+              <p className="mt-2 text-2xl font-medium text-foreground">{reflectionSummary?.periodEvents ?? 0}</p>
             </div>
             <div className="rounded-lg border border-border/60 bg-background p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-muted">Completed Sessions</p>
