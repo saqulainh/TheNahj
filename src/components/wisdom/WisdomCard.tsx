@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Bookmark, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -18,7 +19,17 @@ interface WisdomCardProps {
 
 export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
   const [saved, setSaved] = useState(false);
-  const href = wisdom.slug ? `/wisdom/${encodeURIComponent(wisdom.slug)}` : null;
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const href = (() => {
+    if (!wisdom.slug) return null;
+    const params = new URLSearchParams();
+    const query = searchParams?.toString();
+    const from = query ? `${pathname}?${query}` : pathname;
+    params.set("from", from);
+    if (wisdom.category?.slug) params.set("theme", wisdom.category.slug);
+    return `/wisdom/${encodeURIComponent(wisdom.slug)}?${params.toString()}`;
+  })();
 
   useEffect(() => {
     if (!wisdom?.slug) return;

@@ -12,6 +12,9 @@ interface WisdomDraft {
   featured_image: string | null;
   hero_image: string | null;
   sidebar_banner: string | null;
+  hero_focal_point: { x: number; y: number } | null;
+  featured_focal_point: { x: number; y: number } | null;
+  sidebar_focal_point: { x: number; y: number } | null;
   reading_time: number;
   status: "draft" | "scheduled" | "published";
   featured: boolean;
@@ -66,15 +69,18 @@ interface StudioDraftState {
   resetDraft: () => void;
 }
 
-const initialDraft: WisdomDraft = {
+export const createInitialDraft = (category: string = "Imam Ali Says"): WisdomDraft => ({
   title: "",
   slug: "",
   excerpt: "",
-  category: "Imam Ali Says",
+  category,
   tags: [],
   featured_image: null,
   hero_image: null,
   sidebar_banner: null,
+  hero_focal_point: null,
+  featured_focal_point: null,
+  sidebar_focal_point: null,
   reading_time: 0,
   status: "draft",
   featured: false,
@@ -113,7 +119,9 @@ const initialDraft: WisdomDraft = {
   arabic_content: null,
   english_content: null,
   urdu_content: null,
-};
+});
+
+const initialDraft: WisdomDraft = createInitialDraft();
 
 export const useContentStudioStore = create<StudioDraftState>()(
   persist(
@@ -126,7 +134,7 @@ export const useContentStudioStore = create<StudioDraftState>()(
             ...payload,
           },
         })),
-      resetDraft: () => set({ draft: initialDraft }),
+      resetDraft: () => set({ draft: createInitialDraft() }),
     }),
     {
       name: "thenahj-wisdom-studio-draft",

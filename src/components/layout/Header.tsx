@@ -46,6 +46,18 @@ export function Header({
 
   const isHome = pathname === "/";
 
+  const isLinkActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (pathname === href || pathname.startsWith(`${href}/`)) return true;
+
+    // Keep navigation context visible on nested topic routes.
+    if (href === "/wisdom" && pathname.startsWith("/topics")) return true;
+    if (href === "/student" && pathname.startsWith("/student/")) return true;
+    if (href === "/youth" && pathname.startsWith("/youth/")) return true;
+
+    return false;
+  };
+
   return (
     <header
       className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
@@ -84,18 +96,23 @@ export function Header({
                 </StarBorder>
               </Link>
             ) : (
+              (() => {
+                const active = isLinkActive(link.href);
+                return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`relative uppercase tracking-widest transition-all duration-300 hover:text-foreground ${
                   isHome ? 'text-[10px] text-muted/80' : 'text-xs text-muted hover:text-gold'
-                } ${pathname === link.href ? "text-gold" : ""}`}
+                } ${active ? "text-gold" : ""}`}
               >
                 {link.label}
-                {pathname === link.href && (
+                {active && (
                   <span className="absolute -bottom-2 left-1/2 h-px w-8 -translate-x-1/2 bg-gradient-to-r from-transparent via-gold/80 to-transparent" />
                 )}
               </Link>
+                );
+              })()
             )
           ))}
         </nav>
@@ -125,15 +142,20 @@ export function Header({
         >
           <nav className="flex flex-col gap-6">
             {links && links.map((link) => (
+              (() => {
+                const active = isLinkActive(link.href);
+                return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`text-sm font-medium transition-colors ${
-                  pathname === link.href ? "text-gold" : "text-muted"
+                  active ? "text-gold" : "text-muted"
                 }`}
               >
                 {link.label}
               </Link>
+                );
+              })()
             ))}
           </nav>
         </motion.div>

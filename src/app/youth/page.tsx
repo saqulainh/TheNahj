@@ -15,22 +15,30 @@ export default async function YouthPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
+      <nav className="mb-4 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted">
+        <Link href="/" className="transition-colors hover:text-gold">Home</Link>
+        <span>→</span>
+        <span className="text-gold-light">Youth Corner</span>
+      </nav>
+
       <h1 className="text-3xl font-medium text-foreground md:text-4xl">Youth Corner</h1>
       <p className="mt-4 max-w-xl text-muted">
         Relatable reflection for the struggles Gen Z actually faces — with dignity and wisdom.
       </p>
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-10 rounded-2xl border border-border/30 bg-surface/45 p-4">
+        <p className="mb-3 text-[11px] uppercase tracking-[0.18em] text-gold-muted">Topics</p>
+        <div className="flex gap-2 overflow-x-auto pb-1">
         {youthTopics.map((topic) => (
           <Link
             key={topic.slug}
             href={`/youth/${topic.slug}`}
-            className="rounded-xl border border-border/80 bg-surface p-6 transition-all hover:border-gold/30"
+            className="whitespace-nowrap rounded-full border border-border/80 bg-background/70 px-4 py-2 text-xs text-foreground transition-all hover:border-gold/30"
           >
-            <h2 className="font-medium text-foreground">{topic.title}</h2>
-            <p className="mt-2 text-sm text-muted">{topic.description}</p>
+            {topic.title}
           </Link>
         ))}
+        </div>
       </div>
 
       <Link

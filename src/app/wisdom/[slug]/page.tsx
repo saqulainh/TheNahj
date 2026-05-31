@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ from?: string; theme?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -29,10 +30,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ReflectionPage({ params }: PageProps) {
+export default async function ReflectionPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const { from, theme } = await searchParams;
   const article = await getUnifiedArticleBySlug(slug);
   if (!article) notFound();
+
+  const safeFrom = from && from.startsWith("/") ? from : "/wisdom";
+  const backLabel = safeFrom.startsWith("/student")
+    ? "Student Corner"
+    : safeFrom.startsWith("/youth")
+    ? "Youth Corner"
+    : safeFrom.startsWith("/topics")
+    ? "Life Themes"
+    : "Wisdom Repository";
 
   const related = await getRelatedUnifiedArticles(article.slug, article.category, article.tags ?? []);
   const primaryTopic = article.tags?.[0] || article.category;
@@ -80,9 +91,25 @@ export default async function ReflectionPage({ params }: PageProps) {
 
         <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-16 md:px-6 md:py-24 lg:grid-cols-[minmax(0,1.08fr)_minmax(300px,0.92fr)] lg:items-end">
           <div className="space-y-7">
-            <Link href="/wisdom" className="inline-flex items-center text-xs uppercase tracking-[0.25em] text-secondary transition-colors hover:text-gold">
-              ← Wisdom Repository
+            <Link href={safeFrom} className="inline-flex items-center text-xs uppercase tracking-[0.25em] text-secondary transition-colors hover:text-gold">
+              ← {backLabel}
             </Link>
+
+            <nav className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted">
+              <Link href="/" className="transition-colors hover:text-gold">Home</Link>
+              <span>→</span>
+              <Link href="/wisdom" className="transition-colors hover:text-gold">Imam Ali Says</Link>
+              {(theme || article.tags?.[0]) && (
+                <>
+                  <span>→</span>
+                  <Link href={`/topics/${encodeURIComponent(theme || article.tags?.[0] || "")}`} className="transition-colors hover:text-gold">
+                    {theme || article.tags?.[0]}
+                  </Link>
+                </>
+              )}
+              <span>→</span>
+              <span className="text-gold-light">{article.title}</span>
+            </nav>
 
             <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.22em] text-gold-light">
               <span className="rounded-full border border-gold/25 bg-gold/10 px-3 py-1">{article.category}</span>

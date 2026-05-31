@@ -1,6 +1,54 @@
 import type { Article, Category, Wisdom } from "@/lib/types";
 import { isSupabaseConfigured, supabase } from "./supabase";
 
+const LIFE_THEME_SEED: Category[] = [
+  { id: "self-discipline", name: "Self Discipline", slug: "self-discipline" },
+  { id: "leadership", name: "Leadership", slug: "leadership" },
+  { id: "justice", name: "Justice", slug: "justice" },
+  { id: "knowledge", name: "Knowledge", slug: "knowledge" },
+  { id: "patience", name: "Patience", slug: "patience" },
+  { id: "character", name: "Character", slug: "character" },
+  { id: "purpose", name: "Purpose", slug: "purpose" },
+  { id: "relationships", name: "Relationships", slug: "relationships" },
+  { id: "time-management", name: "Time Management", slug: "time-management" },
+  { id: "spiritual-growth", name: "Spiritual Growth", slug: "spiritual-growth" },
+];
+
+const THEME_ALIAS: Record<string, string> = {
+  "discipline": "self-discipline",
+  "self-control": "self-discipline",
+  "leadership": "leadership",
+  "justice": "justice",
+  "knowledge": "knowledge",
+  "study": "knowledge",
+  "patience": "patience",
+  "character": "character",
+  "purpose": "purpose",
+  "friendship": "relationships",
+  "relationships": "relationships",
+  "relationship": "relationships",
+  "time": "time-management",
+  "focus": "time-management",
+  "productivity": "time-management",
+  "spirituality": "spiritual-growth",
+  "spiritual": "spiritual-growth",
+};
+
+function normalizeSlug(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function resolveThemeFromTags(tags: string[]): Category {
+  for (const tag of tags) {
+    const mapped = THEME_ALIAS[normalizeSlug(tag)];
+    if (mapped) {
+      const found = LIFE_THEME_SEED.find((t) => t.slug === mapped);
+      if (found) return found;
+    }
+  }
+  return LIFE_THEME_SEED[0] as Category;
+}
+
 /**
  * Dynamically extract and generate categories/topics list.
  * Seed categories are loaded from the database, and then all distinct tags 
@@ -15,36 +63,15 @@ export async function getCategories(): Promise<Category[]> {
     }
   }
 
-  // Dynamically extract any custom topics/tags from published articles
-  if (isSupabaseConfigured && supabase) {
-    try {
-      const { data, error } = await supabase
-        .from("articles_unified")
-        .select("tags")
-        .eq("status", "published");
-      if (!error && data?.length) {
-        const allTags = data
-          .flatMap((row: { tags: string[] | null }) => row.tags ?? [])
-          .map((t: string) => t.trim())
-          .filter(Boolean);
-        const uniqueTags = Array.from(new Set(allTags));
-        uniqueTags.forEach((tag) => {
-          const slug = tag.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-          if (slug && !dbCategories.some((c) => c.slug === slug || c.name.toLowerCase() === tag.toLowerCase())) {
-            dbCategories.push({
-              id: slug,
-              name: tag,
-              slug: slug,
-            });
-          }
-        });
-      }
-    } catch (e) {
-      console.error("Error dynamically loading categories:", e);
-    }
-  }
+  // Keep life themes stable; do not replace master themes with individual post tags.
+  const merged = LIFE_THEME_SEED.map((theme) => {
+    const dbMatch = dbCategories.find((c) => normalizeSlug(c.slug) === theme.slug || normalizeSlug(c.name) === theme.slug);
+    return dbMatch
+      ? { ...dbMatch, name: theme.name, slug: theme.slug, id: dbMatch.id || theme.id }
+      : theme;
+  });
 
-  return dbCategories;
+  return merged;
 }
 
 /**
@@ -66,19 +93,8 @@ export async function getAllWisdom(): Promise<Wisdom[]> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return data.map((row: any) => {
           const tags = row.tags ?? [];
-          // Try to match tags with a category in dbCategories
-          const matchedCategory = dbCategories.find(c =>
-            tags.some((tag: string) => tag.toLowerCase() === c.name.toLowerCase() || tag.toLowerCase() === c.slug.toLowerCase())
-          );
-          
-          // If not matched, fallback to first tag or General
-          const firstTag = tags[0] || "General";
-          const firstTagSlug = firstTag.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-          const categoryObj = matchedCategory || {
-            id: firstTagSlug || "general",
-            name: firstTag,
-            slug: firstTagSlug || "general"
-          };
+          const resolved = resolveThemeFromTags(tags);
+          const categoryObj = dbCategories.find((c) => c.slug === resolved.slug) || resolved;
 
           // Parse reflection questions and action steps from newline-separated texts
           const reflectionQuestions = row.reflection_questions 
@@ -106,7 +122,7 @@ export async function getAllWisdom(): Promise<Wisdom[]> {
             audio_url: row.sidebar_banner || undefined,
             featured_image: row.featured_image || row.hero_image || undefined,
             tags: tags,
-            corner_topics: tags.map((t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")),
+            corner_topics: tags.map((t: string) => normalizeSlug(t)),
             related_slugs: [],
             featured: row.featured || false,
             trending: row.featured || false,

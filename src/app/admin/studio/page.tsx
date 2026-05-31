@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Save, Loader2, RefreshCw, History, RotateCcw, Bookmark, Share2 } from "lucide-react";
 import { wisdomArticleSchema, unifiedCategories } from "@/lib/content-schema";
-import { useContentStudioStore } from "@/lib/stores/contentStudioStore";
+import { createInitialDraft, useContentStudioStore } from "@/lib/stores/contentStudioStore";
 import {
   SectionShell, TextField, TextAreaField,
   NarrationsManager, MediaPickerField, WisdomCardPreview,
@@ -63,6 +63,18 @@ export default function ContentStudioPage() {
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftSyncKeyRef = useRef<string>("");
   const setDraftRef = useRef(setDraft);
+  const isHydratingRef = useRef(false);
+
+  const buildFreshFormValues = (category?: string) => {
+    const nextCategory = unifiedCategories.includes(category as any) ? category : "Imam Ali Says";
+    const fresh = createInitialDraft(nextCategory as string);
+    return {
+      ...fresh,
+      category: nextCategory as any,
+      layout_type: "wisdom-editorial",
+      tagsInput: "",
+    } as any;
+  };
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as any,
@@ -126,10 +138,66 @@ export default function ContentStudioPage() {
     }
   }, [form, searchParams]);
 
+  // Force a clean editor state when explicitly opening a new post.
+  useEffect(() => {
+    const isNew = searchParams.get("new") === "1";
+    if (!isNew) return;
+
+    const cat = searchParams.get("category") || "Imam Ali Says";
+    const nextValues = buildFreshFormValues(cat);
+
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    resetDraft();
+    setDraft({ category: nextValues.category, tags: [] } as any);
+    draftSyncKeyRef.current = "";
+    form.reset(nextValues);
+    setIsDirty(false);
+    toast.success("Fresh editor ready", { description: "New post form has been reset." });
+  }, [form, resetDraft, searchParams, setDraft]);
+
+  // When opening studio with ?slug=..., hydrate form from that article.
+  useEffect(() => {
+    const slug = searchParams.get("slug");
+    if (!slug) return;
+
+    let cancelled = false;
+    isHydratingRef.current = true;
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/content?slug=${encodeURIComponent(slug)}`);
+        const json = await res.json();
+        const item = (json.items || [])[0];
+        if (!res.ok || !item || cancelled) return;
+
+        const nextValues = {
+          ...buildFreshFormValues(item.category),
+          ...item,
+          tagsInput: (item.tags || []).join(", "),
+        };
+
+        draftSyncKeyRef.current = "";
+        form.reset(nextValues as any);
+        setDraft({ ...item, tags: item.tags || [] } as any);
+        setIsDirty(false);
+      } catch (e) {
+        // Ignore load errors and keep current draft state.
+      } finally {
+        isHydratingRef.current = false;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      isHydratingRef.current = false;
+    };
+  }, [form, searchParams, setDraft]);
+
   /* ── Auto-sync draft to store + autosave ── */
   useEffect(() => {
     const sub = form.watch((next) => {
       if (!next) return;
+      if (isHydratingRef.current) return;
       const key = JSON.stringify(next);
       if (key !== draftSyncKeyRef.current) {
         draftSyncKeyRef.current = key;
@@ -180,7 +248,16 @@ export default function ContentStudioPage() {
           <p className="mt-2 text-sm text-muted">Structured content engine for multilingual wisdom publishing.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => { resetDraft(); form.reset(); toast.success("Draft cleared"); }}
+          <button type="button" onClick={() => {
+            const nextValues = buildFreshFormValues(values.category);
+            if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+            resetDraft();
+            setDraft({ category: nextValues.category, tags: [] } as any);
+            draftSyncKeyRef.current = "";
+            form.reset(nextValues);
+            setIsDirty(false);
+            toast.success("Draft cleared");
+          }}
             className="inline-flex items-center gap-2 rounded-xl border border-border/40 bg-surface px-3 py-2 text-xs text-muted hover:text-foreground">
             <RotateCcw size={13} /> New
           </button>

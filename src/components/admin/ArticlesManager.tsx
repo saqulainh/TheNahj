@@ -36,7 +36,7 @@ interface ArticleItem {
 }
 
 interface ArticlesManagerProps {
-  categoryFilter?: string;
+  categoryFilter?: string | string[];
   title: string;
   description: string;
 }
@@ -50,8 +50,9 @@ export function ArticlesManager({ categoryFilter, title, description }: Articles
   const { data: articles = [], isLoading, error } = useQuery({
     queryKey: ["content-list", categoryFilter],
     queryFn: async () => {
-      const url = categoryFilter 
-        ? `/api/content?category=${encodeURIComponent(categoryFilter)}`
+      const categoryQuery = typeof categoryFilter === "string" ? categoryFilter : "";
+      const url = categoryQuery
+        ? `/api/content?category=${encodeURIComponent(categoryQuery)}`
         : "/api/content";
       const res = await fetch(url);
       const json = await res.json();
@@ -81,6 +82,9 @@ export function ArticlesManager({ categoryFilter, title, description }: Articles
 
   const filteredArticles = useMemo(() => {
     return articles.filter((item) => {
+      const matchesCategory = Array.isArray(categoryFilter)
+        ? categoryFilter.includes(item.category)
+        : !categoryFilter || item.category === categoryFilter;
       const matchesSearch = 
         item.title.toLowerCase().includes(search.toLowerCase()) ||
         item.slug.toLowerCase().includes(search.toLowerCase()) ||
@@ -88,13 +92,14 @@ export function ArticlesManager({ categoryFilter, title, description }: Articles
       
       const matchesStatus = statusFilter === "all" || item.status === statusFilter;
       
-      return matchesSearch && matchesStatus;
+      return matchesCategory && matchesSearch && matchesStatus;
     });
-  }, [articles, search, statusFilter]);
+  }, [articles, categoryFilter, search, statusFilter]);
 
-  const studioLink = categoryFilter
-    ? `/admin/studio?category=${encodeURIComponent(categoryFilter)}`
-    : "/admin/studio";
+  const studioCategory = Array.isArray(categoryFilter) ? categoryFilter[0] : categoryFilter;
+  const studioLink = studioCategory
+    ? `/admin/studio?new=1&category=${encodeURIComponent(studioCategory)}`
+    : "/admin/studio?new=1";
 
   const getStatusColor = (status: string) => {
     switch (status) {
