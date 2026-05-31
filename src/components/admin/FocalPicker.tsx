@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
+import ImageRole from "../ui/ImageRole";
 
 export default function FocalPicker({ src, value, onChange }: {
   src?: string | null;
@@ -27,8 +28,8 @@ export default function FocalPicker({ src, value, onChange }: {
 
   return (
     <div className="mt-2">
-      <div ref={wrapperRef} className="relative w-full overflow-hidden rounded-lg border border-border/20" style={{ height: 160 }}>
-        <img ref={imgRef} src={src} alt="Focal preview" onClick={handleClick} className="h-full w-full object-cover cursor-crosshair" />
+      <div ref={wrapperRef} className="relative w-full overflow-hidden rounded-lg border border-border/20" style={{ height: 160 }} onClick={handleClick}>
+        <ImageRole src={src} alt="Focal preview" className="h-full w-full" forceNative getImgRef={(el) => { imgRef.current = el; }} />
         {pos && (
           <div style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
             className="pointer-events-none absolute translate-x-[-50%] translate-y-[-50%] flex items-center justify-center">
