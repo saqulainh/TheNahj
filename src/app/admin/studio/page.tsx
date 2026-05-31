@@ -45,6 +45,35 @@ function estimateReadingTime(vals: FormValues): number {
   return Math.max(1, Math.round(words / 180));
 }
 
+function getPublishReadinessIssues(vals: FormValues): string[] {
+  const issues: string[] = [];
+  const structuredCategory = ["Imam Ali Says", "Student Corner", "Youth Corner", "Nahjul Balagha"].includes(vals.category || "");
+
+  if (!vals.title?.trim()) issues.push("Title is required");
+  if (!vals.slug?.trim()) issues.push("Slug is required");
+  if (!vals.excerpt?.trim()) issues.push("Excerpt is required");
+
+  if (structuredCategory) {
+    if (!vals.theme?.trim()) issues.push("Theme mapping is required");
+    if (!vals.topic?.trim()) issues.push("Topic mapping is required");
+  }
+
+  if (!vals.arabic_text?.trim()) issues.push("Arabic text is required");
+  if (!vals.urdu_translation?.trim()) issues.push("Urdu translation is required");
+  if (!vals.english_translation?.trim()) issues.push("English translation is required");
+  if (!vals.source?.trim()) issues.push("Source is required");
+  if (!vals.main_explanation?.trim()) issues.push("Main explanation is required");
+  if (!vals.current_issues?.trim()) issues.push("Current issues is required");
+  if (!vals.reflection_questions?.trim()) issues.push("Reflection questions are required");
+  if (!vals.action_steps?.trim()) issues.push("Action steps are required");
+  if (!vals.summary?.trim()) issues.push("Summary is required");
+
+  if (!vals.hero_image?.trim()) issues.push("Hero image is required");
+  if (!vals.featured_image?.trim()) issues.push("Card background image is required");
+
+  return issues;
+}
+
 async function saveContent(payload: FormValues) {
   const res = await fetch("/api/content", {
     method: "POST", headers: { "Content-Type": "application/json" },
@@ -225,6 +254,16 @@ export default function ContentStudioPage() {
 
   const handlePublish = form.handleSubmit(
     (input) => {
+      if (input.status === "published") {
+        const issues = getPublishReadinessIssues(input);
+        if (issues.length > 0) {
+          toast.error("Cannot publish yet", {
+            description: `Resolve required items: ${issues.slice(0, 3).join(", ")}${issues.length > 3 ? "..." : ""}`,
+          });
+          return;
+        }
+      }
+
       contentMutation.mutate({
         ...input,
         tags: (input.tagsInput || "").split(",").map((t: string) => t.trim()).filter(Boolean),
@@ -242,6 +281,8 @@ export default function ContentStudioPage() {
   const structuredCategory = ["Imam Ali Says", "Student Corner", "Youth Corner", "Nahjul Balagha"].includes(values.category || "");
   const selectedTheme = (values.theme || "") as string;
   const selectedThemeTopics = selectedTheme ? (THEME_TOPICS[selectedTheme] || []) : [];
+  const publishReadinessIssues = useMemo(() => getPublishReadinessIssues(values as FormValues), [values]);
+  const publishBlocked = values.status === "published" && publishReadinessIssues.length > 0;
 
   return (
     <div className="space-y-6">
@@ -269,10 +310,10 @@ export default function ContentStudioPage() {
             className="inline-flex items-center gap-2 rounded-xl border border-border/40 bg-surface px-3 py-2 text-xs text-muted hover:text-foreground">
             <RefreshCw size={13} /> Refresh
           </button>
-          <button type="submit" form="wisdom-studio-form" disabled={contentMutation.isPending}
+          <button type="submit" form="wisdom-studio-form" disabled={contentMutation.isPending || publishBlocked}
             className="inline-flex items-center gap-2 rounded-xl bg-gold/20 px-4 py-2 text-xs font-semibold text-gold-light hover:bg-gold/30 disabled:opacity-60">
             {contentMutation.isPending ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
-            {contentMutation.isPending ? "Saving..." : "Publish"}
+            {contentMutation.isPending ? "Saving..." : publishBlocked ? "Resolve Checklist" : "Publish"}
           </button>
         </div>
       </div>
@@ -281,6 +322,31 @@ export default function ContentStudioPage() {
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         {/* ── LEFT: Editor Sections ── */}
         <form id="wisdom-studio-form" onSubmit={handlePublish} className="space-y-4">
+
+          <SectionShell number={0} title="Publish Readiness" subtitle="Mandatory fields before publishing" defaultOpen>
+            <div className="rounded-xl border border-border/30 bg-background/50 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted">Checklist status</p>
+                <span className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] ${publishReadinessIssues.length === 0 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-amber-500/30 bg-amber-500/10 text-amber-400"}`}>
+                  {publishReadinessIssues.length === 0 ? "Ready" : `${publishReadinessIssues.length} pending`}
+                </span>
+              </div>
+
+              {publishReadinessIssues.length === 0 ? (
+                <p className="text-sm text-emerald-400">All mandatory fields are complete for publishing.</p>
+              ) : (
+                <ul className="space-y-2 text-sm text-muted">
+                  {publishReadinessIssues.map((issue) => (
+                    <li key={issue} className="rounded-lg border border-border/20 bg-surface/60 px-3 py-2">• {issue}</li>
+                  ))}
+                </ul>
+              )}
+
+              <p className="text-[11px] text-muted/80">
+                Draft and scheduled saves are allowed. Direct publish is blocked until required fields are complete.
+              </p>
+            </div>
+          </SectionShell>
 
           {/* Section 1: Basic Information */}
           <SectionShell number={1} title="Basic Information" subtitle="Title, slug, category, status, and tags" defaultOpen>
