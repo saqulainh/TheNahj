@@ -89,10 +89,34 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const payload = articlePayloadSchema.parse({
+
+    function normalizePoint(v: any) {
+      if (v === null || v === undefined) return null;
+      // Accept JSON-stringified objects too
+      if (typeof v === "string") {
+        try {
+          v = JSON.parse(v);
+        } catch (e) {
+          return null;
+        }
+      }
+      if (typeof v === "object") {
+        const x = Number((v as any).x);
+        const y = Number((v as any).y);
+        if (Number.isFinite(x) && Number.isFinite(y)) return { x, y };
+      }
+      return null;
+    }
+
+    const normalized = {
       ...body,
+      hero_focal_point: normalizePoint(body.hero_focal_point),
+      featured_focal_point: normalizePoint(body.featured_focal_point),
+      sidebar_focal_point: normalizePoint(body.sidebar_focal_point),
       slug: normalizeSlug(body.slug || body.title || "article"),
-    });
+    };
+
+    const payload = articlePayloadSchema.parse(normalized);
 
     const record = {
       ...payload,
