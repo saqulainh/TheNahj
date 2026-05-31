@@ -215,10 +215,14 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-muted">No practice data in this range yet.</p>
               ) : (
                 topPracticedArticles.map((item) => (
-                  <div key={item.articleSlug} className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-2.5">
+                  <Link
+                    key={item.articleSlug}
+                    href={`/admin/studio?slug=${encodeURIComponent(item.articleSlug)}`}
+                    className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-2.5 transition-colors hover:border-gold/40 hover:bg-gold/5"
+                  >
                     <span className="truncate pr-3 text-sm text-foreground/90">{item.articleTitle}</span>
                     <span className="shrink-0 text-xs text-muted">{item.events} events · {item.completedSessions} completed</span>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
