@@ -22,6 +22,17 @@ const recentActivity = [
 
 type ReflectionRange = "24h" | "7d" | "30d";
 
+function formatDelta(value: number | null) {
+  if (value === null) return "No baseline";
+  if (value === 0) return "0% vs previous";
+  return `${value > 0 ? "+" : ""}${value}% vs previous`;
+}
+
+function deltaClassName(value: number | null) {
+  if (value === null || value === 0) return "text-muted";
+  return value > 0 ? "text-emerald-400" : "text-red-400";
+}
+
 export default function AdminDashboardPage() {
   const [reflectionRange, setReflectionRange] = useState<ReflectionRange>("7d");
 
@@ -50,6 +61,12 @@ export default function AdminDashboardPage() {
         uniqueArticles: number;
         completionRatePct: number;
         range: ReflectionRange;
+        trend: {
+          periodEventsDeltaPct: number | null;
+          completedSessionsDeltaPct: number | null;
+          uniqueArticlesDeltaPct: number | null;
+          completionRateDeltaPct: number | null;
+        };
       };
     },
     retry: 1,
@@ -134,18 +151,30 @@ export default function AdminDashboardPage() {
             <div className="rounded-lg border border-border/60 bg-background p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-muted">Events ({reflectionSummary?.range ?? reflectionRange})</p>
               <p className="mt-2 text-2xl font-medium text-foreground">{reflectionSummary?.periodEvents ?? 0}</p>
+              <p className={`mt-1 text-xs ${deltaClassName(reflectionSummary?.trend.periodEventsDeltaPct ?? null)}`}>
+                {formatDelta(reflectionSummary?.trend.periodEventsDeltaPct ?? null)}
+              </p>
             </div>
             <div className="rounded-lg border border-border/60 bg-background p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-muted">Completed Sessions</p>
               <p className="mt-2 text-2xl font-medium text-foreground">{reflectionSummary?.completedSessions ?? 0}</p>
+              <p className={`mt-1 text-xs ${deltaClassName(reflectionSummary?.trend.completedSessionsDeltaPct ?? null)}`}>
+                {formatDelta(reflectionSummary?.trend.completedSessionsDeltaPct ?? null)}
+              </p>
             </div>
             <div className="rounded-lg border border-border/60 bg-background p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-muted">Articles Practiced</p>
               <p className="mt-2 text-2xl font-medium text-foreground">{reflectionSummary?.uniqueArticles ?? 0}</p>
+              <p className={`mt-1 text-xs ${deltaClassName(reflectionSummary?.trend.uniqueArticlesDeltaPct ?? null)}`}>
+                {formatDelta(reflectionSummary?.trend.uniqueArticlesDeltaPct ?? null)}
+              </p>
             </div>
             <div className="rounded-lg border border-border/60 bg-background p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-muted">Completion Rate</p>
               <p className="mt-2 text-2xl font-medium text-foreground">{reflectionSummary?.completionRatePct ?? 0}%</p>
+              <p className={`mt-1 text-xs ${deltaClassName(reflectionSummary?.trend.completionRateDeltaPct ?? null)}`}>
+                {formatDelta(reflectionSummary?.trend.completionRateDeltaPct ?? null)}
+              </p>
             </div>
           </div>
         </div>

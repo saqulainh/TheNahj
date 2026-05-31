@@ -30,6 +30,27 @@ function parseRangeHours(url: URL): { hours: number; label: "24h" | "7d" | "30d"
   return { hours: 7 * 24, label: "7d" };
 }
 
+function calculateSummary(rows: Array<{ event_type: string; article_slug: string | null }>) {
+  const completedSessions = rows.filter((row) => row.event_type === "session_completed").length;
+  const uniqueArticles = new Set(rows.map((row) => row.article_slug).filter(Boolean)).size;
+  const completionRatePct = rows.length > 0 ? Math.round((completedSessions / rows.length) * 100) : 0;
+
+  return {
+    periodEvents: rows.length,
+    completedSessions,
+    uniqueArticles,
+    completionRatePct,
+  };
+}
+
+function calculateDeltaPct(current: number, previous: number): number | null {
+  if (previous === 0) {
+    if (current === 0) return 0;
+    return null;
+  }
+  return Math.round(((current - previous) / previous) * 100);
+}
+
 export async function POST(request: Request) {
   const limit = await consumeRateLimit({
     key: `analytics-reflection:${getRequestClientIp(request)}`,
@@ -98,16 +119,36 @@ export async function GET(request: Request) {
         uniqueArticles: 0,
         completionRatePct: 0,
         range: range.label,
+        trend: {
+          periodEventsDeltaPct: 0,
+          completedSessionsDeltaPct: 0,
+          uniqueArticlesDeltaPct: 0,
+          completionRateDeltaPct: 0,
+        },
       },
       source: "fallback",
     });
   }
 
-  const sinceIso = new Date(Date.now() - range.hours * 60 * 60 * 1000).toISOString();
-  const { data, error } = await supabase
-    .from("reflection_analytics_events")
-    .select("event_type,article_slug")
-    .gte("created_at", sinceIso);
+  const now = Date.now();
+  const currentStart = new Date(now - range.hours * 60 * 60 * 1000).toISOString();
+  const previousStart = new Date(now - range.hours * 2 * 60 * 60 * 1000).toISOString();
+  const currentEnd = new Date(now).toISOString();
+
+  const [currentResult, previousResult] = await Promise.all([
+    supabase
+      .from("reflection_analytics_events")
+      .select("event_type,article_slug")
+      .gte("created_at", currentStart)
+      .lte("created_at", currentEnd),
+    supabase
+      .from("reflection_analytics_events")
+      .select("event_type,article_slug")
+      .gte("created_at", previousStart)
+      .lt("created_at", currentStart),
+  ]);
+
+  const error = currentResult.error || previousResult.error;
 
   if (error) {
     if (tableMissing(error.message, error.code)) {
@@ -119,6 +160,12 @@ export async function GET(request: Request) {
           uniqueArticles: 0,
           completionRatePct: 0,
           range: range.label,
+          trend: {
+            periodEventsDeltaPct: 0,
+            completedSessionsDeltaPct: 0,
+            uniqueArticlesDeltaPct: 0,
+            completionRateDeltaPct: 0,
+          },
         },
         source: "table-missing",
       });
@@ -126,19 +173,20 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 
-  const rows = data || [];
-  const completedSessions = rows.filter((row) => row.event_type === "session_completed").length;
-  const uniqueArticles = new Set(rows.map((row) => row.article_slug).filter(Boolean)).size;
-  const completionRatePct = rows.length > 0 ? Math.round((completedSessions / rows.length) * 100) : 0;
+  const currentSummary = calculateSummary(currentResult.data || []);
+  const previousSummary = calculateSummary(previousResult.data || []);
 
   return NextResponse.json({
     success: true,
     summary: {
-      periodEvents: rows.length,
-      completedSessions,
-      uniqueArticles,
-      completionRatePct,
+      ...currentSummary,
       range: range.label,
+      trend: {
+        periodEventsDeltaPct: calculateDeltaPct(currentSummary.periodEvents, previousSummary.periodEvents),
+        completedSessionsDeltaPct: calculateDeltaPct(currentSummary.completedSessions, previousSummary.completedSessions),
+        uniqueArticlesDeltaPct: calculateDeltaPct(currentSummary.uniqueArticles, previousSummary.uniqueArticles),
+        completionRateDeltaPct: calculateDeltaPct(currentSummary.completionRatePct, previousSummary.completionRatePct),
+      },
     },
     source: "supabase",
   });
