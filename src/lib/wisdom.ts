@@ -59,7 +59,7 @@ export async function getAllWisdom(): Promise<Wisdom[]> {
         .from("articles_unified")
         .select("*")
         .eq("status", "published")
-        .in("category", ["Imam Ali Says", "Nahjul Balagha", "Audio Reflections"])
+        .in("category", ["Imam Ali Says", "Nahjul Balagha", "Audio Reflections", "Student Corner", "Youth Corner"])
         .order("published_at", { ascending: false });
 
       if (!error && data?.length) {
@@ -177,7 +177,7 @@ export async function getRelatedWisdom(wisdom: Wisdom): Promise<Wisdom[]> {
 }
 
 /**
- * Fetch all published articles (Student Corner, Youth Corner, Articles).
+ * Fetch all published articles (strictly in Articles category).
  */
 export async function getAllArticles(): Promise<Article[]> {
   if (isSupabaseConfigured && supabase) {
@@ -186,7 +186,7 @@ export async function getAllArticles(): Promise<Article[]> {
         .from("articles_unified")
         .select("*")
         .eq("status", "published")
-        .in("category", ["Student Corner", "Youth Corner", "Articles"])
+        .in("category", ["Articles"])
         .order("published_at", { ascending: false });
 
       if (!error && data?.length) {
