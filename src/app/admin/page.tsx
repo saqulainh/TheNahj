@@ -61,6 +61,7 @@ export default function AdminDashboardPage() {
         uniqueArticles: number;
         completionRatePct: number;
         range: ReflectionRange;
+        sparklineEvents: number[];
         trend: {
           periodEventsDeltaPct: number | null;
           completedSessionsDeltaPct: number | null;
@@ -71,6 +72,9 @@ export default function AdminDashboardPage() {
     },
     retry: 1,
   });
+
+  const sparklineEvents = reflectionSummary?.sparklineEvents ?? [0, 0, 0, 0, 0, 0, 0];
+  const sparklineMax = Math.max(1, ...sparklineEvents);
 
   return (
     <div className="space-y-8">
@@ -175,6 +179,26 @@ export default function AdminDashboardPage() {
               <p className={`mt-1 text-xs ${deltaClassName(reflectionSummary?.trend.completionRateDeltaPct ?? null)}`}>
                 {formatDelta(reflectionSummary?.trend.completionRateDeltaPct ?? null)}
               </p>
+            </div>
+          </div>
+          <div className="border-t border-border/70 px-6 pb-6 pt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs uppercase tracking-[0.14em] text-muted">Event Trend</p>
+              <p className="text-[11px] text-muted">7-point sparkline</p>
+            </div>
+            <div className="flex h-14 items-end gap-1.5">
+              {sparklineEvents.map((value, index) => {
+                const normalized = value / sparklineMax;
+                const height = Math.max(8, Math.round(normalized * 48));
+                return (
+                  <div
+                    key={`spark-${index}`}
+                    className="w-full rounded-sm bg-gold/60"
+                    style={{ height }}
+                    title={`Bucket ${index + 1}: ${value} events`}
+                  />
+                );
+              })}
             </div>
           </div>
         </div>

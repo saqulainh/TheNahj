@@ -51,6 +51,27 @@ function calculateDeltaPct(current: number, previous: number): number | null {
   return Math.round(((current - previous) / previous) * 100);
 }
 
+function buildSparklineEvents(rows: Array<{ created_at?: string | null }>, startMs: number, rangeMs: number, bucketCount = 7) {
+  const buckets = Array.from({ length: bucketCount }, () => 0);
+  const bucketSizeMs = rangeMs / bucketCount;
+
+  rows.forEach((row) => {
+    if (!row.created_at) return;
+    const timestamp = new Date(row.created_at).getTime();
+    if (!Number.isFinite(timestamp)) return;
+    const relative = timestamp - startMs;
+    if (relative < 0 || relative > rangeMs) return;
+    const index = Math.min(bucketCount - 1, Math.max(0, Math.floor(relative / bucketSizeMs)));
+    buckets[index] += 1;
+  });
+
+  return buckets;
+}
+
+function emptySparklineEvents() {
+  return Array.from({ length: 7 }, () => 0);
+}
+
 export async function POST(request: Request) {
   const limit = await consumeRateLimit({
     key: `analytics-reflection:${getRequestClientIp(request)}`,
@@ -125,12 +146,15 @@ export async function GET(request: Request) {
           uniqueArticlesDeltaPct: 0,
           completionRateDeltaPct: 0,
         },
+        sparklineEvents: emptySparklineEvents(),
       },
       source: "fallback",
     });
   }
 
   const now = Date.now();
+  const rangeMs = range.hours * 60 * 60 * 1000;
+  const currentStartMs = now - rangeMs;
   const currentStart = new Date(now - range.hours * 60 * 60 * 1000).toISOString();
   const previousStart = new Date(now - range.hours * 2 * 60 * 60 * 1000).toISOString();
   const currentEnd = new Date(now).toISOString();
@@ -138,7 +162,7 @@ export async function GET(request: Request) {
   const [currentResult, previousResult] = await Promise.all([
     supabase
       .from("reflection_analytics_events")
-      .select("event_type,article_slug")
+      .select("event_type,article_slug,created_at")
       .gte("created_at", currentStart)
       .lte("created_at", currentEnd),
     supabase
@@ -166,6 +190,7 @@ export async function GET(request: Request) {
             uniqueArticlesDeltaPct: 0,
             completionRateDeltaPct: 0,
           },
+          sparklineEvents: emptySparklineEvents(),
         },
         source: "table-missing",
       });
@@ -175,6 +200,7 @@ export async function GET(request: Request) {
 
   const currentSummary = calculateSummary(currentResult.data || []);
   const previousSummary = calculateSummary(previousResult.data || []);
+  const sparklineEvents = buildSparklineEvents(currentResult.data || [], currentStartMs, rangeMs);
 
   return NextResponse.json({
     success: true,
@@ -187,6 +213,7 @@ export async function GET(request: Request) {
         uniqueArticlesDeltaPct: calculateDeltaPct(currentSummary.uniqueArticles, previousSummary.uniqueArticles),
         completionRateDeltaPct: calculateDeltaPct(currentSummary.completionRatePct, previousSummary.completionRatePct),
       },
+      sparklineEvents,
     },
     source: "supabase",
   });
