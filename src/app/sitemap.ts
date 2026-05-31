@@ -1,11 +1,14 @@
 import type { MetadataRoute } from "next";
-import { studentTopics, youthTopics, platformTopics, wisdomItems } from "@/data/mock";
-import { getCategories } from "@/lib/wisdom";
+import { studentTopics, youthTopics, platformTopics } from "@/data/mock";
+import { getCategories, getAllWisdom } from "@/lib/wisdom";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://thenahj.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const categories = await getCategories();
+  const [categories, wisdomItems] = await Promise.all([
+    getCategories(),
+    getAllWisdom(),
+  ]);
 
   const staticRoutes = [
     "",
@@ -51,3 +54,4 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [...staticRoutes, ...wisdomRoutes, ...topicRoutes];
 }
+

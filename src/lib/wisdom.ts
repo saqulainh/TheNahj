@@ -1,8 +1,3 @@
-import {
-  articles as mockArticles,
-  categories as mockCategories,
-  wisdomItems as mockWisdom,
-} from "@/data/mock";
 import type { Article, Category, Wisdom } from "@/lib/types";
 import { isSupabaseConfigured, supabase } from "./supabase";
 
@@ -16,7 +11,7 @@ export async function getCategories(): Promise<Category[]> {
     const { data, error } = await supabase.from("categories").select("*").order("name");
     if (!error && data?.length) return data as Category[];
   }
-  return mockCategories;
+  return [];
 }
 
 export async function getAllWisdom(): Promise<Wisdom[]> {
@@ -32,7 +27,7 @@ export async function getAllWisdom(): Promise<Wisdom[]> {
     }
   }
 
-  return mockWisdom.map((w) => attachCategory(w, categories));
+  return [];
 }
 
 export async function getWisdomBySlug(slug: string): Promise<Wisdom | null> {
@@ -79,7 +74,7 @@ export async function getAllArticles(): Promise<Article[]> {
       .order("created_at", { ascending: false });
     if (!error && data?.length) return data as Article[];
   }
-  return mockArticles;
+  return [];
 }
 
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
