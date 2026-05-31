@@ -7,14 +7,6 @@ export const unifiedCategories = [
   "Nahjul Balagha",
   "Articles",
   "Audio Reflections",
-  "Self Discipline",
-  "Relationships",
-  "Focus",
-  "Productivity",
-  "Modern Issues",
-  "Reflection",
-  "Knowledge",
-  "Spirituality",
 ] as const;
 
 /* ─────────────────────────────────────────────

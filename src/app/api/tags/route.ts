@@ -1,17 +1,80 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
+// Smart default fallbacks for each category page to guide the user's initial choices.
+const defaultTagsByCategory: Record<string, string[]> = {
+  "Student Corner": [
+    "Self Discipline",
+    "Focus",
+    "Productivity",
+    "Exam Anxiety",
+    "Time Management",
+    "Social Media Addiction",
+    "Career Pressure",
+    "Laziness"
+  ],
+  "Youth Corner": [
+    "Relationships",
+    "Modern Issues",
+    "Identity Crisis",
+    "Validation Addiction",
+    "Overthinking",
+    "Purpose",
+    "Self Respect",
+    "Emotional Discipline",
+    "Haram Relationships"
+  ],
+  "Imam Ali Says": [
+    "Discipline",
+    "Knowledge",
+    "Time",
+    "Patience",
+    "Leadership",
+    "Character",
+    "Friendship",
+    "Anger",
+    "Spirituality",
+    "Success"
+  ],
+  "Nahjul Balagha": [
+    "Discipline",
+    "Knowledge",
+    "Time",
+    "Patience",
+    "Leadership",
+    "Character",
+    "Friendship",
+    "Anger",
+    "Spirituality",
+    "Success"
+  ],
+  "Articles": [
+    "Reflection",
+    "Spirituality",
+    "Character",
+    "Modern Issues"
+  ],
+  "Audio Reflections": [
+    "Reflection",
+    "Spirituality",
+    "Focus"
+  ],
+};
+
 /**
  * GET /api/tags?category=Student+Corner
  * Returns unique tags used in the specified category.
- * Falls back to an empty array when the table or Supabase is unavailable.
+ * Integrates database-saved tags with predefined smart fallbacks.
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
 
+  // Load defaults for this category
+  const defaults = category ? (defaultTagsByCategory[category] || []) : [];
+
   if (!isSupabaseConfigured || !supabase) {
-    return NextResponse.json({ tags: [] });
+    return NextResponse.json({ tags: defaults });
   }
 
   try {
@@ -26,25 +89,34 @@ export async function GET(request: Request) {
     const { data, error } = await query;
 
     if (error) {
-      // Table may not exist yet — return empty gracefully
+      // Table may not exist yet — return defaults gracefully
       if (
         error.message.includes("schema cache") ||
         error.message.includes("relation") ||
         error.code === "PGRST204" ||
         error.code === "PGRST116"
       ) {
-        return NextResponse.json({ tags: [] });
+        return NextResponse.json({ tags: defaults });
       }
-      return NextResponse.json({ tags: [], error: error.message }, { status: 500 });
+      return NextResponse.json({ tags: defaults, error: error.message }, { status: 500 });
     }
 
-    // Flatten all tags arrays and deduplicate
-    const allTags = (data ?? [])
+    // Flatten all tags arrays, combine with defaults, and deduplicate case-insensitively
+    const allTagsMap = new Map<string, string>();
+    
+    // Add defaults first so their original casings are registered
+    defaults.forEach(tag => allTagsMap.set(tag.toLowerCase(), tag));
+    
+    // Add tags from the database (will overwrite or add new ones)
+    (data ?? [])
       .flatMap((row: { tags: string[] | null }) => row.tags ?? [])
       .map((tag: string) => tag.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .forEach(tag => {
+        allTagsMap.set(tag.toLowerCase(), tag);
+      });
 
-    const uniqueTags = [...new Set(allTags)].sort((a, b) =>
+    const uniqueTags = Array.from(allTagsMap.values()).sort((a, b) =>
       a.localeCompare(b, undefined, { sensitivity: "base" })
     );
 
@@ -58,7 +130,7 @@ export async function GET(request: Request) {
     );
   } catch (err) {
     return NextResponse.json({
-      tags: [],
+      tags: defaults,
       error: err instanceof Error ? err.message : "Unexpected error",
     });
   }

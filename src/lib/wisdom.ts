@@ -1,29 +1,120 @@
 import type { Article, Category, Wisdom } from "@/lib/types";
 import { isSupabaseConfigured, supabase } from "./supabase";
 
-function attachCategory(wisdom: Wisdom, categories: Category[]): Wisdom {
-  const category = categories.find((c) => c.id === wisdom.category_id);
-  return { ...wisdom, category };
-}
-
+/**
+ * Dynamically extract and generate categories/topics list.
+ * Seed categories are loaded from the database, and then all distinct tags 
+ * from published unified articles are appended dynamically as category objects.
+ */
 export async function getCategories(): Promise<Category[]> {
+  let dbCategories: Category[] = [];
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase.from("categories").select("*").order("name");
-    if (!error && data?.length) return data as Category[];
+    if (!error && data?.length) {
+      dbCategories = data as Category[];
+    }
   }
-  return [];
+
+  // Dynamically extract any custom topics/tags from published articles
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("articles_unified")
+        .select("tags")
+        .eq("status", "published");
+      if (!error && data?.length) {
+        const allTags = data
+          .flatMap((row: { tags: string[] | null }) => row.tags ?? [])
+          .map((t: string) => t.trim())
+          .filter(Boolean);
+        const uniqueTags = Array.from(new Set(allTags));
+        uniqueTags.forEach((tag) => {
+          const slug = tag.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+          if (slug && !dbCategories.some((c) => c.slug === slug || c.name.toLowerCase() === tag.toLowerCase())) {
+            dbCategories.push({
+              id: slug,
+              name: tag,
+              slug: slug,
+            });
+          }
+        });
+      }
+    } catch (e) {
+      console.error("Error dynamically loading categories:", e);
+    }
+  }
+
+  return dbCategories;
 }
 
+/**
+ * Fetch all published short-form wisdom cards (Imam Ali Says, Nahjul Balagha, Audio Reflections).
+ */
 export async function getAllWisdom(): Promise<Wisdom[]> {
-  const categories = await getCategories();
+  const dbCategories = await getCategories();
 
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from("wisdom")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (!error && data?.length) {
-      return (data as Wisdom[]).map((w) => attachCategory(w, categories));
+    try {
+      const { data, error } = await supabase
+        .from("articles_unified")
+        .select("*")
+        .eq("status", "published")
+        .in("category", ["Imam Ali Says", "Nahjul Balagha", "Audio Reflections"])
+        .order("published_at", { ascending: false });
+
+      if (!error && data?.length) {
+        return data.map((row: any) => {
+          const tags = row.tags ?? [];
+          // Try to match tags with a category in dbCategories
+          const matchedCategory = dbCategories.find(c =>
+            tags.some((tag: string) => tag.toLowerCase() === c.name.toLowerCase() || tag.toLowerCase() === c.slug.toLowerCase())
+          );
+          
+          // If not matched, fallback to first tag or General
+          const firstTag = tags[0] || "General";
+          const firstTagSlug = firstTag.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+          const categoryObj = matchedCategory || {
+            id: firstTagSlug || "general",
+            name: firstTag,
+            slug: firstTagSlug || "general"
+          };
+
+          // Parse reflection questions and action steps from newline-separated texts
+          const reflectionQuestions = row.reflection_questions 
+            ? row.reflection_questions.split("\n").map((q: string) => q.replace(/^[-\*\s\d\.\)]+/, "").trim()).filter(Boolean)
+            : [];
+          const actionSteps = row.action_steps 
+            ? row.action_steps.split("\n").map((s: string) => s.replace(/^[-\*\s\d\.\)]+/, "").trim()).filter(Boolean)
+            : [];
+
+          return {
+            id: row.id,
+            slug: row.slug,
+            arabic_text: row.arabic_text || "",
+            urdu_translation: row.urdu_translation || "",
+            english_translation: row.english_translation || "",
+            short_reflection: row.excerpt || "",
+            deep_reflection: row.main_explanation || "",
+            simple_meaning: row.summary || "",
+            why_today: row.current_issues || "",
+            reflection_questions: reflectionQuestions,
+            action_steps: actionSteps,
+            source: row.source || "",
+            category_id: categoryObj.id,
+            category: categoryObj,
+            audio_url: row.sidebar_banner || undefined,
+            featured_image: row.featured_image || row.hero_image || undefined,
+            tags: tags,
+            corner_topics: tags.map((t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")),
+            related_slugs: [],
+            featured: row.featured || false,
+            trending: row.featured || false,
+            created_at: row.published_at || row.created_at || new Date().toISOString(),
+          };
+        });
+      }
+    } catch (e) {
+      console.error("Error in getAllWisdom:", e);
     }
   }
 
@@ -66,13 +157,44 @@ export async function getRelatedWisdom(wisdom: Wisdom): Promise<Wisdom[]> {
     .slice(0, 3);
 }
 
+/**
+ * Fetch all published articles (Student Corner, Youth Corner, Articles).
+ */
 export async function getAllArticles(): Promise<Article[]> {
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from("articles")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (!error && data?.length) return data as Article[];
+    try {
+      const { data, error } = await supabase
+        .from("articles_unified")
+        .select("*")
+        .eq("status", "published")
+        .in("category", ["Student Corner", "Youth Corner", "Articles"])
+        .order("published_at", { ascending: false });
+
+      if (!error && data?.length) {
+        return data.map((row: any) => {
+          const tags = row.tags ?? [];
+          
+          let type: Article["type"] = "reflection";
+          if (row.category === "Student Corner") type = "student";
+          else if (row.category === "Youth Corner") type = "youth";
+
+          return {
+            id: row.id,
+            title: row.title,
+            slug: row.slug,
+            excerpt: row.excerpt || "",
+            content: row.main_explanation || "",
+            cover_image: row.featured_image || row.hero_image || undefined,
+            seo_description: row.seo_description || row.excerpt || "",
+            type: type,
+            corner_topics: tags.map((t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")),
+            created_at: row.published_at || row.created_at || new Date().toISOString(),
+          };
+        });
+      }
+    } catch (e) {
+      console.error("Error in getAllArticles:", e);
+    }
   }
   return [];
 }
@@ -106,7 +228,7 @@ export async function getWisdomByCornerTopic(topicSlug: string): Promise<Wisdom[
   };
 
   const tags = tagFallback[topicSlug] ?? [];
-  return all.filter((w) => w.tags?.some((t) => tags.includes(t)));
+  return all.filter((w) => w.tags?.some((t) => tags.includes(t.toLowerCase())));
 }
 
 export async function getArticlesByCornerTopic(topicSlug: string): Promise<Article[]> {
@@ -159,12 +281,12 @@ export async function syncSavedSlugs(): Promise<void> {
   if (session) {
     try {
       const res = await fetch('/api/saved', {
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
+        headers: { 'Authorization': `Bearer session.access_token` }
       });
       if (res.ok) {
         const { saved } = await res.json();
         if (Array.isArray(saved)) {
-           localStorage.setItem("thenahj-saved", JSON.stringify(saved));
+          localStorage.setItem("thenahj-saved", JSON.stringify(saved));
         }
       }
     } catch {}

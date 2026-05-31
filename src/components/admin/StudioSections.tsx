@@ -118,14 +118,28 @@ export function TopicSelectorField({ selectedTags, onChange, category }: {
             </button>
           </span>
         ))}
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={selectedTags.length === 0 ? "Type a topic and press Enter..." : "Add more..."}
-          className="flex-1 min-w-[120px] bg-transparent text-sm text-foreground placeholder:text-muted/50 outline-none"
-        />
+        <div className="flex-1 flex items-center min-w-[180px]">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={selectedTags.length === 0 ? "Type a topic and press Enter..." : "Add more..."}
+            className="w-full bg-transparent text-sm text-foreground placeholder:text-muted/50 outline-none"
+          />
+          {inputValue.trim() && (
+            <button
+              type="button"
+              onClick={() => {
+                addTag(inputValue);
+                setInputValue("");
+              }}
+              className="ml-2 shrink-0 inline-flex items-center gap-1 rounded-lg bg-gold/20 border border-gold/30 px-2.5 py-1 text-[11px] font-semibold text-gold-light hover:bg-gold/35 transition-all"
+            >
+              <Plus size={11} /> Create "{inputValue.trim()}"
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Suggested tags from database */}
