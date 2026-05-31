@@ -72,6 +72,30 @@ function emptySparklineEvents() {
   return Array.from({ length: 7 }, () => 0);
 }
 
+function buildTopPracticedArticles(rows: Array<{ article_slug?: string | null; event_type?: string | null }>, limit = 5) {
+  const map = new Map<string, { articleSlug: string; events: number; completedSessions: number }>();
+
+  rows.forEach((row) => {
+    const articleSlug = row.article_slug?.trim();
+    if (!articleSlug) return;
+
+    const existing = map.get(articleSlug) ?? { articleSlug, events: 0, completedSessions: 0 };
+    existing.events += 1;
+    if (row.event_type === "session_completed") {
+      existing.completedSessions += 1;
+    }
+    map.set(articleSlug, existing);
+  });
+
+  return Array.from(map.values())
+    .sort((left, right) => {
+      if (right.events !== left.events) return right.events - left.events;
+      if (right.completedSessions !== left.completedSessions) return right.completedSessions - left.completedSessions;
+      return left.articleSlug.localeCompare(right.articleSlug);
+    })
+    .slice(0, limit);
+}
+
 export async function POST(request: Request) {
   const limit = await consumeRateLimit({
     key: `analytics-reflection:${getRequestClientIp(request)}`,
@@ -147,6 +171,7 @@ export async function GET(request: Request) {
           completionRateDeltaPct: 0,
         },
         sparklineEvents: emptySparklineEvents(),
+        topPracticedArticles: [],
       },
       source: "fallback",
     });
@@ -191,6 +216,7 @@ export async function GET(request: Request) {
             completionRateDeltaPct: 0,
           },
           sparklineEvents: emptySparklineEvents(),
+          topPracticedArticles: [],
         },
         source: "table-missing",
       });
@@ -201,6 +227,7 @@ export async function GET(request: Request) {
   const currentSummary = calculateSummary(currentResult.data || []);
   const previousSummary = calculateSummary(previousResult.data || []);
   const sparklineEvents = buildSparklineEvents(currentResult.data || [], currentStartMs, rangeMs);
+  const topPracticedArticles = buildTopPracticedArticles(currentResult.data || []);
 
   return NextResponse.json({
     success: true,
@@ -214,6 +241,7 @@ export async function GET(request: Request) {
         completionRateDeltaPct: calculateDeltaPct(currentSummary.completionRatePct, previousSummary.completionRatePct),
       },
       sparklineEvents,
+      topPracticedArticles,
     },
     source: "supabase",
   });

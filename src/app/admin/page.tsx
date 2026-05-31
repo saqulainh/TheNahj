@@ -62,6 +62,11 @@ export default function AdminDashboardPage() {
         completionRatePct: number;
         range: ReflectionRange;
         sparklineEvents: number[];
+        topPracticedArticles: Array<{
+          articleSlug: string;
+          events: number;
+          completedSessions: number;
+        }>;
         trend: {
           periodEventsDeltaPct: number | null;
           completedSessionsDeltaPct: number | null;
@@ -75,6 +80,7 @@ export default function AdminDashboardPage() {
 
   const sparklineEvents = reflectionSummary?.sparklineEvents ?? [0, 0, 0, 0, 0, 0, 0];
   const sparklineMax = Math.max(1, ...sparklineEvents);
+  const topPracticedArticles = reflectionSummary?.topPracticedArticles ?? [];
 
   return (
     <div className="space-y-8">
@@ -199,6 +205,21 @@ export default function AdminDashboardPage() {
                   />
                 );
               })}
+            </div>
+          </div>
+          <div className="border-t border-border/70 px-6 pb-6 pt-4">
+            <p className="mb-2 text-xs uppercase tracking-[0.14em] text-muted">Top Practiced Articles</p>
+            <div className="space-y-2">
+              {topPracticedArticles.length === 0 ? (
+                <p className="text-sm text-muted">No practice data in this range yet.</p>
+              ) : (
+                topPracticedArticles.map((item) => (
+                  <div key={item.articleSlug} className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-2.5">
+                    <span className="truncate pr-3 text-sm text-foreground/90">{item.articleSlug}</span>
+                    <span className="shrink-0 text-xs text-muted">{item.events} events · {item.completedSessions} completed</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
