@@ -128,8 +128,17 @@ export async function POST(request: Request) {
           if (typeof copy.narration === "string" && !copy.translation && !copy.arabic) {
             copy.translation = copy.narration;
           }
-          // remove legacy key to keep payload clean
+          // map legacy Urdu keys to `urdu`
+          if (!copy.urdu) {
+            if (typeof copy.narration_urdu === "string") copy.urdu = copy.narration_urdu;
+            else if (typeof copy.urdu_translation === "string") copy.urdu = copy.urdu_translation;
+            else if (typeof copy.urduText === "string") copy.urdu = copy.urduText;
+          }
+          // remove legacy keys to keep payload clean
           delete copy.narration;
+          delete copy.narration_urdu;
+          delete copy.urdu_translation;
+          delete copy.urduText;
           return copy;
         }
         return n;

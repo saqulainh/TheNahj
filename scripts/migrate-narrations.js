@@ -58,10 +58,21 @@ async function main() {
       }
       if (n && typeof n === 'object') {
         const copy = { ...n };
+        // map legacy `narration` -> `translation`
         if (typeof copy.narration === 'string' && !copy.translation && !copy.arabic) {
           copy.translation = copy.narration;
         }
+        // map legacy Urdu keys into `urdu` if present
+        if (!copy.urdu) {
+          if (typeof copy.narration_urdu === 'string') copy.urdu = copy.narration_urdu;
+          else if (typeof copy.urdu_translation === 'string') copy.urdu = copy.urdu_translation;
+          else if (typeof copy.urduText === 'string') copy.urdu = copy.urduText;
+        }
+        // clean up legacy keys
         delete copy.narration;
+        delete copy.narration_urdu;
+        delete copy.urdu_translation;
+        delete copy.urduText;
         // ensure an id exists
         if (!copy.id) copy.id = `narr-migrated-${Date.now()}`;
         return copy;
