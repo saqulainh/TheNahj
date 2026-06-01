@@ -44,13 +44,23 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
       .map((line) => line.trim())
       .filter(Boolean);
 
-  const safeFrom = from && from.startsWith("/") ? from : "/wisdom";
+  const defaultFrom =
+    article.category === "Student Corner"
+      ? "/student"
+      : article.category === "Youth Corner"
+      ? "/youth"
+      : article.category === "Nahjul Balagha"
+      ? "/nahjul-balagha"
+      : "/wisdom";
+  const safeFrom = from && from.startsWith("/") ? from : defaultFrom;
   const backLabel = safeFrom.startsWith("/student")
     ? "Student Corner"
     : safeFrom.startsWith("/youth")
     ? "Youth Corner"
     : safeFrom.startsWith("/topics")
     ? "Life Themes"
+    : safeFrom.startsWith("/nahjul-balagha")
+    ? "Nahjul Balagha"
     : "Wisdom Repository";
 
   const related = await getRelatedUnifiedArticles(article.slug, article.category, article.tags ?? []);
@@ -60,7 +70,7 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
   const reflectionQuestions = splitLines(article.reflection_questions);
   const actionSteps = splitLines(article.action_steps);
   const sections = [
-    { href: "/wisdom", label: "Wisdom" },
+    { href: safeFrom, label: backLabel.split(" ")[0] },
     { id: "narrations", label: "Narrations" },
     { id: "relevance", label: "Modern Relevance" },
     { id: "reflection", label: "Reflection" },
