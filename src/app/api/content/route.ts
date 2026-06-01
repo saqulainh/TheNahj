@@ -119,6 +119,23 @@ export async function POST(request: Request) {
       slug: normalizeSlug(body.slug || body.title || "article"),
     };
 
+    // Backwards-compat: migrate legacy `narration` field to new `arabic`/`translation` shape
+    if (Array.isArray(normalized.narrations)) {
+      normalized.narrations = normalized.narrations.map((n: any) => {
+        // If old shape used `narration` string, map it to `translation` if translation missing
+        if (n && typeof n === "object") {
+          const copy = { ...n };
+          if (typeof copy.narration === "string" && !copy.translation && !copy.arabic) {
+            copy.translation = copy.narration;
+          }
+          // remove legacy key to keep payload clean
+          delete copy.narration;
+          return copy;
+        }
+        return n;
+      });
+    }
+
     const payload = articlePayloadSchema.parse(normalized);
 
     const section = payload.category;
