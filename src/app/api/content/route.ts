@@ -121,10 +121,10 @@ export async function POST(request: Request) {
 
     // Backwards-compat: migrate legacy `narration` field to new `arabic`/`translation` shape
     if (Array.isArray(normalized.narrations)) {
-      normalized.narrations = normalized.narrations.map((n: any) => {
+      normalized.narrations = normalized.narrations.map((n: unknown) => {
         // If old shape used `narration` string, map it to `translation` if translation missing
         if (n && typeof n === "object") {
-          const copy = { ...n };
+          const copy = { ...(n as Record<string, unknown>) };
           if (typeof copy.narration === "string" && !copy.translation && !copy.arabic) {
             copy.translation = copy.narration;
           }

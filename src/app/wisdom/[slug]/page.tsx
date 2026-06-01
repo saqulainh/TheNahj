@@ -166,6 +166,15 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
 
             <div className="space-y-3 text-sm text-secondary/80">
               <p>Use the journey to return to the wisdom repository first, then continue through narration, relevance, reflection, and conclusion.</p>
+              {article.sidebar_banner && (
+                <ImageRole
+                  src={article.sidebar_banner}
+                  alt={`${article.title} sidebar banner`}
+                  role="sidebar"
+                  className="w-full rounded-2xl object-cover"
+                  focalPoint={article.sidebar_focal_point ?? null}
+                />
+              )}
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 {sections.map((section) => (
                   section.href ? (
@@ -440,6 +449,15 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
             <p className="mt-2 text-xl text-foreground">{article.reading_time || 1} min read</p>
             <p className="mt-2 text-sm leading-relaxed text-secondary/75">The page now keeps the journey minimal and sends you back to the main wisdom surface instead of duplicating navigation.</p>
           </div>
+          {article.sidebar_banner && (
+            <ImageRole
+              src={article.sidebar_banner}
+              alt={`${article.title} sidebar banner`}
+              role="sidebar"
+              className="w-full rounded-[2rem] object-cover"
+              focalPoint={article.sidebar_focal_point ?? null}
+            />
+          )}
         </aside>
       </div>
     </article>

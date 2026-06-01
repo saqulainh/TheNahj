@@ -80,28 +80,29 @@ export async function POST(request: Request) {
 
   if (records.length === 0) return NextResponse.json({ success: true, inserted: 0 });
 
-  const { error, data } = await supabase.from("reflection_analytics_events").insert(records);
-  if (error) {
-    if (tableMissing(error.message, error.code)) {
-      try {
-        const hook = process.env.MONITORING_WEBHOOK;
-        if (hook) await fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "bulk_insert_error", message: error.message, code: error.code }) });
-      } catch {}
-      return NextResponse.json({ success: true, inserted: 0, reason: "table-missing" });
-    }
-    try {
-      const hook = process.env.MONITORING_WEBHOOK;
-      if (hook) await fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "bulk_insert_error", message: error.message, code: error.code }) });
-    } catch {}
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
+const { error, data } = await supabase.from("reflection_analytics_events").insert(records);
+   if (error) {
+     if (tableMissing(error.message, error.code)) {
+       try {
+         const hook = process.env.MONITORING_WEBHOOK;
+         if (hook) await fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "bulk_insert_error", message: error.message, code: error.code }) });
+       } catch {}
+       return NextResponse.json({ success: true, inserted: 0, reason: "table-missing" });
+     }
+     try {
+       const hook = process.env.MONITORING_WEBHOOK;
+       if (hook) await fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "bulk_insert_error", message: error.message, code: error.code }) });
+     } catch {}
+     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+   }
 
-  // invalidate cached summaries so admin sees new data
-  try {
-    // import locally to avoid top-level circular imports in edge/runtime contexts
-    const { clearSummaryCache } = await import("@/lib/analytics-cache");
-    clearSummaryCache();
-  } catch {}
+   // invalidate cached summaries so admin sees new data
+   try {
+     // import locally to avoid top-level circular imports in edge/runtime contexts
+     const { clearSummaryCache } = await import("@/lib/analytics-cache");
+     clearSummaryCache();
+   } catch {}
 
-  return NextResponse.json({ success: true, inserted: Array.isArray(data) ? data.length : records.length });
+   const inserted = data && typeof data === "object" && "length" in data ? (data as unknown[]).length : records.length;
+   return NextResponse.json({ success: true, inserted });
 }

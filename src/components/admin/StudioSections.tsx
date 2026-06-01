@@ -209,12 +209,12 @@ export function NarrationsManager({ form }: { form: UseFormReturn<any> }) {
               <Trash2 size={12} />
             </button>
           </div>
-          <textarea value={(n as any).arabic} onChange={(e) => updateNarration(n.id, "arabic", e.target.value)}
-            rows={2} className={`${textareaCls} font-arabic text-right`} placeholder="Arabic text..." dir="rtl" />
-          <textarea value={(n as any).urdu} onChange={(e) => updateNarration(n.id, "urdu", e.target.value)}
-            rows={2} className={`${textareaCls} font-urdu text-right`} placeholder="Urdu translation..." dir="rtl" />
-          <textarea value={(n as any).translation} onChange={(e) => updateNarration(n.id, "translation", e.target.value)}
-            rows={2} className={textareaCls} placeholder="English translation..." />
+<textarea value={n.arabic} onChange={(e) => updateNarration(n.id, "arabic", e.target.value)}
+             rows={2} className={`${textareaCls} font-arabic text-right`} placeholder="Arabic text..." dir="rtl" />
+           <textarea value={n.urdu} onChange={(e) => updateNarration(n.id, "urdu", e.target.value)}
+             rows={2} className={`${textareaCls} font-urdu text-right`} placeholder="Urdu translation..." dir="rtl" />
+           <textarea value={n.translation} onChange={(e) => updateNarration(n.id, "translation", e.target.value)}
+             rows={2} className={textareaCls} placeholder="English translation..." />
           <div className="grid gap-3 md:grid-cols-2">
             <input value={n.narrator} onChange={(e) => updateNarration(n.id, "narrator", e.target.value)}
               className={inputCls} placeholder="Narrator" />

@@ -21,6 +21,8 @@ export interface Wisdom {
   category?: Category;
   audio_url?: string;
   featured_image?: string;
+  sidebar_banner?: string;
+  sidebar_focal_point?: { x: number; y: number } | null;
   tags?: string[];
   corner_topics?: string[];
   related_slugs?: string[];

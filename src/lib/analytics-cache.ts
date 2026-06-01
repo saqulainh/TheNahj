@@ -24,13 +24,13 @@ export function getCachedSummary(key: string) {
   }
 }
 
-export function setCachedSummary(key: string, payload: ReflectionSummary) {
-  try {
-    CACHE.set(key, { ts: Date.now(), payload });
-  } catch {
-    // ignore
-  }
-}
+export function setCachedSummary(key: string, payload: ReflectionSummaryWithRange) {
+   try {
+     CACHE.set(key, { ts: Date.now(), payload });
+   } catch {
+     // ignore
+   }
+ }
 
 export function clearSummaryCache() {
   try {

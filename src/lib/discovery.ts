@@ -4,6 +4,42 @@ import { topicExperienceBySlug } from "@/lib/content-experience";
 
 type DiscoveryKind = "wisdom" | "article";
 
+interface WisdomCardRow {
+  id: string | number;
+  article_slug?: string;
+  section?: string;
+  theme?: string;
+  topic?: string;
+  audiences?: string[];
+  title?: string;
+  excerpt?: string;
+  slug?: string;
+  reading_time?: number;
+  featured?: boolean;
+  published_at?: string;
+  source?: string;
+  source_number?: string;
+  book_name?: string;
+  metadata?: { tags?: string[] };
+  status?: string;
+}
+
+interface UnifiedArticleRow {
+  id: string | number;
+  title?: string;
+  slug?: string;
+  excerpt?: string;
+  category?: string;
+  tags?: string[];
+  reading_time?: number;
+  featured?: boolean;
+  published_at?: string;
+  source?: string;
+  source_number?: string;
+  book_name?: string;
+  status?: string;
+}
+
 export interface DiscoveryItem {
   kind: DiscoveryKind;
   id: string;
@@ -39,7 +75,8 @@ export interface DiscoveryObservability {
 }
 
 function normalizeText(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9\s]+/g, " ").replace(/\s+/g, " ").trim();
+  const normalized = value.normalize("NFKC").toLowerCase();
+  return normalized.replace(/[^\p{L}\p{N}\s]+/gu, " ").replace(/\s+/g, " ").trim();
 }
 
 function normalizeArray(value: unknown): string[] {
@@ -69,7 +106,7 @@ function inferAudiences(section: string, tags: string[], sourceTags: string[] = 
   return Array.from(audiences);
 }
 
-function toDiscoveryItemFromWisdomCard(row: Record<string, any>): DiscoveryItem {
+function toDiscoveryItemFromWisdomCard(row: WisdomCardRow): DiscoveryItem {
   const metadata = row.metadata || {};
   const section = typeof row.section === "string" ? row.section : "Imam Ali Says";
   const tags = normalizeArray(metadata.tags);
@@ -94,7 +131,7 @@ function toDiscoveryItemFromWisdomCard(row: Record<string, any>): DiscoveryItem 
   };
 }
 
-function toDiscoveryItemFromUnified(row: Record<string, any>): DiscoveryItem {
+function toDiscoveryItemFromUnified(row: UnifiedArticleRow): DiscoveryItem {
   const section = typeof row.category === "string" ? row.category : "Imam Ali Says";
   const inferred = inferThemeTopicFromTagsForSection(section, normalizeArray(row.tags));
 
@@ -132,7 +169,7 @@ async function loadDiscoveryCandidates(section?: string | null): Promise<Discove
 
       const { data, error } = await query;
       if (!error && data?.length) {
-        items.push(...data.map((row) => toDiscoveryItemFromWisdomCard(row as Record<string, any>)));
+        items.push(...data.map((row) => toDiscoveryItemFromWisdomCard(row as WisdomCardRow)));
       }
     } catch {
       // best-effort: wisdom_cards may not exist yet
@@ -148,7 +185,7 @@ async function loadDiscoveryCandidates(section?: string | null): Promise<Discove
 
       const { data, error } = await query;
       if (!error && data?.length) {
-        items.push(...data.map((row) => toDiscoveryItemFromUnified(row as Record<string, any>)));
+        items.push(...data.map((row) => toDiscoveryItemFromUnified(row as UnifiedArticleRow)));
       }
     } catch {
       // ignore fallback query issues
@@ -164,18 +201,11 @@ async function loadDiscoveryCandidates(section?: string | null): Promise<Discove
   });
 }
 
-function tokenScore(text: string, tokens: string[]) {
-  let score = 0;
-  tokens.forEach((token) => {
-    if (!token) return;
-    if (text === token) score += 180;
-    else if (text.startsWith(token)) score += 90;
-    else if (text.includes(token)) score += 35;
-  });
-  return score;
-}
-
 function scoreSearchCandidate(query: string, tokens: string[], item: DiscoveryItem) {
+  if (!query) {
+    return { score: 0, reasons: [] as string[] };
+  }
+
   const reasons: string[] = [];
   const haystack = normalizeText(
     [
@@ -265,6 +295,22 @@ function scoreSearchCandidate(query: string, tokens: string[], item: DiscoveryIt
 
 export async function searchDiscoveryContent(query: string, options?: { section?: string | null; limit?: number }) {
   const normalizedQuery = normalizeText(query);
+  if (!normalizedQuery) {
+    return {
+      query,
+      results: [],
+      observability: {
+        query,
+        tokenCount: 0,
+        totalCandidates: 0,
+        matched: 0,
+        sourceCounts: { wisdom: 0, article: 0 },
+        sectionCounts: {},
+        reasonCounts: {},
+      },
+    };
+  }
+
   const tokens = normalizedQuery.split(" ").filter(Boolean);
   const limit = options?.limit || 12;
   const section = options?.section || null;
