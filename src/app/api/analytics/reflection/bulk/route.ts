@@ -83,8 +83,16 @@ export async function POST(request: Request) {
   const { error, data } = await supabase.from("reflection_analytics_events").insert(records);
   if (error) {
     if (tableMissing(error.message, error.code)) {
+      try {
+        const hook = process.env.MONITORING_WEBHOOK;
+        if (hook) await fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "bulk_insert_error", message: error.message, code: error.code }) });
+      } catch {}
       return NextResponse.json({ success: true, inserted: 0, reason: "table-missing" });
     }
+    try {
+      const hook = process.env.MONITORING_WEBHOOK;
+      if (hook) await fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "bulk_insert_error", message: error.message, code: error.code }) });
+    } catch {}
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 

@@ -82,6 +82,20 @@ export default function AdminDashboardPage() {
   const sparklineEvents = reflectionSummary?.sparklineEvents ?? [0, 0, 0, 0, 0, 0, 0];
   const sparklineMax = Math.max(1, ...sparklineEvents);
   const topPracticedArticles = reflectionSummary?.topPracticedArticles ?? [];
+  const { data: ingestionHealth } = useQuery({
+    queryKey: ["reflection-ingestion-health"],
+    queryFn: async () => {
+      const res = await fetch(`/api/analytics/reflection/health`);
+      const j = await res.json();
+      if (!res.ok || !j.success) throw new Error(j.error || "Failed to load ingestion health");
+      return j.recent as { lastEventAt: string | null; lastHour: number; last24h: number };
+    },
+    retry: 1,
+  });
+
+  const lastEventAt = ingestionHealth?.lastEventAt ? new Date(ingestionHealth.lastEventAt) : null;
+  const now = Date.now();
+  const minutesSinceLast = lastEventAt ? Math.round((now - lastEventAt.getTime()) / 60000) : Infinity;
   const [topPage, setTopPage] = useState(1);
   const TOP_PAGE_SIZE = 5;
   const topPageCount = Math.max(1, Math.ceil(topPracticedArticles.length / TOP_PAGE_SIZE));
@@ -144,6 +158,10 @@ export default function AdminDashboardPage() {
           <div className="border-b border-border p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-medium text-foreground">Reflection Analytics</h2>
+              <div className="text-sm text-muted">
+                <span className={`inline-block mr-2 rounded-full h-2 w-2 ${minutesSinceLast <= 5 ? 'bg-emerald-400' : minutesSinceLast <= 60 ? 'bg-amber-400' : 'bg-red-400'}`} />
+                <span className="align-middle">{minutesSinceLast === Infinity ? 'No data' : `${minutesSinceLast}m since last event`}</span>
+              </div>
               <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/70 p-1">
                 {(["24h", "7d", "30d"] as const).map((option) => (
                   <button

@@ -163,8 +163,17 @@ export async function POST(request: Request) {
   const { error } = await supabase.from("reflection_analytics_events").insert(record);
   if (error) {
     if (tableMissing(error.message, error.code)) {
+      // notify monitoring webhook if configured
+      try {
+        const hook = process.env.MONITORING_WEBHOOK;
+        if (hook) await fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "insert_error", message: error.message, code: error.code }) });
+      } catch {}
       return NextResponse.json({ success: true, stored: false, reason: "table-missing" });
     }
+    try {
+      const hook = process.env.MONITORING_WEBHOOK;
+      if (hook) await fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "insert_error", message: error.message, code: error.code }) });
+    } catch {}
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
   // clear cached summaries so admin sees fresh data immediately
