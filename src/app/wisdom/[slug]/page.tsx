@@ -247,9 +247,16 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
                       <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Supporting Narration</p>
                       <span className="rounded-full border border-border/20 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-muted">Quote card</span>
                     </div>
-                    <p className="mt-4 whitespace-pre-wrap text-[1rem] leading-relaxed text-foreground/90 md:text-[1.05rem]">
-                      {narration.narration}
-                    </p>
+                    {narration.translation ? (
+                      <p className="mt-4 whitespace-pre-wrap text-[1rem] leading-relaxed text-foreground/90 md:text-[1.05rem]">
+                        {narration.translation}
+                      </p>
+                    ) : null}
+                    {narration.arabic ? (
+                      <p className="mt-3 font-arabic text-[1rem] leading-relaxed text-foreground/90" dir="rtl" lang="ar">
+                        {narration.arabic}
+                      </p>
+                    ) : null}
                     <div className="mt-5 grid gap-4 border-t border-border/15 pt-5 text-sm text-secondary md:grid-cols-3">
                       <div>
                         <p className="text-[10px] uppercase tracking-[0.2em] text-muted">Narrator</p>

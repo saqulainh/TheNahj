@@ -46,8 +46,10 @@ export const contentBlockSchema = z.object({
    ───────────────────────────────────────────── */
 export const narrationSchema = z.object({
   id: z.string().min(1),
-  narration: z.string().default(""),
-  narrator: z.string().default(""),
+  // Split fields for better narration structure
+  arabic: z.string().default(""),
+  translation: z.string().default(""),
+  narrator: z.string().default("") ,
   source: z.string().default(""),
   explanation: z.string().default(""),
 });

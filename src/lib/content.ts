@@ -38,10 +38,11 @@ export interface UnifiedArticle {
   historical_context?: string | null;
   narrations?: Array<{
     id: string;
-    narration: string;
-    narrator: string;
-    source: string;
-    explanation: string;
+    arabic?: string | null;
+    translation?: string | null;
+    narrator?: string | null;
+    source?: string | null;
+    explanation?: string | null;
   }>;
   current_issues?: string | null;
   youth_relevance?: string | null;
