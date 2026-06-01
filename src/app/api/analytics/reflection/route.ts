@@ -170,9 +170,19 @@ export async function POST(request: Request) {
   return NextResponse.json({ success: true, stored: true });
 }
 
+// Simple in-memory cache for summary responses (short TTL)
+const SUMMARY_CACHE = new Map<string, { ts: number; payload: any }>();
+const CACHE_TTL_MS = 30_000; // 30 seconds
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const range = parseRangeHours(url);
+
+  // Return cached response when available
+  const cached = SUMMARY_CACHE.get(range.label);
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+    return NextResponse.json({ success: true, summary: cached.payload, source: "cache" });
+  }
 
   if (!isSupabaseConfigured || !supabase) {
     return NextResponse.json({
@@ -253,20 +263,25 @@ export async function GET(request: Request) {
     articleTitle: titleMap.get(item.articleSlug) ?? item.articleSlug,
   }));
 
-  return NextResponse.json({
-    success: true,
-    summary: {
-      ...currentSummary,
-      range: range.label,
-      trend: {
-        periodEventsDeltaPct: calculateDeltaPct(currentSummary.periodEvents, previousSummary.periodEvents),
-        completedSessionsDeltaPct: calculateDeltaPct(currentSummary.completedSessions, previousSummary.completedSessions),
-        uniqueArticlesDeltaPct: calculateDeltaPct(currentSummary.uniqueArticles, previousSummary.uniqueArticles),
-        completionRateDeltaPct: calculateDeltaPct(currentSummary.completionRatePct, previousSummary.completionRatePct),
-      },
-      sparklineEvents,
-      topPracticedArticles: topPracticedArticlesWithTitles,
+  const summaryPayload = {
+    ...currentSummary,
+    range: range.label,
+    trend: {
+      periodEventsDeltaPct: calculateDeltaPct(currentSummary.periodEvents, previousSummary.periodEvents),
+      completedSessionsDeltaPct: calculateDeltaPct(currentSummary.completedSessions, previousSummary.completedSessions),
+      uniqueArticlesDeltaPct: calculateDeltaPct(currentSummary.uniqueArticles, previousSummary.uniqueArticles),
+      completionRateDeltaPct: calculateDeltaPct(currentSummary.completionRatePct, previousSummary.completionRatePct),
     },
-    source: "supabase",
-  });
+    sparklineEvents,
+    topPracticedArticles: topPracticedArticlesWithTitles,
+  };
+
+  // cache the computed payload for a short time
+  try {
+    SUMMARY_CACHE.set(range.label, { ts: Date.now(), payload: summaryPayload });
+  } catch {
+    // ignore cache errors
+  }
+
+  return NextResponse.json({ success: true, summary: summaryPayload, source: "supabase" });
 }
