@@ -166,15 +166,6 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
 
             <div className="space-y-3 text-sm text-secondary/80">
               <p>Use the journey to return to the wisdom repository first, then continue through narration, relevance, reflection, and conclusion.</p>
-              {article.sidebar_banner && (
-                <ImageRole
-                  src={article.sidebar_banner}
-                  alt={`${article.title} sidebar banner`}
-                  role="sidebar"
-                  className="w-full rounded-2xl object-cover"
-                  focalPoint={article.sidebar_focal_point ?? null}
-                />
-              )}
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 {sections.map((section) => (
                   section.href ? (
