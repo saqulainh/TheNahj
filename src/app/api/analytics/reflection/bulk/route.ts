@@ -88,5 +88,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 
+  // invalidate cached summaries so admin sees new data
+  try {
+    // import locally to avoid top-level circular imports in edge/runtime contexts
+    const { clearSummaryCache } = await import("@/lib/analytics-cache");
+    clearSummaryCache();
+  } catch {}
+
   return NextResponse.json({ success: true, inserted: Array.isArray(data) ? data.length : records.length });
 }

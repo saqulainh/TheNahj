@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { getCachedSummary, setCachedSummary, clearSummaryCache } from "@/lib/analytics-cache";
 
 type ReflectionEventType = "question_viewed" | "step_toggled" | "session_completed";
 
@@ -166,13 +167,14 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
+  // clear cached summaries so admin sees fresh data immediately
+  try {
+    clearSummaryCache();
+  } catch {}
 
   return NextResponse.json({ success: true, stored: true });
 }
 
-// Simple in-memory cache for summary responses (short TTL)
-const SUMMARY_CACHE = new Map<string, { ts: number; payload: any }>();
-const CACHE_TTL_MS = 30_000; // 30 seconds
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
