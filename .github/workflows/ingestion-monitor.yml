@@ -1,0 +1,22 @@
+name: Ingestion Monitor
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # every 5 minutes
+  workflow_dispatch: {}
+
+jobs:
+  check-ingestion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run ingestion check
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+          MONITORING_WEBHOOK: ${{ secrets.MONITORING_WEBHOOK }}
+          THRESHOLD_LAST_HOUR: '1'
+          MAX_MINUTES_SINCE: '60'
+        run: |
+          node scripts/check-ingestion.js
