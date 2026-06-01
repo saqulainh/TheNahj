@@ -70,7 +70,7 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
   const reflectionQuestions = splitLines(article.reflection_questions);
   const actionSteps = splitLines(article.action_steps);
   const sections = [
-    { href: safeFrom, label: backLabel.split(" ")[0] },
+    { href: safeFrom, label: "Wisdom" },
     { id: "narrations", label: "Narrations" },
     { id: "relevance", label: "Modern Relevance" },
     { id: "reflection", label: "Reflection" },
