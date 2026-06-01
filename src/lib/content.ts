@@ -2,8 +2,8 @@ import { getAllArticles, getArticleBySlug } from "@/lib/wisdom";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type { ContentBlock } from "@/lib/content-schema";
 import { unstable_cache } from "next/cache";
-import { inferThemeTopicFromTags, slugifyTaxonomy } from "@/lib/taxonomy";
-import { topicExperienceBySlug } from "@/lib/content-experience";
+import { DiscoveryItem, scoreRelatedDiscoveryCandidate } from "@/lib/discovery";
+import { slugifyTaxonomy } from "@/lib/taxonomy";
 
 export interface UnifiedArticle {
   id?: string;
@@ -268,59 +268,34 @@ function scoreRelatedCandidate(params: {
   candidate: { slug: string; category: string; tags?: string[] | null; published_at?: string | null };
 }) {
   const { currentSlug, currentCategory, currentTags, candidate } = params;
-  if (candidate.slug === currentSlug) return { score: 0, reasons: [] as string[] };
+  const current: DiscoveryItem = {
+    kind: "wisdom",
+    id: currentSlug,
+    slug: currentSlug,
+    title: "",
+    excerpt: "",
+    section: currentCategory,
+    theme: null,
+    topic: null,
+    tags: currentTags,
+    audiences: inferAudiences(currentCategory, currentTags),
+  };
 
-  const reasons: string[] = [];
-  const currentNormTags = currentTags.map(normalizeTag).filter(Boolean);
-  const candidateNormTags = (candidate.tags || []).map(normalizeTag).filter(Boolean);
+  const discoveryCandidate: DiscoveryItem = {
+    kind: "wisdom",
+    id: candidate.slug,
+    slug: candidate.slug,
+    title: "",
+    excerpt: "",
+    section: candidate.category,
+    theme: null,
+    topic: null,
+    tags: candidate.tags || [],
+    audiences: inferAudiences(candidate.category, candidate.tags || []),
+    publishedAt: candidate.published_at || null,
+  };
 
-  const currentTax = inferThemeTopicFromTags(currentTags);
-  const candidateTax = inferThemeTopicFromTags(candidate.tags || []);
-
-  const currentTopicSlug = currentTax.topic ? slugifyTaxonomy(currentTax.topic) : null;
-  const candidateTopicSlug = candidateTax.topic ? slugifyTaxonomy(candidateTax.topic) : null;
-  const currentThemeSlug = currentTax.theme ? slugifyTaxonomy(currentTax.theme) : null;
-  const candidateThemeSlug = candidateTax.theme ? slugifyTaxonomy(candidateTax.theme) : null;
-
-  const currentAudiences = inferAudiences(currentCategory, currentTags);
-  const candidateAudiences = inferAudiences(candidate.category, candidate.tags || []);
-
-  let score = 0;
-
-  // Priority 1: same topic
-  if (currentTopicSlug && candidateTopicSlug && currentTopicSlug === candidateTopicSlug) {
-    score += 1000;
-    reasons.push("same-topic");
-  }
-
-  // Priority 2: same theme
-  if (currentThemeSlug && candidateThemeSlug && currentThemeSlug === candidateThemeSlug) {
-    score += 450;
-    reasons.push("same-theme");
-  }
-
-  // Priority 3: same audience
-  const sharedAudience = currentAudiences.filter((a) => candidateAudiences.includes(a));
-  if (sharedAudience.length > 0) {
-    const audienceWeight = sharedAudience.includes("student") || sharedAudience.includes("youth") ? 240 : 80;
-    score += audienceWeight;
-    reasons.push("same-audience");
-  }
-
-  // Priority 4: related concepts (topic graph) + shared tags
-  const relatedTopicSlugs = currentTopicSlug ? (topicExperienceBySlug[currentTopicSlug]?.relatedTopics || []) : [];
-  if (relatedTopicSlugs.length > 0 && candidateTopicSlug && relatedTopicSlugs.includes(candidateTopicSlug)) {
-    score += 140;
-    reasons.push("related-concept");
-  }
-
-  const sharedTags = candidateNormTags.filter((tag) => currentNormTags.includes(tag));
-  if (sharedTags.length > 0) {
-    score += Math.min(sharedTags.length, 4) * 28;
-    reasons.push("shared-tags");
-  }
-
-  return { score, reasons };
+  return scoreRelatedDiscoveryCandidate({ current, candidate: discoveryCandidate });
 }
 
 export async function getRelatedUnifiedArticles(slug: string, category: string, tags: string[] = []): Promise<RelatedArticlePreview[]> {

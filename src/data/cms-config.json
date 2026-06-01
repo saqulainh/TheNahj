@@ -89,6 +89,10 @@
         "href": "/articles"
       },
       {
+        "label": "Search",
+        "href": "/search"
+      },
+      {
         "label": "Audio Reflections",
         "href": "/audio"
       },

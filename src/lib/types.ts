@@ -57,3 +57,17 @@ export interface Topic {
   title: string;
   description: string;
 }
+
+export interface TrendData {
+  periodEventsDeltaPct: number | null;
+  completedSessionsDeltaPct: number | null;
+  uniqueArticlesDeltaPct: number | null;
+  completionRateDeltaPct: number | null;
+}
+
+export interface ReflectionSummary {
+  periodEvents: number;
+  completedSessions: number;
+  uniqueArticles: number;
+  completionRatePct: number;
+}

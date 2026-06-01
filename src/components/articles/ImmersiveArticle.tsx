@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowUp, Bookmark, Share2 } from "lucide-react";
 import { ImageRole } from "@/components/ui/ImageRole";
 import type { ContentBlock } from "@/lib/content-schema";
@@ -93,6 +94,8 @@ function renderBlock(block: ContentBlock) {
 export function ImmersiveArticle({ article, related }: ImmersiveArticleProps) {
   const [progress, setProgress] = useState(0);
   const [activeHeading, setActiveHeading] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
   const headings = useMemo(
     () => article.content_blocks.filter((block) => block.type === "heading" && block.value),
     [article.content_blocks]
@@ -230,9 +233,22 @@ export function ImmersiveArticle({ article, related }: ImmersiveArticleProps) {
           <div className="sticky top-28 space-y-4 rounded-2xl border border-border/30 bg-surface/70 p-4">
             <input
               type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search reflections"
               className="w-full rounded-xl border border-border/30 bg-background px-3 py-2 text-sm"
             />
+            <button
+              type="button"
+              onClick={() => {
+                const query = searchQuery.trim();
+                if (!query) return;
+                router.push(`/search?q=${encodeURIComponent(query)}&section=${encodeURIComponent(article.category)}`);
+              }}
+              className="w-full rounded-xl border border-gold/20 bg-gold/10 px-3 py-2 text-xs uppercase tracking-[0.18em] text-gold-light hover:bg-gold/20"
+            >
+              Search
+            </button>
             {article.sidebar_banner && (
               <ImageRole src={article.sidebar_banner} alt="Sidebar banner" role="sidebar" className="w-full rounded-xl object-cover" />
             )}

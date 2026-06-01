@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SITE_NAME } from "@/lib/brand";
-import { BookOpen, Users, FileText, Headphones, ArrowRight, Home, AlertCircle } from "lucide-react";
+import { BookOpen, Users, FileText, Headphones, ArrowRight, Home, AlertCircle, Search } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
@@ -320,6 +320,16 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-3">
                 <FileText className="h-5 w-5 text-gold-muted" />
                 <span className="text-sm font-medium">Write Article</span>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted" />
+            </Link>
+            <Link 
+              href="/search"
+              className="flex items-center justify-between rounded-lg border border-border bg-background p-4 transition-colors hover:border-gold/40 hover:bg-gold/5"
+            >
+              <div className="flex items-center gap-3">
+                <Search className="h-5 w-5 text-gold-muted" />
+                <span className="text-sm font-medium">Open Search</span>
               </div>
               <ArrowRight className="h-4 w-4 text-muted" />
             </Link>

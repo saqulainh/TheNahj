@@ -11,7 +11,7 @@ import { z } from "zod";
 import { Save, Loader2, RefreshCw, History, RotateCcw, Bookmark, Share2 } from "lucide-react";
 import { wisdomArticleSchema, unifiedCategories } from "@/lib/content-schema";
 import { createInitialDraft, useContentStudioStore } from "@/lib/stores/contentStudioStore";
-import { IMAM_ALI_THEMES, THEME_TOPICS } from "@/lib/taxonomy";
+import { SECTION_TAXONOMY, getThemesForSection, getTopicsForSection, normalizeThemeForSection } from "@/lib/taxonomy";
 import {
   SectionShell, TextField, TextAreaField,
   NarrationsManager, MediaPickerField, WisdomCardPreview,
@@ -47,7 +47,7 @@ function estimateReadingTime(vals: FormValues): number {
 
 function getPublishReadinessIssues(vals: FormValues): string[] {
   const issues: string[] = [];
-  const structuredCategory = ["Imam Ali Says", "Student Corner", "Youth Corner", "Nahjul Balagha"].includes(vals.category || "");
+  const structuredCategory = Boolean(SECTION_TAXONOMY[vals.category || ""]);
 
   if (!vals.title?.trim()) issues.push("Title is required");
   if (!vals.slug?.trim()) issues.push("Slug is required");
@@ -278,9 +278,10 @@ export default function ContentStudioPage() {
   );
 
   const mediaCards = useMemo(() => mediaQuery.data || [], [mediaQuery.data]);
-  const structuredCategory = ["Imam Ali Says", "Student Corner", "Youth Corner", "Nahjul Balagha"].includes(values.category || "");
-  const selectedTheme = (values.theme || "") as string;
-  const selectedThemeTopics = selectedTheme ? (THEME_TOPICS[selectedTheme] || []) : [];
+  const structuredCategory = Boolean(SECTION_TAXONOMY[values.category || ""]);
+  const selectedSectionThemes = getThemesForSection(values.category || "");
+  const selectedTheme = normalizeThemeForSection(values.category || "", values.theme || "") || "";
+  const selectedThemeTopics = getTopicsForSection(values.category || "", selectedTheme || null);
   const publishReadinessIssues = useMemo(() => getPublishReadinessIssues(values as FormValues), [values]);
   const publishBlocked = values.status === "published" && publishReadinessIssues.length > 0;
 
@@ -387,7 +388,7 @@ export default function ContentStudioPage() {
                       onChange={(e) => {
                         const nextTheme = e.target.value;
                         form.setValue("theme", nextTheme || null, { shouldDirty: true, shouldValidate: true });
-                        const validTopics = THEME_TOPICS[nextTheme] || [];
+                        const validTopics = getTopicsForSection(values.category || "", nextTheme || null);
                         if (!validTopics.includes(values.topic || "")) {
                           form.setValue("topic", null, { shouldDirty: true, shouldValidate: true });
                         }
@@ -395,7 +396,7 @@ export default function ContentStudioPage() {
                       className="w-full rounded-xl border border-border/40 bg-background px-3 py-2 text-sm"
                     >
                       <option value="">Select Theme</option>
-                      {IMAM_ALI_THEMES.map((theme) => <option key={theme} value={theme}>{theme}</option>)}
+                      {selectedSectionThemes.map((theme) => <option key={theme} value={theme}>{theme}</option>)}
                     </select>
                   </label>
 

@@ -83,20 +83,69 @@ export async function getAllWisdom(): Promise<Wisdom[]> {
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase
+        .from("wisdom_cards")
+        .select("*")
+        .eq("status", "published")
+        .order("published_at", { ascending: false });
+
+      if (!error && data?.length) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return data.map((row: any) => {
+          const tags = row.metadata?.tags ?? [];
+          const resolved = row.theme
+            ? { id: normalizeSlug(row.theme), name: row.theme, slug: normalizeSlug(row.theme) }
+            : resolveThemeFromTags(tags);
+          const categoryObj = dbCategories.find((c) => c.slug === resolved.slug) || resolved;
+
+          // Parse reflection questions and action steps from newline-separated texts
+          const reflectionQuestions = row.metadata?.reflection_questions 
+            ? String(row.metadata.reflection_questions).split("\n").map((q: string) => q.replace(/^[-\*\s\d\.\)]+/, "").trim()).filter(Boolean)
+            : [];
+          const actionSteps = row.metadata?.action_steps 
+            ? String(row.metadata.action_steps).split("\n").map((s: string) => s.replace(/^[-\*\s\d\.\)]+/, "").trim()).filter(Boolean)
+            : [];
+
+          return {
+            id: row.id,
+            slug: row.slug,
+            arabic_text: row.arabic_text || "",
+            urdu_translation: row.urdu_translation || "",
+            english_translation: row.english_translation || "",
+            short_reflection: row.excerpt || "",
+            deep_reflection: row.metadata?.main_explanation || row.metadata?.detailed_explanation || "",
+            simple_meaning: row.metadata?.summary || "",
+            why_today: row.metadata?.current_issues || "",
+            reflection_questions: reflectionQuestions,
+            action_steps: actionSteps,
+            source: row.source || "",
+            category_id: categoryObj.id,
+            category: categoryObj,
+            audio_url: row.sidebar_banner || undefined,
+            featured_image: row.featured_image || row.hero_image || undefined,
+            tags: tags,
+            corner_topics: tags.map((t: string) => normalizeSlug(t)),
+            related_slugs: [],
+            featured: row.featured || false,
+            trending: row.featured || false,
+            created_at: row.published_at || row.created_at || new Date().toISOString(),
+          };
+        });
+      }
+
+      const fallback = await supabase
         .from("articles_unified")
         .select("*")
         .eq("status", "published")
         .in("category", ["Imam Ali Says", "Nahjul Balagha", "Audio Reflections", "Student Corner", "Youth Corner"])
         .order("published_at", { ascending: false });
 
-      if (!error && data?.length) {
+      if (!fallback.error && fallback.data?.length) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return data.map((row: any) => {
+        return fallback.data.map((row: any) => {
           const tags = row.tags ?? [];
           const resolved = resolveThemeFromTags(tags);
           const categoryObj = dbCategories.find((c) => c.slug === resolved.slug) || resolved;
 
-          // Parse reflection questions and action steps from newline-separated texts
           const reflectionQuestions = row.reflection_questions 
             ? row.reflection_questions.split("\n").map((q: string) => q.replace(/^[-\*\s\d\.\)]+/, "").trim()).filter(Boolean)
             : [];

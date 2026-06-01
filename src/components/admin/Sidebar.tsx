@@ -40,6 +40,7 @@ const navItems = [
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/media-library", label: "Media Library", icon: ImageIcon },
   { href: "/admin/seo-manager", label: "SEO Manager", icon: Search },
+  { href: "/search", label: "Search", icon: Search },
   { href: "/admin/navigation", label: "Navigation Menu", icon: Menu },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/settings", label: "Settings", icon: Settings },

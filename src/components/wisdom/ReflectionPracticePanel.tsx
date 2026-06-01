@@ -123,16 +123,21 @@ async function flushQueue() {
   }
 }
 
+type NavigatorWithBeacon = Navigator & {
+  sendBeacon?: (url: string, data: unknown) => boolean;
+};
+
 function beaconFlush() {
   try {
     const items = readQueue();
     if (items.length === 0) return;
+    const nav = navigator as NavigatorWithBeacon;
     // try to send each event with sendBeacon (best-effort)
-    if (typeof navigator !== "undefined" && typeof (navigator as any).sendBeacon === "function") {
+    if (typeof nav.sendBeacon === "function") {
       items.forEach((it) => {
         try {
           const blob = new Blob([JSON.stringify(it)], { type: "application/json" });
-          (navigator as any).sendBeacon("/api/analytics/reflection", blob);
+          nav.sendBeacon("/api/analytics/reflection", blob);
         } catch {
           // ignore per-item failure
         }
@@ -197,8 +202,8 @@ export function ReflectionPracticePanel({ articleSlug, questions, actionSteps }:
     }
   }, [activeQuestion, safeQuestions.length]);
 
-  // Periodically flush queued events and flush on page hide/unload
-  useEffect(() => {
+// Periodically flush queued events and flush on page hide/unload
+ useEffect(() => {
     // try a flush on mount
     flushQueue().catch(() => undefined);
 
@@ -226,33 +231,37 @@ export function ReflectionPracticePanel({ articleSlug, questions, actionSteps }:
       window.removeEventListener("pagehide", handlePageHide);
       window.removeEventListener("beforeunload", handlePageHide);
     };
-  }, []);
-
-  if (safeQuestions.length === 0 && safeSteps.length === 0) return null;
+  }, [safeQuestions.length, safeSteps.length]);
 
   const currentQuestion = safeQuestions[activeQuestion] || null;
   const completedCount = safeSteps.reduce((count, _, index) => (completedSteps[index] ? count + 1 : count), 0);
 
   useEffect(() => {
-    if (!currentQuestion) return;
-    sendReflectionEvent({
-      articleSlug,
-      eventType: "question_viewed",
-      questionIndex: activeQuestion,
-      completedSteps: completedCount,
-      totalSteps: safeSteps.length,
-    });
+    if (currentQuestion) {
+      sendReflectionEvent({
+        articleSlug,
+        eventType: "question_viewed",
+        questionIndex: activeQuestion,
+        completedSteps: completedCount,
+        totalSteps: safeSteps.length,
+      });
+    }
   }, [activeQuestion, articleSlug, currentQuestion, completedCount, safeSteps.length]);
 
   useEffect(() => {
-    if (safeSteps.length === 0 || completedCount !== safeSteps.length) return;
-    sendReflectionEvent({
-      articleSlug,
-      eventType: "session_completed",
-      completedSteps: completedCount,
-      totalSteps: safeSteps.length,
-    });
+    if (safeSteps.length > 0 && completedCount === safeSteps.length) {
+      sendReflectionEvent({
+        articleSlug,
+        eventType: "session_completed",
+        completedSteps: completedCount,
+        totalSteps: safeSteps.length,
+      });
+    }
   }, [articleSlug, completedCount, safeSteps.length]);
+
+  if (safeQuestions.length === 0 && safeSteps.length === 0) {
+    return null;
+  }
 
   return (
     <section className="rounded-[1.75rem] border border-gold/20 bg-[linear-gradient(180deg,_hsl(var(--surface-elevated)/0.9),_hsl(var(--surface)/0.7))] p-5 md:p-6">

@@ -3,7 +3,8 @@ import { revalidateTag } from "next/cache";
 import { articlePayloadSchema } from "@/lib/content-schema";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
-import { inferThemeTopicFromTags, isValidThemeTopic, normalizeTheme, normalizeTopic, uniqueTagsWithTaxonomy } from "@/lib/taxonomy";
+import { SECTION_TAXONOMY, inferThemeTopicFromTagsForSection, isValidSectionThemeTopic, normalizeThemeForSection, normalizeTopicForSection, uniqueTagsWithTaxonomy } from "@/lib/taxonomy";
+import { deleteWisdomCardProjection, syncWisdomCardProjection } from "@/lib/wisdom-card-projection";
 
 function normalizeSlug(input: string): string {
   return input
@@ -91,19 +92,20 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    function normalizePoint(v: any) {
+    function normalizePoint(v: unknown) {
       if (v === null || v === undefined) return null;
       // Accept JSON-stringified objects too
       if (typeof v === "string") {
         try {
           v = JSON.parse(v);
-        } catch (e) {
+        } catch {
           return null;
         }
       }
-      if (typeof v === "object") {
-        const x = Number((v as any).x);
-        const y = Number((v as any).y);
+      if (typeof v === "object" && v !== null) {
+        const obj = v as Record<string, unknown>;
+        const x = Number(obj.x);
+        const y = Number(obj.y);
         if (Number.isFinite(x) && Number.isFinite(y)) return { x, y };
       }
       return null;
@@ -119,12 +121,15 @@ export async function POST(request: Request) {
 
     const payload = articlePayloadSchema.parse(normalized);
 
-    const needsStructuredTaxonomy = ["Imam Ali Says", "Student Corner", "Youth Corner", "Nahjul Balagha"].includes(payload.category);
-    const inferred = inferThemeTopicFromTags(payload.tags || []);
-    const resolvedTheme = normalizeTheme(payload.theme || inferred.theme);
-    const resolvedTopic = normalizeTopic(resolvedTheme, payload.topic || inferred.topic);
+    const section = payload.category;
+    const inferred = inferThemeTopicFromTagsForSection(section, payload.tags || []);
+    const resolvedTheme = normalizeThemeForSection(section, payload.theme || inferred.theme);
+    const resolvedTopic = normalizeTopicForSection(section, resolvedTheme, payload.topic || inferred.topic);
 
-    if (needsStructuredTaxonomy && !isValidThemeTopic(resolvedTheme, resolvedTopic)) {
+    const hasSectionTaxonomy = Boolean(SECTION_TAXONOMY[section]);
+    const shouldEnforceTaxonomy = hasSectionTaxonomy && (payload.status === "published" || payload.status === "scheduled");
+
+    if (shouldEnforceTaxonomy && !isValidSectionThemeTopic(section, resolvedTheme, resolvedTopic)) {
       return NextResponse.json(
         {
           success: false,
@@ -140,7 +145,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { theme, topic, audiences, ...persistablePayload } = payload;
+    const { theme: _theme, topic: _topic, audiences: _audiences, ...persistablePayload } = payload;
     const normalizedTags = uniqueTagsWithTaxonomy(persistablePayload.tags || [], resolvedTheme, resolvedTopic);
 
     const record = {
@@ -190,9 +195,17 @@ export async function POST(request: Request) {
 
     await supabase.from("article_revisions").insert(revisionRecord);
 
+    try {
+      await syncWisdomCardProjection(data as Record<string, unknown>);
+    } catch {
+      // Wisdom card projection is best-effort and must not block publishing.
+    }
+
     revalidateTag("articles-unified");
     revalidateTag(`article:${record.slug}`);
     revalidateTag(`article-related:${record.slug}`);
+    revalidateTag("wisdom-cards");
+    revalidateTag(`wisdom-card:${record.slug}`);
 
     return NextResponse.json(
       { success: true, data },
@@ -242,6 +255,14 @@ export async function DELETE(request: Request) {
       revalidateTag("articles-unified");
       revalidateTag(`article:${slug}`);
       revalidateTag(`article-related:${slug}`);
+      revalidateTag("wisdom-cards");
+      revalidateTag(`wisdom-card:${slug}`);
+
+      try {
+        await deleteWisdomCardProjection(slug);
+      } catch {
+        // Best-effort cleanup only.
+      }
     }
 
     return NextResponse.json({ success: true });
