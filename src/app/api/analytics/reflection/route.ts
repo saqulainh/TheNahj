@@ -179,11 +179,14 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const range = parseRangeHours(url);
+  const topParam = Number(url.searchParams.get("top") || "5");
+  const topLimit = Math.min(Math.max(1, Number.isFinite(topParam) ? topParam : 5), 500);
 
   // Return cached response when available
-  const cached = SUMMARY_CACHE.get(range.label);
-  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-    return NextResponse.json({ success: true, summary: cached.payload, source: "cache" });
+  const cacheKey = `${range.label}:top=${topLimit}`;
+  const cached = getCachedSummary(cacheKey);
+  if (cached) {
+    return NextResponse.json({ success: true, summary: cached, source: "cache" });
   }
 
   if (!isSupabaseConfigured || !supabase) {
@@ -258,7 +261,7 @@ export async function GET(request: Request) {
   const currentSummary = calculateSummary(currentResult.data || []);
   const previousSummary = calculateSummary(previousResult.data || []);
   const sparklineEvents = buildSparklineEvents(currentResult.data || [], currentStartMs, rangeMs);
-  const topPracticedArticles = buildTopPracticedArticles(currentResult.data || []);
+  const topPracticedArticles = buildTopPracticedArticles(currentResult.data || [], topLimit);
   const titleMap = await fetchArticleTitles(topPracticedArticles.map((item) => item.articleSlug));
   const topPracticedArticlesWithTitles = topPracticedArticles.map((item) => ({
     ...item,
@@ -280,10 +283,8 @@ export async function GET(request: Request) {
 
   // cache the computed payload for a short time
   try {
-    SUMMARY_CACHE.set(range.label, { ts: Date.now(), payload: summaryPayload });
-  } catch {
-    // ignore cache errors
-  }
+    setCachedSummary(cacheKey, summaryPayload);
+  } catch {}
 
   return NextResponse.json({ success: true, summary: summaryPayload, source: "supabase" });
 }

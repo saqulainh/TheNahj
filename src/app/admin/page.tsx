@@ -50,7 +50,7 @@ export default function AdminDashboardPage() {
   const { data: reflectionSummary } = useQuery({
     queryKey: ["reflection-analytics-summary", reflectionRange],
     queryFn: async () => {
-      const response = await fetch(`/api/analytics/reflection?range=${reflectionRange}`);
+      const response = await fetch(`/api/analytics/reflection?range=${reflectionRange}&top=50`);
       const json = await response.json();
       if (!response.ok || !json.success) {
         throw new Error(json.error || "Failed to load reflection analytics");
@@ -82,6 +82,10 @@ export default function AdminDashboardPage() {
   const sparklineEvents = reflectionSummary?.sparklineEvents ?? [0, 0, 0, 0, 0, 0, 0];
   const sparklineMax = Math.max(1, ...sparklineEvents);
   const topPracticedArticles = reflectionSummary?.topPracticedArticles ?? [];
+  const [topPage, setTopPage] = useState(1);
+  const TOP_PAGE_SIZE = 5;
+  const topPageCount = Math.max(1, Math.ceil(topPracticedArticles.length / TOP_PAGE_SIZE));
+  const topPageItems = topPracticedArticles.slice((topPage - 1) * TOP_PAGE_SIZE, topPage * TOP_PAGE_SIZE);
 
   return (
     <div className="space-y-8">
@@ -210,33 +214,59 @@ export default function AdminDashboardPage() {
           </div>
           <div className="border-t border-border/70 px-6 pb-6 pt-4">
             <p className="mb-2 text-xs uppercase tracking-[0.14em] text-muted">Top Practiced Articles</p>
-            <div className="space-y-2">
-              {topPracticedArticles.length === 0 ? (
-                <p className="text-sm text-muted">No practice data in this range yet.</p>
-              ) : (
-                topPracticedArticles.map((item) => (
-                  <div key={item.articleSlug} className="rounded-lg border border-border/60 bg-background p-2.5">
-                    <div className="flex items-center justify-between gap-3">
-                      <Link
-                        href={`/admin/studio?slug=${encodeURIComponent(item.articleSlug)}`}
-                        className="truncate text-sm text-foreground/90 transition-colors hover:text-gold-light"
-                      >
-                        {item.articleTitle}
-                      </Link>
-                      <Link
-                        href={`/wisdom/${encodeURIComponent(item.articleSlug)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="shrink-0 text-xs text-gold-muted transition-colors hover:text-gold-light"
-                      >
-                        Open Public
-                      </Link>
+              <div className="space-y-2">
+                {topPracticedArticles.length === 0 ? (
+                  <p className="text-sm text-muted">No practice data in this range yet.</p>
+                ) : (
+                  <>
+                    {topPageItems.map((item) => (
+                      <div key={item.articleSlug} className="rounded-lg border border-border/60 bg-background p-2.5">
+                        <div className="flex items-center justify-between gap-3">
+                          <Link
+                            href={`/admin/studio?slug=${encodeURIComponent(item.articleSlug)}`}
+                            className="truncate text-sm text-foreground/90 transition-colors hover:text-gold-light"
+                          >
+                            {item.articleTitle}
+                          </Link>
+                          <Link
+                            href={`/wisdom/${encodeURIComponent(item.articleSlug)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 text-xs text-gold-muted transition-colors hover:text-gold-light"
+                          >
+                            Open Public
+                          </Link>
+                        </div>
+                        <p className="mt-1 text-xs text-muted">{item.events} events · {item.completedSessions} completed</p>
+                      </div>
+                    ))}
+
+                    <div className="mt-2 flex items-center justify-between text-xs text-muted">
+                      <div>
+                        Page {topPage} of {topPageCount}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setTopPage((p) => Math.max(1, p - 1))}
+                          disabled={topPage === 1}
+                          className="rounded px-2 py-1 bg-background/70 disabled:opacity-40"
+                        >
+                          Prev
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTopPage((p) => Math.min(topPageCount, p + 1))}
+                          disabled={topPage === topPageCount}
+                          className="rounded px-2 py-1 bg-background/70 disabled:opacity-40"
+                        >
+                          Next
+                        </button>
+                      </div>
                     </div>
-                    <p className="mt-1 text-xs text-muted">{item.events} events · {item.completedSessions} completed</p>
-                  </div>
-                ))
-              )}
-            </div>
+                  </>
+                )}
+              </div>
           </div>
         </div>
 
