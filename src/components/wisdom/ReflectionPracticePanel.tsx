@@ -34,23 +34,115 @@ function sendReflectionEvent(payload: {
   completedSteps?: number;
   totalSteps?: number;
 }) {
-  const body = JSON.stringify({
-    ...payload,
-    clientId: getClientId(),
-  });
-
-  if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
-    const blob = new Blob([body], { type: "application/json" });
-    navigator.sendBeacon("/api/analytics/reflection", blob);
-    return;
+  // enqueue for reliable delivery from the client-side queue
+  try {
+    enqueueEvent({
+      ...payload,
+      clientId: getClientId(),
+      ts: Date.now(),
+    });
+  } catch {
+    // fallback to best-effort immediate send
+    const body = JSON.stringify({
+      ...payload,
+      clientId: getClientId(),
+    });
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon("/api/analytics/reflection", blob);
+      return;
+    }
+    fetch("/api/analytics/reflection", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => undefined);
   }
+}
 
-  fetch("/api/analytics/reflection", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-    keepalive: true,
-  }).catch(() => undefined);
+// --- client-side event queue -------------------------------------------------
+const QUEUE_KEY = "thenahj-reflection-events-queue";
+
+type QueuedEvent = Record<string, unknown> & { ts: number };
+
+function readQueue(): QueuedEvent[] {
+  try {
+    const raw = localStorage.getItem(QUEUE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed as QueuedEvent[];
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+function writeQueue(items: QueuedEvent[]) {
+  try {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(items));
+  } catch {
+    // ignore
+  }
+}
+
+function enqueueEvent(ev: QueuedEvent) {
+  const items = readQueue();
+  items.push(ev);
+  // keep queue size bounded
+  if (items.length > 200) items.splice(0, items.length - 200);
+  writeQueue(items);
+}
+
+async function sendSingleEvent(ev: QueuedEvent) {
+  try {
+    const res = await fetch("/api/analytics/reflection", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(ev),
+      keepalive: true,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function flushQueue() {
+  try {
+    const items = readQueue();
+    if (items.length === 0) return;
+    const remaining: QueuedEvent[] = [];
+    for (const it of items) {
+      const ok = await sendSingleEvent(it);
+      if (!ok) remaining.push(it);
+    }
+    writeQueue(remaining);
+  } catch {
+    // ignore
+  }
+}
+
+function beaconFlush() {
+  try {
+    const items = readQueue();
+    if (items.length === 0) return;
+    // try to send each event with sendBeacon (best-effort)
+    if (typeof navigator !== "undefined" && typeof (navigator as any).sendBeacon === "function") {
+      items.forEach((it) => {
+        try {
+          const blob = new Blob([JSON.stringify(it)], { type: "application/json" });
+          (navigator as any).sendBeacon("/api/analytics/reflection", blob);
+        } catch {
+          // ignore per-item failure
+        }
+      });
+      // we can't reliably know what succeeded, so clear local queue to avoid duplicates
+      writeQueue([]);
+    }
+  } catch {
+    // ignore
+  }
 }
 
 export function ReflectionPracticePanel({ articleSlug, questions, actionSteps }: ReflectionPracticePanelProps) {
@@ -104,6 +196,37 @@ export function ReflectionPracticePanel({ articleSlug, questions, actionSteps }:
       setActiveQuestion(Math.max(0, safeQuestions.length - 1));
     }
   }, [activeQuestion, safeQuestions.length]);
+
+  // Periodically flush queued events and flush on page hide/unload
+  useEffect(() => {
+    // try a flush on mount
+    flushQueue().catch(() => undefined);
+
+    const intervalId = setInterval(() => {
+      flushQueue().catch(() => undefined);
+    }, 15_000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        beaconFlush();
+      }
+    };
+
+    const handlePageHide = () => {
+      beaconFlush();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("beforeunload", handlePageHide);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("beforeunload", handlePageHide);
+    };
+  }, []);
 
   if (safeQuestions.length === 0 && safeSteps.length === 0) return null;
 
