@@ -252,6 +252,11 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
                         {narration.translation}
                       </p>
                     ) : null}
+                    {narration.urdu ? (
+                      <p className="mt-3 font-urdu text-[1rem] leading-relaxed text-foreground/90" dir="rtl">
+                        {narration.urdu}
+                      </p>
+                    ) : null}
                     {narration.arabic ? (
                       <p className="mt-3 font-arabic text-[1rem] leading-relaxed text-foreground/90" dir="rtl" lang="ar">
                         {narration.arabic}

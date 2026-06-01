@@ -39,6 +39,7 @@ export interface UnifiedArticle {
   narrations?: Array<{
     id: string;
     arabic?: string | null;
+    urdu?: string | null;
     translation?: string | null;
     narrator?: string | null;
     source?: string | null;

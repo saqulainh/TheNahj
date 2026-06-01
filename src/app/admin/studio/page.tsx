@@ -39,7 +39,7 @@ function estimateReadingTime(vals: FormValues): number {
     vals.current_issues, vals.youth_relevance, vals.student_relevance, vals.practical_application,
     vals.reflection_questions, vals.action_steps, vals.personal_reflection,
     vals.summary, vals.closing_reflection,
-    ...(vals.narrations || []).map((n: any) => `${(n.translation || n.arabic || "")} ${n.explanation || ""}`),
+    ...(vals.narrations || []).map((n: any) => `${(n.translation || n.urdu || n.arabic || "")} ${n.explanation || ""}`),
   ].filter(Boolean).join(" ");
   const words = allText.split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.round(words / 180));

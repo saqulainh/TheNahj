@@ -185,7 +185,7 @@ export function NarrationsManager({ form }: { form: UseFormReturn<any> }) {
   const addNarration = () => {
     const current = form.getValues("narrations") || [];
     form.setValue("narrations", [...current, {
-      id: `narr-${Date.now()}`, arabic: "", translation: "", narrator: "", source: "", explanation: "",
+      id: `narr-${Date.now()}`, arabic: "", urdu: "", translation: "", narrator: "", source: "", explanation: "",
     }], { shouldDirty: true });
   };
 
@@ -211,6 +211,8 @@ export function NarrationsManager({ form }: { form: UseFormReturn<any> }) {
           </div>
           <textarea value={(n as any).arabic} onChange={(e) => updateNarration(n.id, "arabic", e.target.value)}
             rows={2} className={`${textareaCls} font-arabic text-right`} placeholder="Arabic text..." dir="rtl" />
+          <textarea value={(n as any).urdu} onChange={(e) => updateNarration(n.id, "urdu", e.target.value)}
+            rows={2} className={`${textareaCls} font-urdu text-right`} placeholder="Urdu translation..." dir="rtl" />
           <textarea value={(n as any).translation} onChange={(e) => updateNarration(n.id, "translation", e.target.value)}
             rows={2} className={textareaCls} placeholder="English translation..." />
           <div className="grid gap-3 md:grid-cols-2">

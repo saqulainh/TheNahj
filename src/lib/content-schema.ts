@@ -49,6 +49,7 @@ export const narrationSchema = z.object({
   // Split fields for better narration structure
   arabic: z.string().default(""),
   translation: z.string().default(""),
+  urdu: z.string().default(""),
   narrator: z.string().default("") ,
   source: z.string().default(""),
   explanation: z.string().default(""),
