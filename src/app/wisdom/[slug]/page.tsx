@@ -256,19 +256,19 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
                       <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Supporting Narration</p>
                       <span className="rounded-full border border-border/20 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-muted">Quote card</span>
                     </div>
-                    {narration.translation ? (
-                      <p className="mt-4 whitespace-pre-wrap text-[1rem] leading-relaxed text-foreground/90 md:text-[1.05rem]">
-                        {narration.translation}
+                    {narration.arabic ? (
+                      <p className="mt-6 font-arabic text-[1.65rem] leading-[2.2] text-foreground text-center drop-shadow-sm" dir="rtl" lang="ar">
+                        {narration.arabic}
                       </p>
                     ) : null}
                     {narration.urdu ? (
-                      <p className="mt-3 font-urdu text-[1rem] leading-relaxed text-foreground/90" dir="rtl">
+                      <p className="mt-4 font-urdu text-[1.3rem] leading-[2.0] text-foreground/90 text-center" dir="rtl">
                         {narration.urdu}
                       </p>
                     ) : null}
-                    {narration.arabic ? (
-                      <p className="mt-3 font-arabic text-[1rem] leading-relaxed text-foreground/90" dir="rtl" lang="ar">
-                        {narration.arabic}
+                    {narration.translation ? (
+                      <p className="mt-4 font-serif text-[1rem] leading-relaxed text-gold italic text-center max-w-xl mx-auto whitespace-pre-wrap">
+                        {narration.translation}
                       </p>
                     ) : null}
                     <div className="mt-5 grid gap-4 border-t border-border/15 pt-5 text-sm text-secondary md:grid-cols-3">
