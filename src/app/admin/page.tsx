@@ -6,19 +6,24 @@ import { BookOpen, Users, FileText, Headphones, ArrowRight, Home, AlertCircle, S
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
-const stats = [
-  { label: "Total Wisdom Cards", value: "142", icon: BookOpen, change: "+12 this week", trend: "up" },
-  { label: "Articles Published", value: "24", icon: FileText, change: "+2 this week", trend: "up" },
-  { label: "Audio Reflections", value: "38", icon: Headphones, change: "+5 this week", trend: "up" },
-  { label: "Total Users", value: "1,204", icon: Users, change: "+84 this week", trend: "up" },
-];
+function formatRelativeTime(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    const diffHours = Math.round(diffMs / 3600000);
+    const diffDays = Math.round(diffMs / 86400000);
 
-const recentActivity = [
-  { action: "Published Wisdom Card", target: "The Value of Patience", time: "2 hours ago" },
-  { action: "Updated Homepage", target: "Hero Section", time: "5 hours ago" },
-  { action: "Added Audio", target: "Reflection on Loneliness", time: "1 day ago" },
-  { action: "Published Article", target: "Understanding Digital Diseases", time: "2 days ago" },
-];
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return dateString;
+  }
+}
 
 type ReflectionRange = "24h" | "7d" | "30d";
 
@@ -35,6 +40,38 @@ function deltaClassName(value: number | null) {
 
 export default function AdminDashboardPage() {
   const [reflectionRange, setReflectionRange] = useState<ReflectionRange>("7d");
+
+  const { data: adminStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/stats");
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || "Failed to load stats");
+      return json as {
+        stats: {
+          wisdomCardsCount: number;
+          articlesCount: number;
+          audioReflectionsCount: number;
+          usersCount: number;
+        };
+        recentActivity: Array<{
+          action: string;
+          target: string;
+          time: string;
+        }>;
+      };
+    },
+    retry: 1,
+  });
+
+  const statsList = [
+    { label: "Total Wisdom Cards", value: statsLoading ? "..." : String(adminStats?.stats.wisdomCardsCount ?? 0), icon: BookOpen, change: "Real-time count" },
+    { label: "Articles Published", value: statsLoading ? "..." : String(adminStats?.stats.articlesCount ?? 0), icon: FileText, change: "Real-time count" },
+    { label: "Audio Reflections", value: statsLoading ? "..." : String(adminStats?.stats.audioReflectionsCount ?? 0), icon: Headphones, change: "Real-time count" },
+    { label: "Total Users", value: statsLoading ? "..." : String(adminStats?.stats.usersCount ?? 1), icon: Users, change: "Unique participants" },
+  ];
+
+  const recentActivityList = adminStats?.recentActivity ?? [];
 
   const { error } = useQuery({
     queryKey: ["content-list-check"],
@@ -134,7 +171,7 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => {
+        {statsList.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <div key={index} className="rounded-xl border border-border bg-surface p-6">
@@ -352,13 +389,13 @@ export default function AdminDashboardPage() {
           </div>
           <div className="p-6">
             <div className="space-y-6">
-              {recentActivity.map((activity, index) => (
+              {recentActivityList.map((activity, index) => (
                 <div key={index} className="flex gap-4">
                   <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-gold-muted" />
                   <div>
                     <p className="text-sm font-medium text-foreground">{activity.action}</p>
                     <p className="text-sm text-muted">{activity.target}</p>
-                    <p className="mt-1 text-xs text-muted/60">{activity.time}</p>
+                    <p className="mt-1 text-xs text-muted/60">{formatRelativeTime(activity.time)}</p>
                   </div>
                 </div>
               ))}
