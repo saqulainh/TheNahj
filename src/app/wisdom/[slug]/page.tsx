@@ -70,7 +70,7 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
   const reflectionQuestions = splitLines(article.reflection_questions);
   const actionSteps = splitLines(article.action_steps);
   const sections = [
-    { href: safeFrom, label: "Wisdom" },
+    { href: safeFrom, label: backLabel },
     { id: "narrations", label: "Narrations" },
     { id: "relevance", label: "Modern Relevance" },
     { id: "reflection", label: "Reflection" },
@@ -128,7 +128,7 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
             <nav className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted">
               <Link href="/" className="transition-colors hover:text-gold">Home</Link>
               <span>→</span>
-              <Link href="/wisdom" className="transition-colors hover:text-gold">Imam Ali Says</Link>
+              <Link href={safeFrom} className="transition-colors hover:text-gold">{backLabel}</Link>
               {(theme || article.tags?.[0]) && (
                 <>
                   <span>→</span>
