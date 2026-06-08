@@ -126,10 +126,29 @@ export default function ContentStudioPage() {
   const contentMutation = useMutation({
     mutationFn: saveContent,
     onMutate: async () => { setIsDirty(false); await queryClient.cancelQueries({ queryKey: ["content-list"] }); },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success("Wisdom saved", { description: "Article saved to the editorial engine." });
       queryClient.invalidateQueries({ queryKey: ["content-list"] });
       queryClient.invalidateQueries({ queryKey: ["public-content"] });
+      if (data) {
+        isHydratingRef.current = true;
+        if (data.id) {
+          form.setValue("id", data.id, { shouldDirty: false });
+        }
+        if (data.slug) {
+          form.setValue("slug", data.slug, { shouldDirty: false });
+          const params = new URLSearchParams(window.location.search);
+          if (params.get("slug") !== data.slug) {
+            params.set("slug", data.slug);
+            params.delete("new");
+            window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+          }
+        }
+        setDraft({ ...data, tags: data.tags || [] } as any);
+        draftSyncKeyRef.current = JSON.stringify(form.getValues());
+        setIsDirty(false);
+        isHydratingRef.current = false;
+      }
     },
     onError: (error) => {
       setIsDirty(true);

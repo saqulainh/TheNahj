@@ -200,9 +200,26 @@ export async function POST(request: Request) {
       );
     }
 
+    let oldSlug: string | null = null;
+    if (record.id && isSupabaseConfigured && supabase) {
+      try {
+        const { data: existing } = await supabase
+          .from("articles_unified")
+          .select("slug")
+          .eq("id", record.id)
+          .maybeSingle();
+        if (existing && existing.slug !== record.slug) {
+          oldSlug = existing.slug;
+        }
+      } catch {
+        // ignore errors querying existing
+      }
+    }
+
+    const conflictTarget = record.id ? "id" : "slug";
     const { data, error } = await supabase
       .from("articles_unified")
-      .upsert(record, { onConflict: "slug" })
+      .upsert(record, { onConflict: conflictTarget })
       .select()
       .single();
 
@@ -222,6 +239,9 @@ export async function POST(request: Request) {
     await supabase.from("article_revisions").insert(revisionRecord);
 
     try {
+      if (oldSlug) {
+        await deleteWisdomCardProjection(oldSlug);
+      }
       await syncWisdomCardProjection(data as Record<string, unknown>);
     } catch {
       // Wisdom card projection is best-effort and must not block publishing.
@@ -232,6 +252,12 @@ export async function POST(request: Request) {
     revalidateTag(`article-related:${record.slug}`);
     revalidateTag("wisdom-cards");
     revalidateTag(`wisdom-card:${record.slug}`);
+
+    if (oldSlug) {
+      revalidateTag(`article:${oldSlug}`);
+      revalidateTag(`article-related:${oldSlug}`);
+      revalidateTag(`wisdom-card:${oldSlug}`);
+    }
 
     return NextResponse.json(
       { success: true, data },
