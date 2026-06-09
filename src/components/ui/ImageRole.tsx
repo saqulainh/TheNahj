@@ -15,9 +15,11 @@ interface ImageRoleProps {
   getImgRef?: (el: HTMLImageElement | null) => void;
   // When true, force rendering a native <img> even if variants are not available.
   forceNative?: boolean;
+  // When true, do not apply the role's aspect ratio to the container wrapper.
+  unconstrained?: boolean;
 }
 
-export function ImageRole({ src, alt = "", role = "hero", className = "", focalPoint = null, getImgRef, forceNative = false }: ImageRoleProps) {
+export function ImageRole({ src, alt = "", role = "hero", className = "", focalPoint = null, getImgRef, forceNative = false, unconstrained = false }: ImageRoleProps) {
   const missing = !src;
 
   // Decide sizes and object-fit defaults per role
@@ -57,7 +59,7 @@ export function ImageRole({ src, alt = "", role = "hero", className = "", focalP
   }, [src]);
 
   if (missing) {
-    return <div className={`bg-muted ${className}`} style={{ minHeight: role === "hero" ? 220 : 120 }} />;
+    return <div className={`bg-muted ${className}`} style={{ minHeight: role === "hero" ? 220 : 120, ...(unconstrained ? {} : { aspectRatio: opts.aspect }) }} />;
   }
 
   // If variants are available, render a native img with srcset for responsive delivery
@@ -67,7 +69,7 @@ export function ImageRole({ src, alt = "", role = "hero", className = "", focalP
     const srcset = variants ? variants.map((v) => `${v.url} ${v.width}w`).join(", ") : "";
     const fallback = variants && variants.length ? variants[variants.length - 1].url : src;
     return (
-      <div className={`relative overflow-hidden ${className}`} style={{ aspectRatio: opts.aspect }}>
+      <div className={`relative overflow-hidden ${className}`} style={unconstrained ? undefined : { aspectRatio: opts.aspect }}>
         <img
           ref={(el) => { if (getImgRef) getImgRef?.(el); }}
           src={fallback as string}
@@ -82,7 +84,7 @@ export function ImageRole({ src, alt = "", role = "hero", className = "", focalP
   }
 
   return (
-    <div className={`relative overflow-hidden ${className}`} style={{ aspectRatio: opts.aspect }}>
+    <div className={`relative overflow-hidden ${className}`} style={unconstrained ? undefined : { aspectRatio: opts.aspect }}>
       <Image
         src={src}
         alt={alt}

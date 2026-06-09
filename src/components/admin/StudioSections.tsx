@@ -321,7 +321,7 @@ export function WisdomCardPreview({ data }: {
         <div className="absolute inset-0 z-0">
           <div className="h-full w-full opacity-15 mix-blend-luminosity">
             { }
-            <ImageRole src={data.hero_image} alt="" role="hero" className="h-full w-full object-cover" focalPoint={data.hero_focal_point || null} />
+            <ImageRole src={data.hero_image} alt="" role="hero" className="h-full w-full object-cover" focalPoint={data.hero_focal_point || null} unconstrained />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>

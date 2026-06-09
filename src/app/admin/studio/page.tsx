@@ -242,9 +242,14 @@ export default function ContentStudioPage() {
   /** Assign a media library item to a specific slot */
   const assignMediaToSlot = useCallback((slot: MediaSlotKey, url: string, title: string) => {
     const config = MEDIA_SLOT_CONFIG[slot];
-    form.setValue(config.field, url, { shouldDirty: true });
-    toast.success(`${config.label} set`, { description: title });
-  }, [form]);
+    setCropState({
+      imageUrl: url,
+      targetSlot: slot,
+      aspectRatio: config.aspectRatio,
+      label: config.label,
+      originalFileName: title,
+    });
+  }, []);
 
   useEffect(() => { setDraftRef.current = setDraft; }, [setDraft]);
   useEffect(() => { mutateRef.current = contentMutation.mutate; }, [contentMutation.mutate]);
