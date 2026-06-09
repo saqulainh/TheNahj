@@ -1,14 +1,15 @@
 "use client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Save, Loader2, RefreshCw, History, RotateCcw, Bookmark, Share2 } from "lucide-react";
+import { Save, Loader2, RefreshCw, History, RotateCcw, Image as ImageIcon } from "lucide-react";
+import ImageCropModal from "@/components/admin/ImageCropModal";
 import { wisdomArticleSchema, unifiedCategories } from "@/lib/content-schema";
 import { createInitialDraft, useContentStudioStore } from "@/lib/stores/contentStudioStore";
 import { SECTION_TAXONOMY, getThemesForSection, getTopicsForSection, normalizeThemeForSection } from "@/lib/taxonomy";
@@ -27,6 +28,22 @@ interface MediaItem {
   id: string; title: string; url: string; mimeType: string; size: number;
   variants?: Array<{ width: number; url: string; format: string; fileName: string }>;
 }
+type MediaSlotKey = "hero" | "featured" | "sidebar";
+
+interface CropState {
+  imageUrl: string;
+  targetSlot: MediaSlotKey;
+  aspectRatio: number;
+  label: string;
+  /** Original file to re-upload as cropped version */
+  originalFileName: string;
+}
+
+const MEDIA_SLOT_CONFIG: Record<MediaSlotKey, { field: "hero_image" | "featured_image" | "sidebar_banner"; aspectRatio: number; label: string; recommendedLabel: string }> = {
+  hero: { field: "hero_image", aspectRatio: 16 / 9, label: "Hero Image", recommendedLabel: "16:9 (e.g. 1600×900). Full-width hero banner." },
+  featured: { field: "featured_image", aspectRatio: 1, label: "Card Background", recommendedLabel: "1:1 (e.g. 1200×1200). Card/grid previews." },
+  sidebar: { field: "sidebar_banner", aspectRatio: 3 / 4, label: "Sidebar Banner", recommendedLabel: "3:4 (e.g. 1200×1600). Tall sidebar banners." },
+};
 
 function slugify(text: string): string {
   return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 90);
@@ -89,7 +106,8 @@ export default function ContentStudioPage() {
   const queryClient = useQueryClient();
   const { draft, setDraft, resetDraft } = useContentStudioStore();
   const [isDirty, setIsDirty] = useState(false);
-  const [mediaTarget, setMediaTarget] = useState<"hero" | "featured" | "sidebar" | null>(null);
+  const [uploadingSlots, setUploadingSlots] = useState<Record<MediaSlotKey, boolean>>({ hero: false, featured: false, sidebar: false });
+  const [cropState, setCropState] = useState<CropState | null>(null);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftSyncKeyRef = useRef<string>("");
   const setDraftRef = useRef(setDraft);
@@ -158,24 +176,75 @@ export default function ContentStudioPage() {
 
   const mutateRef = useRef(contentMutation.mutate);
 
-  const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const fd = new FormData(); fd.append("file", file); fd.append("title", file.name);
-      const res = await fetch("/api/media", { method: "POST", body: fd });
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.error || "Upload failed");
-      return json.item as MediaItem;
-    },
-    onSuccess: (item) => {
-      toast.success("Image uploaded", { description: item.title });
+  /** Upload a file to /api/media and return the MediaItem */
+  const uploadFileToServer = useCallback(async (file: File | Blob, title: string): Promise<MediaItem> => {
+    const fd = new FormData();
+    fd.append("file", file instanceof File ? file : new File([file], title, { type: file.type }));
+    fd.append("title", title);
+    const res = await fetch("/api/media", { method: "POST", body: fd });
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.error || "Upload failed");
+    return json.item as MediaItem;
+  }, []);
+
+  /** Per-slot upload handler: uploads file, then opens crop modal */
+  const handleSlotUpload = useCallback(async (slot: MediaSlotKey, file: File) => {
+    const config = MEDIA_SLOT_CONFIG[slot];
+    setUploadingSlots((prev) => ({ ...prev, [slot]: true }));
+    try {
+      const item = await uploadFileToServer(file, file.name);
       queryClient.invalidateQueries({ queryKey: ["media"] });
-      if (mediaTarget === "hero") { form.setValue("hero_image", item.url, { shouldDirty: true }); }
-      else if (mediaTarget === "featured") { form.setValue("featured_image", item.url, { shouldDirty: true }); }
-      else if (mediaTarget === "sidebar") { form.setValue("sidebar_banner", item.url, { shouldDirty: true }); }
-      setMediaTarget(null);
-    },
-    onError: (error) => { toast.error("Upload failed", { description: error instanceof Error ? error.message : "Could not upload" }); },
-  });
+      // Open crop modal with the uploaded image URL
+      setCropState({
+        imageUrl: item.url,
+        targetSlot: slot,
+        aspectRatio: config.aspectRatio,
+        label: config.label,
+        originalFileName: file.name,
+      });
+    } catch (error) {
+      toast.error("Upload failed", { description: error instanceof Error ? error.message : "Could not upload" });
+    } finally {
+      setUploadingSlots((prev) => ({ ...prev, [slot]: false }));
+    }
+  }, [uploadFileToServer, queryClient]);
+
+  /** Called when user confirms the crop — re-uploads the cropped blob */
+  const handleCropConfirm = useCallback(async (croppedBlob: Blob) => {
+    if (!cropState) return;
+    const { targetSlot, originalFileName } = cropState;
+    const config = MEDIA_SLOT_CONFIG[targetSlot];
+    setCropState(null);
+    setUploadingSlots((prev) => ({ ...prev, [targetSlot]: true }));
+    try {
+      const croppedName = `cropped-${originalFileName.replace(/\.[^.]+$/, "")}.webp`;
+      const item = await uploadFileToServer(croppedBlob, croppedName);
+      queryClient.invalidateQueries({ queryKey: ["media"] });
+      form.setValue(config.field, item.url, { shouldDirty: true });
+      toast.success(`${config.label} cropped & set`, { description: croppedName });
+    } catch (error) {
+      toast.error("Crop upload failed", { description: error instanceof Error ? error.message : "Could not upload cropped image" });
+    } finally {
+      setUploadingSlots((prev) => ({ ...prev, [targetSlot]: false }));
+    }
+  }, [cropState, uploadFileToServer, queryClient, form]);
+
+  /** Called when user skips cropping — use the original uploaded URL directly */
+  const handleCropSkip = useCallback(() => {
+    if (!cropState) return;
+    const { targetSlot, imageUrl } = cropState;
+    const config = MEDIA_SLOT_CONFIG[targetSlot];
+    form.setValue(config.field, imageUrl, { shouldDirty: true });
+    toast.success(`${config.label} set`, { description: "Original image applied without cropping." });
+    setCropState(null);
+  }, [cropState, form]);
+
+  /** Assign a media library item to a specific slot */
+  const assignMediaToSlot = useCallback((slot: MediaSlotKey, url: string, title: string) => {
+    const config = MEDIA_SLOT_CONFIG[slot];
+    form.setValue(config.field, url, { shouldDirty: true });
+    toast.success(`${config.label} set`, { description: title });
+  }, [form]);
 
   useEffect(() => { setDraftRef.current = setDraft; }, [setDraft]);
   useEffect(() => { mutateRef.current = contentMutation.mutate; }, [contentMutation.mutate]);
@@ -526,13 +595,18 @@ export default function ContentStudioPage() {
           </SectionShell>
 
           {/* Section 9: Media */}
-          <SectionShell number={9} title="Media" subtitle="Upload images — no URL inputs, media library only">
-            <div className="grid gap-4 md:grid-cols-3">
+          <SectionShell number={9} title="Media" subtitle="Independent uploads per slot — crop to exact dimensions">
+            <div className="grid gap-6 md:grid-cols-3">
+              {/* ── Hero Image Slot ── */}
               <div>
-                <MediaPickerField label="Hero Image" currentUrl={values.hero_image || null}
-                  onSelect={() => setMediaTarget("hero")} isUploading={uploadMutation.isPending && mediaTarget === "hero"}
-                  onUpload={(file) => { setMediaTarget("hero"); uploadMutation.mutate(file); }} />
-                <p className="mt-2 text-[11px] text-muted">Recommended: 16:9 (e.g. 1600×900). Used as full-width hero; will be cropped with object-fit.</p>
+                <MediaPickerField
+                  label="Hero Image"
+                  currentUrl={values.hero_image || null}
+                  isUploading={uploadingSlots.hero}
+                  aspectLabel={MEDIA_SLOT_CONFIG.hero.recommendedLabel}
+                  onUpload={(file) => handleSlotUpload("hero", file)}
+                  onClear={() => { form.setValue("hero_image", null, { shouldDirty: true }); form.setValue("hero_focal_point", null, { shouldDirty: true }); }}
+                />
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <label className="space-y-1 text-[11px] text-muted">
                     Focal X (%)
@@ -547,11 +621,17 @@ export default function ContentStudioPage() {
                   <FocalPicker src={values.hero_image} value={values.hero_focal_point || null} onChange={(p) => form.setValue("hero_focal_point", p, { shouldDirty: true })} />
                 )}
               </div>
+
+              {/* ── Card Background Slot ── */}
               <div>
-                <MediaPickerField label="Card Background" currentUrl={values.featured_image || null}
-                  onSelect={() => setMediaTarget("featured")} isUploading={uploadMutation.isPending && mediaTarget === "featured"}
-                  onUpload={(file) => { setMediaTarget("featured"); uploadMutation.mutate(file); }} />
-                <p className="mt-2 text-[11px] text-muted">Recommended: 1:1 (e.g. 1200×1200). Best for card/grid previews and square crops.</p>
+                <MediaPickerField
+                  label="Card Background"
+                  currentUrl={values.featured_image || null}
+                  isUploading={uploadingSlots.featured}
+                  aspectLabel={MEDIA_SLOT_CONFIG.featured.recommendedLabel}
+                  onUpload={(file) => handleSlotUpload("featured", file)}
+                  onClear={() => { form.setValue("featured_image", null, { shouldDirty: true }); form.setValue("featured_focal_point", null, { shouldDirty: true }); }}
+                />
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <label className="space-y-1 text-[11px] text-muted">
                     Focal X (%)
@@ -566,11 +646,17 @@ export default function ContentStudioPage() {
                   <FocalPicker src={values.featured_image} value={values.featured_focal_point || null} onChange={(p) => form.setValue("featured_focal_point", p, { shouldDirty: true })} />
                 )}
               </div>
+
+              {/* ── Sidebar Banner Slot ── */}
               <div>
-                <MediaPickerField label="Sidebar Banner" currentUrl={values.sidebar_banner || null}
-                  onSelect={() => setMediaTarget("sidebar")} isUploading={uploadMutation.isPending && mediaTarget === "sidebar"}
-                  onUpload={(file) => { setMediaTarget("sidebar"); uploadMutation.mutate(file); }} />
-                <p className="mt-2 text-[11px] text-muted">Recommended: 3:4 or 4:5 (e.g. 1200×1600). Tall banners for sidebars and promo blocks.</p>
+                <MediaPickerField
+                  label="Sidebar Banner"
+                  currentUrl={values.sidebar_banner || null}
+                  isUploading={uploadingSlots.sidebar}
+                  aspectLabel={MEDIA_SLOT_CONFIG.sidebar.recommendedLabel}
+                  onUpload={(file) => handleSlotUpload("sidebar", file)}
+                  onClear={() => { form.setValue("sidebar_banner", null, { shouldDirty: true }); form.setValue("sidebar_focal_point", null, { shouldDirty: true }); }}
+                />
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <label className="space-y-1 text-[11px] text-muted">
                     Focal X (%)
@@ -587,32 +673,33 @@ export default function ContentStudioPage() {
               </div>
             </div>
 
-            {/* Media Library */}
-            <div className="mt-4">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-muted mb-2">Media Library — click to assign</p>
-              <div className="max-h-48 space-y-2 overflow-auto">
+            {/* ── Media Library with explicit slot assignment ── */}
+            <div className="mt-5">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted mb-2">Media Library — assign to a specific slot</p>
+              <div className="max-h-56 space-y-2 overflow-auto">
                 {mediaQuery.isLoading && <p className="text-xs text-muted">Loading media...</p>}
                 {mediaCards.filter((m) => m.mimeType.startsWith("image/")).map((item) => (
-                  <button key={item.id} type="button"
-                    onClick={() => {
-                      if (mediaTarget) {
-                        const field = mediaTarget === "hero" ? "hero_image" : mediaTarget === "featured" ? "featured_image" : "sidebar_banner";
-                        form.setValue(field, item.url, { shouldDirty: true });
-                        toast.success(`${mediaTarget} image set`, { description: item.title });
-                        setMediaTarget(null);
-                      } else {
-                        form.setValue("hero_image", item.url, { shouldDirty: true });
-                        form.setValue("featured_image", item.url, { shouldDirty: true });
-                        toast.success("Image applied", { description: item.title });
-                      }
-                    }}
-                    className="flex w-full items-center gap-3 rounded-xl border border-border/30 bg-background p-2 text-left hover:border-gold/35">
-                    <ImageRole src={item.url} alt={item.title} role="card" className="h-10 w-10 rounded-lg object-cover" />
-                    <div className="min-w-0">
+                  <div key={item.id} className="flex w-full items-center gap-3 rounded-xl border border-border/30 bg-background p-2">
+                    <ImageRole src={item.url} alt={item.title} role="card" className="h-10 w-10 rounded-lg object-cover shrink-0" />
+                    <div className="min-w-0 flex-1">
                       <p className="truncate text-xs text-foreground">{item.title}</p>
                       <p className="text-[10px] text-muted">{Math.round(item.size / 1024)} KB</p>
                     </div>
-                  </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button type="button" onClick={() => assignMediaToSlot("hero", item.url, item.title)}
+                        className="rounded-lg border border-border/30 px-2 py-1 text-[10px] text-muted hover:text-gold-light hover:border-gold/30 hover:bg-gold/5 transition-all">
+                        <ImageIcon size={10} className="inline mr-0.5" /> Hero
+                      </button>
+                      <button type="button" onClick={() => assignMediaToSlot("featured", item.url, item.title)}
+                        className="rounded-lg border border-border/30 px-2 py-1 text-[10px] text-muted hover:text-gold-light hover:border-gold/30 hover:bg-gold/5 transition-all">
+                        <ImageIcon size={10} className="inline mr-0.5" /> Card
+                      </button>
+                      <button type="button" onClick={() => assignMediaToSlot("sidebar", item.url, item.title)}
+                        className="rounded-lg border border-border/30 px-2 py-1 text-[10px] text-muted hover:text-gold-light hover:border-gold/30 hover:bg-gold/5 transition-all">
+                        <ImageIcon size={10} className="inline mr-0.5" /> Side
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -655,6 +742,18 @@ export default function ContentStudioPage() {
           </section>
         </aside>
       </div>
+
+      {/* ── Crop Modal (rendered as a portal-like overlay) ── */}
+      {cropState && (
+        <ImageCropModal
+          imageUrl={cropState.imageUrl}
+          aspectRatio={cropState.aspectRatio}
+          label={cropState.label}
+          onConfirm={handleCropConfirm}
+          onSkip={handleCropSkip}
+          onCancel={() => setCropState(null)}
+        />
+      )}
     </div>
   );
 }
