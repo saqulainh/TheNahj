@@ -53,8 +53,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    const enrichedItems = (data ?? []).map((item) => {
+      const section = item.category;
+      const { theme, topic } = inferThemeTopicFromTagsForSection(section, item.tags || []);
+      return {
+        ...item,
+        theme,
+        topic,
+      };
+    });
+
     return NextResponse.json(
-      { items: data ?? [], source: "supabase" },
+      { items: enrichedItems, source: "supabase" },
       {
         headers: {
           "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
@@ -259,8 +269,14 @@ export async function POST(request: Request) {
       revalidateTag(`wisdom-card:${oldSlug}`);
     }
 
+    const enrichedData = {
+      ...data,
+      theme: resolvedTheme,
+      topic: resolvedTopic,
+    };
+
     return NextResponse.json(
-      { success: true, data },
+      { success: true, data: enrichedData },
       {
         headers: {
           "X-RateLimit-Remaining": String(limit.remaining),

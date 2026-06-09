@@ -3,7 +3,7 @@ import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type { ContentBlock } from "@/lib/content-schema";
 import { unstable_cache } from "next/cache";
 import { DiscoveryItem, scoreRelatedDiscoveryCandidate } from "@/lib/discovery";
-import { slugifyTaxonomy } from "@/lib/taxonomy";
+import { slugifyTaxonomy, inferThemeTopicFromTagsForSection } from "@/lib/taxonomy";
 
 export interface UnifiedArticle {
   id?: string;
@@ -58,6 +58,8 @@ export interface UnifiedArticle {
   published_at?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
+  theme?: string | null;
+  topic?: string | null;
 }
 
 function fallbackBlocks(text: string): ContentBlock[] {
@@ -196,11 +198,14 @@ async function fetchUnifiedArticleBySlug(slug: string): Promise<UnifiedArticle |
       if (!blocks || blocks.length === 0) {
         blocks = generateBlocksFromStructured(data);
       }
+      const { theme, topic } = inferThemeTopicFromTagsForSection(data.category, data.tags || []);
       return {
         ...data,
         tags: data.tags ?? [],
         narrations: data.narrations ?? [],
         content_blocks: blocks,
+        theme,
+        topic,
       } as UnifiedArticle;
     }
   }
