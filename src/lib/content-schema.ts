@@ -29,6 +29,7 @@ export const blockTypes = [
   "modern_relevance",
   "side_note",
   "timeline",
+  "narrations_block",
 ] as const;
 
 export const contentBlockSchema = z.object({

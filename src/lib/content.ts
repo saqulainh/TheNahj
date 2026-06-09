@@ -138,6 +138,12 @@ function generateBlocksFromStructured(data: any): ContentBlock[] {
     });
   }
 
+  // Section 4: Related Narrations
+  if (data.narrations && data.narrations.length > 0) {
+    blocks.push({ id: "h-narrations", type: "heading", value: "Related Narrations" });
+    blocks.push({ id: "narrations-block", type: "narrations_block", value: "" });
+  }
+
   // Section 5: Modern Relevance
   if (data.current_issues || data.youth_relevance || data.student_relevance || data.practical_application) {
     blocks.push({ id: "h-relevance", type: "heading", value: "Modern Relevance & Action" });

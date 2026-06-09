@@ -38,7 +38,7 @@ interface ImmersiveArticleProps {
   related: Array<{ slug: string; title: string; category: string }>;
 }
 
-function renderBlock(block: ContentBlock) {
+function renderBlock(block: ContentBlock, narrations?: ImmersiveArticleProps["article"]["narrations"]) {
   if (block.type === "heading") {
     return <h2 id={block.id} className="mt-14 mb-6 font-serif text-2xl md:text-3xl font-light text-foreground tracking-tight">{block.value}</h2>;
   }
@@ -97,6 +97,37 @@ function renderBlock(block: ContentBlock) {
       </div>
     );
   }
+  if (block.type === "narrations_block" && narrations && narrations.length > 0) {
+    return (
+      <div className="space-y-6 my-10">
+        {narrations.map((narration, i) => (
+          <div key={narration.id || i} className="rounded-2xl border border-border/20 bg-surface-elevated/10 p-6 shadow-sm">
+            {narration.arabic && (
+              <p dir="rtl" className="mb-4 text-center font-arabic text-2xl leading-loose text-foreground drop-shadow-sm">{narration.arabic}</p>
+            )}
+            {narration.urdu && (
+              <p dir="rtl" className="mb-4 text-center font-urdu text-xl leading-relaxed text-foreground/90">{narration.urdu}</p>
+            )}
+            {narration.translation && (
+              <p className="mb-4 text-center font-serif text-lg italic text-secondary">&ldquo;{narration.translation}&rdquo;</p>
+            )}
+            {(narration.narrator || narration.source) && (
+              <div className="flex flex-wrap items-center justify-center gap-2 text-xs uppercase tracking-[0.1em] text-gold-muted mt-4">
+                {narration.narrator && <span>{narration.narrator}</span>}
+                {narration.narrator && narration.source && <span>•</span>}
+                {narration.source && <span>{narration.source}</span>}
+              </div>
+            )}
+            {narration.explanation && (
+              <div className="mt-5 border-t border-border/10 pt-4 text-center text-sm font-light text-secondary">
+                {narration.explanation}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
   return <p className="mt-6 mb-4 text-base md:text-lg leading-relaxed text-secondary font-light tracking-wide">{block.value}</p>;
 }
 
@@ -106,12 +137,8 @@ export function ImmersiveArticle({ article, related }: ImmersiveArticleProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const headings = useMemo(() => {
-    const list = article.content_blocks.filter((block) => block.type === "heading" && block.value);
-    if (article.narrations && article.narrations.length > 0) {
-      list.push({ id: "h-narrations", type: "heading", value: "Related Narrations" });
-    }
-    return list;
-  }, [article.content_blocks, article.narrations]);
+    return article.content_blocks.filter((block) => block.type === "heading" && block.value);
+  }, [article.content_blocks]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -224,41 +251,8 @@ export function ImmersiveArticle({ article, related }: ImmersiveArticleProps) {
 
           <div className="prose-reflection mt-8 max-w-none">
             {article.content_blocks.map((block) => (
-              <div key={block.id}>{renderBlock(block)}</div>
+              <div key={block.id}>{renderBlock(block, article.narrations)}</div>
             ))}
-            
-            {article.narrations && article.narrations.length > 0 && (
-              <div className="mt-14">
-                <h2 id="h-narrations" className="mb-6 font-serif text-2xl md:text-3xl font-light text-foreground tracking-tight">Related Narrations</h2>
-                <div className="space-y-6">
-                  {article.narrations.map((narration, i) => (
-                    <div key={narration.id || i} className="rounded-2xl border border-border/20 bg-surface-elevated/10 p-6 shadow-sm">
-                      {narration.arabic && (
-                        <p dir="rtl" className="mb-4 text-center font-arabic text-2xl leading-loose text-foreground drop-shadow-sm">{narration.arabic}</p>
-                      )}
-                      {narration.urdu && (
-                        <p dir="rtl" className="mb-4 text-center font-urdu text-xl leading-relaxed text-foreground/90">{narration.urdu}</p>
-                      )}
-                      {narration.translation && (
-                        <p className="mb-4 text-center font-serif text-lg italic text-secondary">&ldquo;{narration.translation}&rdquo;</p>
-                      )}
-                      {(narration.narrator || narration.source) && (
-                        <div className="flex flex-wrap items-center justify-center gap-2 text-xs uppercase tracking-[0.1em] text-gold-muted mt-4">
-                          {narration.narrator && <span>{narration.narrator}</span>}
-                          {narration.narrator && narration.source && <span>•</span>}
-                          {narration.source && <span>{narration.source}</span>}
-                        </div>
-                      )}
-                      {narration.explanation && (
-                        <div className="mt-5 border-t border-border/10 pt-4 text-center text-sm font-light text-secondary">
-                          {narration.explanation}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="mt-14 border-t border-border/20 pt-8">
