@@ -39,7 +39,7 @@ export function Footer({ socialLinks, links = footerLinks }: FooterProps) {
                 src="/TheNahj Logo.jpeg" 
                 alt={SITE_NAME} 
                 fill 
-                className="object-contain mix-blend-multiply dark:invert" 
+                className="object-contain rounded-xl overflow-hidden" 
               />
             </div>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted/80">

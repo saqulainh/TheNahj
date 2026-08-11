@@ -82,7 +82,7 @@ export function Header({
               src="/TheNahj Logo.jpeg" 
               alt={siteName} 
               fill 
-              className="object-contain mix-blend-multiply dark:invert"
+              className="object-contain rounded-xl overflow-hidden"
               priority 
             />
           </div>
