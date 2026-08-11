@@ -5,25 +5,31 @@ import { getThemesForSection, getTopicsForSection, normalizeSection, normalizeTh
 // Smart default fallbacks for each category page to guide the user's initial choices.
 const defaultTagsByCategory: Record<string, string[]> = {
   "Student Corner": [
+    "Focus & Productivity",
+    "Exam Anxiety",
+    "Social Media Addiction",
+    "Laziness",
+    "Career Pressure",
+    "Time Management",
+    "Dopamine Distraction",
+    "Study Discipline",
     "Self Discipline",
     "Focus",
-    "Productivity",
-    "Exam Anxiety",
-    "Time Management",
-    "Social Media Addiction",
-    "Career Pressure",
-    "Laziness"
+    "Concentration",
+    "Deep Work"
   ],
   "Youth Corner": [
-    "Relationships",
-    "Modern Issues",
+    "Haram Relationships",
+    "Loneliness",
     "Identity Crisis",
     "Validation Addiction",
     "Overthinking",
     "Purpose",
     "Self Respect",
     "Emotional Discipline",
-    "Haram Relationships"
+    "Relationships",
+    "Modern Issues",
+    "Social Media"
   ],
   "Imam Ali Says": [
     "Discipline",
@@ -35,19 +41,22 @@ const defaultTagsByCategory: Record<string, string[]> = {
     "Friendship",
     "Anger",
     "Spirituality",
-    "Success"
+    "Success",
+    "Justice",
+    "Self Control"
   ],
   "Nahjul Balagha": [
+    "Sermons",
+    "Letters",
+    "Wisdom Sayings",
+    "Governance",
+    "Ethics",
+    "Social Justice",
     "Discipline",
     "Knowledge",
     "Time",
     "Patience",
-    "Leadership",
-    "Character",
-    "Friendship",
-    "Anger",
-    "Spirituality",
-    "Success"
+    "Leadership"
   ],
   "Articles": [
     "Reflection",
@@ -56,9 +65,11 @@ const defaultTagsByCategory: Record<string, string[]> = {
     "Modern Issues"
   ],
   "Audio Reflections": [
-    "Reflection",
-    "Spirituality",
-    "Focus"
+    "Duas & Ziyarat",
+    "Nohay",
+    "Audio Reflections",
+    "Focus",
+    "Spirituality"
   ],
 };
 
@@ -81,10 +92,6 @@ export async function GET(request: Request) {
 
   // Load defaults for this category
   const defaults = category ? (defaultTagsByCategory[category] || []) : [];
-
-  if (section) {
-    return NextResponse.json({ tags: getThemesForSection(section) });
-  }
 
   if (!isSupabaseConfigured || !supabase) {
     return NextResponse.json({ tags: defaults });

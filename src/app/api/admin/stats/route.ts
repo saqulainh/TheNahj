@@ -1,7 +1,20 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { verifyAdminToken, COOKIE_NAME } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const cookieHeader = request.headers.get("cookie") || "";
+  const cookies = Object.fromEntries(
+    cookieHeader.split("; ").map(v => {
+      const parts = v.split("=");
+      return [decodeURIComponent(parts[0]), decodeURIComponent(parts.slice(1).join("="))];
+    })
+  );
+  const token = cookies[COOKIE_NAME];
+  
+  if (!(await verifyAdminToken(token))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const fallbackActivity = [
     { action: "Published Wisdom Card", target: "Welcome to TheNahj", time: new Date().toISOString() },
   ];

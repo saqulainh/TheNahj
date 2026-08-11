@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { verifyAdminToken } from "@/lib/auth";
+import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   if (!isSupabaseConfigured || !supabase) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
+
+  const ip = getRequestClientIp(request);
+  const rl = await consumeRateLimit({ key: `categories:post:${ip}`, limit: 10, windowMs: 60000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": rl.retryAfterSec.toString() } });
   }
 
   const cookieHeader = request.headers.get("cookie") || "";

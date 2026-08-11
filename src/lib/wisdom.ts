@@ -303,15 +303,15 @@ export async function getWisdomByCornerTopic(topicSlug: string): Promise<Wisdom[
     "focus-productivity": ["focus", "study", "knowledge", "time"],
     "exam-anxiety": ["anxiety", "patience", "study"],
     "social-media-addiction": ["time", "focus"],
-    laziness: ["study", "knowledge"],
+    "laziness": ["study", "knowledge"],
     "career-pressure": ["success", "purpose"],
     "time-management": ["time"],
     "dopamine-distraction": ["focus", "time"],
-    loneliness: ["loneliness", "friendship"],
+    "loneliness": ["loneliness", "friendship"],
     "identity-crisis": ["purpose"],
     "validation-addiction": ["friendship"],
-    overthinking: ["anxiety", "patience"],
-    purpose: ["purpose", "success"],
+    "overthinking": ["anxiety", "patience"],
+    "purpose": ["purpose", "success"],
     "self-respect": ["character", "discipline"],
     "emotional-discipline": ["anger", "patience", "discipline"],
     "haram-relationships": ["friendship", "character"],
@@ -393,7 +393,7 @@ export async function syncSavedSlugs(): Promise<void> {
   if (session) {
     try {
       const res = await fetch('/api/saved', {
-        headers: { 'Authorization': `Bearer session.access_token` }
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
       });
       if (res.ok) {
         const { saved } = await res.json();

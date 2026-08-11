@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { verifyAdminToken } from "@/lib/auth";
+import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 
 export async function GET() {
   if (!isSupabaseConfigured || !supabase) {
@@ -24,6 +25,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
 
+  const ip = getRequestClientIp(request);
+  const rl = await consumeRateLimit({ key: `audio:post:${ip}`, limit: 10, windowMs: 60000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": rl.retryAfterSec.toString() } });
+  }
+
   // Very simple auth check for admin panel using cookies
   const cookieHeader = request.headers.get("cookie") || "";
   const match = cookieHeader.match(/thenahj-admin=([^;]+)/);
@@ -36,10 +43,10 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { title, subtitle, category, duration, audio_url } = body;
+    const { title, subtitle, category, reciter, cover_image, duration, audio_url } = body;
 
     const { error } = await supabase.from("audio_tracks").insert([
-      { title, subtitle, category, duration, audio_url },
+      { title, subtitle, category, reciter, cover_image, duration, audio_url },
     ]);
 
     if (error) {

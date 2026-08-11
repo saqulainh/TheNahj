@@ -58,7 +58,7 @@ export default async function StudentPage() {
           <Link
             key={topic.slug}
             href={`/student/${topic.slug}`}
-            className="whitespace-nowrap rounded-full border border-border/80 bg-background/70 px-4 py-2 text-xs text-foreground transition-all hover:border-gold/30"
+            className="whitespace-nowrap rounded-full border border-border/80 bg-background/70 px-4 py-2 text-xs text-foreground transition-all hover:border-gold/30 hover:bg-gold/10"
           >
             {topic.title}
           </Link>

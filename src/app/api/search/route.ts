@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { searchDiscoveryContent } from "@/lib/discovery";
+import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
+  const ip = getRequestClientIp(request);
+  const rl = await consumeRateLimit({ key: `search:get:${ip}`, limit: 30, windowMs: 60000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": rl.retryAfterSec.toString() } });
+  }
+
   const url = new URL(request.url);
   const q = url.searchParams.get("q") || "";
   const section = url.searchParams.get("section");

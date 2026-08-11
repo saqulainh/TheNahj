@@ -13,17 +13,18 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { topic } = await params;
-  const item = studentTopics.find((t) => t.slug === topic);
-  const title = `${item?.title ?? "Student Topic"} — Islamic Student Wisdom | TheNahj`;
-  const description = item
-    ? `${item.description} Imam Ali (AS) wisdom on ${item.title.toLowerCase()} for Muslim students — practical reflections and action steps.`
-    : "Islamic wisdom for Muslim students on focus, exams, and productivity.";
+  const item = studentTopics.find((t) => t.slug === topic) || {
+    title: topic.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    description: `Islamic wisdom and reflections for Muslim students on ${topic.replace(/-/g, " ")}.`,
+  };
+  const title = `${item.title} — Islamic Student Wisdom | TheNahj`;
+  const description = `${item.description} Imam Ali (AS) guidance on ${item.title.toLowerCase()} for Muslim students.`;
 
   return {
     title,
     description,
     keywords: [
-      item?.title || "Student Wisdom",
+      item.title,
       "Imam Ali student advice",
       "Islamic study tips",
       "Muslim student motivation",
@@ -40,8 +41,12 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function StudentTopicPage({ params }: PageProps) {
   const { topic } = await params;
-  const item = studentTopics.find((t) => t.slug === topic);
-  if (!item) notFound();
+  const formattedTitle = topic.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const item = studentTopics.find((t) => t.slug === topic) || {
+    slug: topic,
+    title: formattedTitle,
+    description: `Guidance and Imam Ali (AS) wisdom on ${formattedTitle.toLowerCase()} for Muslim students.`,
+  };
 
   const [wisdom, articles] = await Promise.all([
     getWisdomByCornerTopic(topic),

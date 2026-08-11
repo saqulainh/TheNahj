@@ -246,7 +246,12 @@ export async function POST(request: Request) {
       created_at: new Date().toISOString(),
     };
 
-    await supabase.from("article_revisions").insert(revisionRecord);
+    // Do not fail the entire request if history insert fails
+    try {
+      await supabase.from("article_revisions").insert(revisionRecord);
+    } catch (e) {
+      console.error("Failed to insert revision history", e);
+    }
 
     try {
       if (oldSlug) {

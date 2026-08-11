@@ -5,7 +5,9 @@ import { PrismaHero } from "@/components/ui/prisma-hero";
 import { CornerPreview } from "@/components/home/CornerPreview";
 import { StruggleSelector } from "@/components/home/StruggleSelector";
 import { NewsletterCTA } from "@/components/home/NewsletterCTA";
+import { StreakDashboard } from "@/components/home/StreakDashboard";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
+import { DailyWisdomShowcase } from "@/components/home/DailyWisdomShowcase";
 import { Button } from "@/components/ui/Button";
 import { studentTopics, youthTopics } from "@/data/mock";
 import { getCMSConfig } from "@/lib/cms";
@@ -26,6 +28,11 @@ export default async function HomePage() {
   ]);
 
   const featuredItem = featured[0];
+  
+  // Prepare items for Daily Wisdom Showcase (1 daily + a few top trending/featured)
+  const showcaseItems = [daily, ...featured.slice(0, 2), ...trending.slice(0, 2)].filter(Boolean);
+  // Deduplicate by ID
+  const uniqueShowcaseItems = Array.from(new Map(showcaseItems.map(item => [item.id, item])).values());
 
   // Helper to check if a block is enabled
   const isEnabled = (type: string) => {
@@ -84,6 +91,13 @@ export default async function HomePage() {
         />
       )}
 
+      {/* ─── Reading Streak Dashboard ─── */}
+      <section className="relative py-6 md:py-8 border-b border-border/10 bg-surface/30">
+        <div className="mx-auto max-w-4xl px-4 md:px-6">
+          <StreakDashboard />
+        </div>
+      </section>
+
       {/* ─── Daily Wisdom ─── */}
       {isEnabled("daily-wisdom") && (
         <section className="relative py-12 md:py-20">
@@ -99,8 +113,8 @@ export default async function HomePage() {
                 Start your day with one intentional reflection.
               </p>
             </div>
-            <div className="mx-auto max-w-3xl">
-              <WisdomCard wisdom={daily} />
+            <div className="mx-auto w-full">
+              <DailyWisdomShowcase items={uniqueShowcaseItems} />
             </div>
           </div>
         </section>

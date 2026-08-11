@@ -472,19 +472,35 @@ export default function ContentStudioPage() {
 
             {structuredCategory && (
               <div className="rounded-2xl border border-border/30 bg-background/50 p-4 space-y-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-gold-muted">Taxonomy Mapping (Required)</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-gold-muted">Taxonomy Mapping & Topic Assignment</p>
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="space-y-1.5 text-xs font-medium uppercase tracking-[0.15em] text-muted block">
-                    Theme
+                    Primary Topic / Category
+                    <select
+                      value={values.topic || values.theme || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        form.setValue("topic", val || null, { shouldDirty: true });
+                        form.setValue("theme", val || selectedSectionThemes[0] || null, { shouldDirty: true });
+                        if (val && !values.tags?.includes(val)) {
+                          form.setValue("tags", [...(values.tags || []), val], { shouldDirty: true });
+                        }
+                      }}
+                      className="w-full rounded-xl border border-border/40 bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">Select Primary Topic</option>
+                      {selectedSectionThemes.map((t) => <option key={t} value={t}>{t}</option>)}
+                      {selectedThemeTopics.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </label>
+
+                  <label className="space-y-1.5 text-xs font-medium uppercase tracking-[0.15em] text-muted block">
+                    Theme / Focus Area (Optional)
                     <select
                       value={values.theme || ""}
                       onChange={(e) => {
                         const nextTheme = e.target.value;
-                        form.setValue("theme", nextTheme || null, { shouldDirty: true, shouldValidate: true });
-                        const validTopics = getTopicsForSection(values.category || "", nextTheme || null);
-                        if (!validTopics.includes(values.topic || "")) {
-                          form.setValue("topic", null, { shouldDirty: true, shouldValidate: true });
-                        }
+                        form.setValue("theme", nextTheme || null, { shouldDirty: true });
                       }}
                       className="w-full rounded-xl border border-border/40 bg-background px-3 py-2 text-sm"
                     >
@@ -492,19 +508,17 @@ export default function ContentStudioPage() {
                       {selectedSectionThemes.map((theme) => <option key={theme} value={theme}>{theme}</option>)}
                     </select>
                   </label>
+                </div>
 
-                  <label className="space-y-1.5 text-xs font-medium uppercase tracking-[0.15em] text-muted block">
-                    Topic
-                    <select
-                      value={values.topic || ""}
-                      onChange={(e) => form.setValue("topic", e.target.value || null, { shouldDirty: true, shouldValidate: true })}
-                      disabled={!selectedTheme}
-                      className="w-full rounded-xl border border-border/40 bg-background px-3 py-2 text-sm disabled:opacity-60"
-                    >
-                      <option value="">Select Topic</option>
-                      {selectedThemeTopics.map((topic) => <option key={topic} value={topic}>{topic}</option>)}
-                    </select>
-                  </label>
+                <div className="pt-2">
+                  <TopicSelectorField
+                    selectedTags={values.tags || []}
+                    onChange={(newTags) => form.setValue("tags", newTags, { shouldDirty: true })}
+                    category={values.category || "Student Corner"}
+                  />
+                  <p className="mt-1 text-[10px] text-muted">
+                    💡 <strong>Multi-Topic Mapping:</strong> You can select multiple topic tags here. This card will automatically show up in all selected topics!
+                  </p>
                 </div>
 
                 <div className="space-y-1.5">

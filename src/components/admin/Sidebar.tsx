@@ -21,11 +21,13 @@ import {
   Menu,
   Settings,
   LogOut,
+  BarChart2,
 } from "lucide-react";
 import { SITE_NAME } from "@/lib/brand";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/admin/homepage", label: "Homepage", icon: Home },
   { href: "/admin/studio", label: "Content Studio", icon: Sparkles },
   { href: "/admin/wisdom-cards", label: "Wisdom Cards", icon: BookOpen },

@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { StarBorder } from "@/components/ui/StarBorder";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { StreakBadge } from "@/components/ui/StreakBadge";
+import { LanguageToggle } from "@/components/ui/LanguageToggle";
 
 interface HeaderProps {
   siteName?: string;
@@ -123,12 +125,16 @@ export function Header({
           ))}
         </nav>
 
-        <div className="hidden md:block md:pl-3">
+        <div className="hidden md:flex md:pl-3 items-center gap-2">
+          <StreakBadge />
+          <LanguageToggle />
           <ThemeToggle />
         </div>
 
         {/* Mobile Menu Toggle */}
         <div className="flex items-center gap-2 md:hidden">
+          <StreakBadge />
+          <LanguageToggle />
           <ThemeToggle />
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

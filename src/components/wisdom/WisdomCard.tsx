@@ -4,13 +4,15 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Bookmark, Share2 } from "lucide-react";
+import { Bookmark, Share2, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { Wisdom } from "@/lib/types";
 import { SITE_NAME } from "@/lib/brand";
 import { getSavedSlugs, toggleSaveAsync } from "@/lib/wisdom";
 import ImageRole from "@/components/ui/ImageRole";
+import { ShareableWisdomCard } from "@/components/wisdom/ShareableWisdomCard";
+import { AddToCollectionMenu } from "@/components/wisdom/CollectionManager";
 
 interface WisdomCardProps {
   wisdom: Wisdom;
@@ -19,6 +21,9 @@ interface WisdomCardProps {
 
 export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
   const [saved, setSaved] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCollectionMenuOpen, setIsCollectionMenuOpen] = useState(false);
+  
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const href = (() => {
@@ -50,16 +55,10 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
     setSaved(isSaved);
   };
 
-  const handleShare = async (e: React.MouseEvent) => {
+  const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const url = `${window.location.origin}/wisdom/${wisdom.slug}`;
-    const text = wisdom.english_translation;
-    if (navigator.share) {
-      await navigator.share({ title: SITE_NAME, text, url });
-    } else {
-      await navigator.clipboard.writeText(url);
-    }
+    setIsShareModalOpen(true);
   };
 
   return (
@@ -117,6 +116,22 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
           >
             <Bookmark size={15} fill={saved ? "currentColor" : "none"} />
           </button>
+          {/* Collection dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsCollectionMenuOpen(!isCollectionMenuOpen); }}
+              className="wisdom-classic-menu text-secondary/70 hover:text-foreground"
+              aria-label="Add to collection"
+            >
+              <ChevronDown size={15} />
+            </button>
+            <AddToCollectionMenu
+              slug={wisdom.slug}
+              isOpen={isCollectionMenuOpen}
+              onClose={() => setIsCollectionMenuOpen(false)}
+            />
+          </div>
         </div>
       </div>
 
@@ -169,6 +184,13 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
           <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
         </div>
       </div>
+      
+      {/* Share Modal - rendered outside the clickable link area to prevent nested interactions */}
+      <ShareableWisdomCard
+        wisdom={wisdom}
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </motion.article>
   );
 }

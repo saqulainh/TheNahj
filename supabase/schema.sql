@@ -73,7 +73,9 @@ create policy "Public read categories" on categories for select using (true);
 create policy "Public read wisdom" on wisdom for select using (true);
 create policy "Public read articles" on articles for select using (true);
 
-create policy "Service insert wisdom" on wisdom for insert with check (true);
+create policy "Admin write categories" on categories for all using (auth.uid() is not null);
+create policy "Admin write wisdom" on wisdom for all using (auth.uid() is not null);
+create policy "Admin write articles" on articles for all using (auth.uid() is not null);
 
 -- User Saved Wisdom
 create table if not exists saved_wisdom (
@@ -104,6 +106,7 @@ create table if not exists audio_tracks (
 alter table audio_tracks enable row level security;
 
 create policy "Public read audio tracks" on audio_tracks for select using (true);
+create policy "Admin write audio tracks" on audio_tracks for all using (auth.uid() is not null);
 
 -- Unified Content Engine (single source for all categories)
 create table if not exists articles_unified (
@@ -220,9 +223,7 @@ create index if not exists idx_wisdom_cards_updated on wisdom_cards(updated_at d
 
 alter table wisdom_cards enable row level security;
 create policy "Public read wisdom cards" on wisdom_cards for select using (status = 'published');
-create policy "Admin full access wisdom cards" on wisdom_cards for all using (auth.role() = 'authenticated');
-create policy "Anon read all wisdom cards" on wisdom_cards for select to anon using (true);
-create policy "Anon write all wisdom cards" on wisdom_cards for all to anon using (true) with check (true);
+create policy "Admin full access wisdom cards" on wisdom_cards for all using (auth.uid() is not null);
 
 create table if not exists uploads (
   id uuid primary key default uuid_generate_v4(),
@@ -296,6 +297,13 @@ alter table activity_logs enable row level security;
 alter table reflection_analytics_events enable row level security;
 
 create policy "Public read unified articles" on articles_unified for select using (true);
+create policy "Admin write unified articles" on articles_unified for all using (auth.uid() is not null);
+
+create policy "Admin write article revisions" on article_revisions for all using (auth.uid() is not null);
+create policy "Admin write uploads" on uploads for all using (auth.uid() is not null);
+create policy "Admin write seo metadata" on seo_metadata for all using (auth.uid() is not null);
+create policy "Admin write activity logs" on activity_logs for all using (auth.uid() is not null);
+
 create policy "Public read reflections" on reflections for select using (true);
 create policy "Users manage own bookmarks" on bookmarks for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Public read reflection analytics" on reflection_analytics_events for select using (true);

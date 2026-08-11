@@ -14,6 +14,9 @@ interface WisdomCardRow {
   title?: string;
   excerpt?: string;
   slug?: string;
+  arabic_text?: string;
+  urdu_translation?: string;
+  english_translation?: string;
   reading_time?: number;
   featured?: boolean;
   published_at?: string;
@@ -29,6 +32,9 @@ interface UnifiedArticleRow {
   title?: string;
   slug?: string;
   excerpt?: string;
+  arabic_text?: string;
+  urdu_translation?: string;
+  english_translation?: string;
   category?: string;
   tags?: string[];
   reading_time?: number;
@@ -46,6 +52,9 @@ export interface DiscoveryItem {
   slug: string;
   title: string;
   excerpt: string;
+  arabicText?: string;
+  urduTranslation?: string;
+  englishTranslation?: string;
   section: string;
   theme: string | null;
   topic: string | null;
@@ -117,6 +126,9 @@ function toDiscoveryItemFromWisdomCard(row: WisdomCardRow): DiscoveryItem {
     slug: String(row.slug || row.article_slug || ""),
     title: toTitleFallback(row.title, row.slug || "Wisdom"),
     excerpt: typeof row.excerpt === "string" ? row.excerpt : "",
+    arabicText: typeof row.arabic_text === "string" ? row.arabic_text : "",
+    urduTranslation: typeof row.urdu_translation === "string" ? row.urdu_translation : "",
+    englishTranslation: typeof row.english_translation === "string" ? row.english_translation : "",
     section,
     theme: typeof row.theme === "string" ? row.theme : null,
     topic: typeof row.topic === "string" ? row.topic : null,
@@ -141,6 +153,9 @@ function toDiscoveryItemFromUnified(row: UnifiedArticleRow): DiscoveryItem {
     slug: String(row.slug || ""),
     title: toTitleFallback(row.title, row.slug || "Article"),
     excerpt: typeof row.excerpt === "string" ? row.excerpt : "",
+    arabicText: typeof row.arabic_text === "string" ? row.arabic_text : "",
+    urduTranslation: typeof row.urdu_translation === "string" ? row.urdu_translation : "",
+    englishTranslation: typeof row.english_translation === "string" ? row.english_translation : "",
     section,
     theme: inferred.theme,
     topic: inferred.topic,
@@ -162,7 +177,7 @@ async function loadDiscoveryCandidates(section?: string | null): Promise<Discove
     try {
       let query = supabase
         .from("wisdom_cards")
-        .select("id,article_slug,section,theme,topic,audiences,title,excerpt,slug,reading_time,featured,published_at,source,source_number,book_name,metadata,status")
+        .select("id,article_slug,section,theme,topic,audiences,title,excerpt,arabic_text,urdu_translation,english_translation,slug,reading_time,featured,published_at,source,source_number,book_name,metadata,status")
         .eq("status", "published");
 
       if (section) query = query.eq("section", section);
@@ -178,7 +193,7 @@ async function loadDiscoveryCandidates(section?: string | null): Promise<Discove
     try {
       let query = supabase
         .from("articles_unified")
-        .select("id,title,slug,excerpt,category,tags,reading_time,featured,published_at,source,source_number,book_name,status")
+        .select("id,title,slug,excerpt,arabic_text,urdu_translation,english_translation,category,tags,reading_time,featured,published_at,source,source_number,book_name,status")
         .eq("status", "published");
 
       if (section) query = query.eq("category", section);
@@ -228,6 +243,9 @@ function scoreSearchCandidate(query: string, tokens: string[], item: DiscoveryIt
   const topic = normalizeText(item.topic || "");
   const tags = normalizeArray(item.tags).map(normalizeText);
   const audiences = normalizeArray(item.audiences).map(normalizeText);
+  const arabicText = normalizeText(item.arabicText || "").replace(/[\u064B-\u065F\u0670]/g, ""); // strip tashkeel
+  const urduTranslation = normalizeText(item.urduTranslation || "");
+  const englishTranslation = normalizeText(item.englishTranslation || "");
 
   let score = 0;
 
@@ -237,6 +255,25 @@ function scoreSearchCandidate(query: string, tokens: string[], item: DiscoveryIt
   } else if (title.includes(query)) {
     score += 420;
     reasons.push("title-match");
+  }
+
+  // Multilingual matching
+  // Note: we remove tashkeel from query if matching against arabic
+  const queryNoTashkeel = query.replace(/[\u064B-\u065F\u0670]/g, "");
+  
+  if (arabicText && arabicText.includes(queryNoTashkeel)) {
+    score += 500;
+    reasons.push("arabic-match");
+  }
+  
+  if (urduTranslation && urduTranslation.includes(query)) {
+    score += 350;
+    reasons.push("urdu-match");
+  }
+  
+  if (englishTranslation && englishTranslation.includes(query)) {
+    score += 300;
+    reasons.push("english-match");
   }
 
   if (excerpt.includes(query)) {
@@ -279,7 +316,8 @@ function scoreSearchCandidate(query: string, tokens: string[], item: DiscoveryIt
 
   const intentSlug = slugifyTaxonomy(query);
   const relatedSlugs = topicExperienceBySlug[intentSlug]?.relatedTopics || [];
-  const relatedTopicMatches = relatedSlugs.filter((slug) => topic === slug || tags.includes(slug) || tokens.some((token) => slug.includes(token))).length;
+  const topicSlug = slugifyTaxonomy(topic);
+  const relatedTopicMatches = relatedSlugs.filter((slug) => topicSlug === slug || tags.includes(slug) || tokens.some((token) => slug.includes(token))).length;
   if (relatedTopicMatches > 0) {
     score += relatedTopicMatches * 45;
     reasons.push("related-topic");

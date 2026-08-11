@@ -762,3 +762,40 @@
   filter: brightness(150%);
 }
 
+/* ─── RTL & Multilingual Support ─────────────────────────────────────────── */
+
+/* Arabic font */
+.font-arabic {
+  font-family: "Amiri", "Noto Naskh Arabic", "Traditional Arabic", serif;
+  line-height: 1.8;
+}
+
+/* Urdu font */
+.font-urdu {
+  font-family: "Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", "Nafees Web Naskh", serif;
+  line-height: 2.2;
+}
+
+/* RTL global direction */
+html[dir="rtl"] {
+  text-align: right;
+}
+
+html[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* When RTL, reverse flex rows */
+html[dir="rtl"] .flex-rtl-row {
+  flex-direction: row-reverse;
+}
+
+/* In RTL mode, left-anchored items go right */
+html[dir="rtl"] .ltr-only {
+  display: none;
+}
+
+html[dir="ltr"] .rtl-only {
+  display: none;
+}
+

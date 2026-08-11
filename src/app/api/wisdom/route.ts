@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
+import { verifyAdminToken } from "@/lib/auth";
 
 function slugify(text: string): string {
   return text
@@ -10,6 +12,21 @@ function slugify(text: string): string {
 }
 
 export async function POST(request: Request) {
+  const ip = getRequestClientIp(request);
+  const rl = await consumeRateLimit({ key: `wisdom:post:${ip}`, limit: 10, windowMs: 60000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": rl.retryAfterSec.toString() } });
+  }
+
+  const cookieHeader = request.headers.get("cookie") || "";
+  const match = cookieHeader.match(/thenahj-admin=([^;]+)/);
+  const token = match ? match[1] : null;
+
+  const isValid = await verifyAdminToken(token);
+  if (!isValid) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const body = await request.json();
 
   const slug = slugify(body.english_translation ?? body.arabic_text ?? "wisdom");
