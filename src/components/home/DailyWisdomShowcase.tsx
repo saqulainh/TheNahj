@@ -89,9 +89,10 @@ export function DailyWisdomShowcase({ items }: DailyWisdomShowcaseProps) {
 
           <Link 
             href={`/wisdom/${currentItem.slug}`}
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-xs font-bold text-black transition-all hover:bg-gold-light hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(199,166,84,0.3)]"
+            className="mt-6 flex items-center justify-center gap-2 text-xs tracking-wider uppercase font-semibold font-display text-gold hover:text-gold-light transition-colors duration-300 group"
           >
-            Reflect on this
+            <span>Read Reflection</span>
+            <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
           </Link>
         </motion.div>
       </AnimatePresence>
@@ -102,7 +103,7 @@ export function DailyWisdomShowcase({ items }: DailyWisdomShowcaseProps) {
           {items.length > 1 && (
             <button 
               onClick={() => setIsPaused(!isPaused)}
-              className="p-2 rounded-full bg-black/40 text-gold-muted hover:text-gold hover:bg-black/60 transition-all border border-white/5"
+              className="p-2 rounded-full bg-gold/10 text-gold hover:bg-gold/20 transition-all border border-gold/20"
               aria-label={isPaused ? "Play" : "Pause"}
             >
               {isPaused ? <Play size={14} className="ml-0.5" /> : <Pause size={14} />}
@@ -120,7 +121,7 @@ export function DailyWisdomShowcase({ items }: DailyWisdomShowcaseProps) {
                 className={`h-1.5 rounded-full transition-all duration-300 ${
                   idx === currentIndex 
                     ? "w-6 bg-gold shadow-[0_0_10px_rgba(199,166,84,0.5)]" 
-                    : "w-1.5 bg-white/20 hover:bg-white/40"
+                    : "w-1.5 bg-gold/20 hover:bg-gold/40"
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               />
@@ -133,14 +134,14 @@ export function DailyWisdomShowcase({ items }: DailyWisdomShowcaseProps) {
             <>
               <button 
                 onClick={prevSlide}
-                className="p-2 rounded-full bg-black/40 text-gold-muted hover:text-gold hover:bg-black/60 transition-all border border-white/5"
+                className="p-2 rounded-full bg-gold/10 text-gold hover:bg-gold/20 transition-all border border-gold/20"
                 aria-label="Previous slide"
               >
                 <ChevronLeft size={16} />
               </button>
               <button 
                 onClick={nextSlide}
-                className="p-2 rounded-full bg-black/40 text-gold-muted hover:text-gold hover:bg-black/60 transition-all border border-white/5"
+                className="p-2 rounded-full bg-gold/10 text-gold hover:bg-gold/20 transition-all border border-gold/20"
                 aria-label="Next slide"
               >
                 <ChevronRight size={16} />

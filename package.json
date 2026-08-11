@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "next lint",
+    "test": "vitest run",
     "setup": "npm install && npm run build"
   },
   "engines": {
@@ -43,6 +44,7 @@
     "eslint-config-next": "^15.2.0",
     "postcss": "^8.5.2",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^1.6.0"
   }
 }

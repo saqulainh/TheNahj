@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 import { getAllWisdom, getCategories } from "@/lib/wisdom";
