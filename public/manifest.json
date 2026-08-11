@@ -1,0 +1,16 @@
+{
+  "name": "TheNahj - Wisdom for the Distracted Generation",
+  "short_name": "TheNahj",
+  "description": "Navigate modern life through the timeless wisdom of Imam Ali (AS). Islamic reflections for students and youth.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBF9F5",
+  "theme_color": "#C7A654",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

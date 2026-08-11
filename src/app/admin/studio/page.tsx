@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Save, Loader2, RefreshCw, History, RotateCcw, Image as ImageIcon } from "lucide-react";
+import { Save, Loader2, RefreshCw, History, RotateCcw, Image as ImageIcon, Sparkles } from "lucide-react";
 import ImageCropModal from "@/components/admin/ImageCropModal";
 import { wisdomArticleSchema, unifiedCategories } from "@/lib/content-schema";
 import { createInitialDraft, useContentStudioStore } from "@/lib/stores/contentStudioStore";
@@ -593,7 +593,59 @@ export default function ContentStudioPage() {
           </SectionShell>
 
           {/* Section 6: Reflection */}
-          <SectionShell number={6} title="Reflection" subtitle="Questions, action steps, and personal reflection">
+          <SectionShell 
+            number={6} 
+            title="Reflection" 
+            subtitle="Questions, action steps, and personal reflection"
+            action={
+              <button
+                type="button"
+                onClick={async () => {
+                  const title = form.getValues("title");
+                  const content = form.getValues("main_explanation") || form.getValues("arabic_text") || form.getValues("title");
+                  if (!content) {
+                    toast.error("Please enter a title or main content first.");
+                    return;
+                  }
+                  const loadingToast = toast.loading("Generating AI enhancements...");
+                  try {
+                    const res = await fetch("/api/ai/generate", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ title, text: content }),
+                    });
+                    const data = await res.json();
+                    toast.dismiss(loadingToast);
+                    if (data.success && data.result) {
+                      const { reflection_questions, action_steps, youth_relevance, seo_description } = data.result;
+                      if (reflection_questions?.length) {
+                        form.setValue("reflection_questions", reflection_questions.join("\n"));
+                      }
+                      if (action_steps?.length) {
+                        form.setValue("action_steps", action_steps.join("\n"));
+                      }
+                      if (youth_relevance) {
+                        form.setValue("youth_relevance", youth_relevance);
+                      }
+                      if (seo_description) {
+                        form.setValue("seo_description", seo_description);
+                      }
+                      toast.success("AI content generated successfully!");
+                    } else {
+                      toast.error(data.error || "Failed to generate AI content");
+                    }
+                  } catch {
+                    toast.dismiss(loadingToast);
+                    toast.error("Error connecting to AI service.");
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-gold/15 px-3 py-1.5 text-xs font-semibold text-gold hover:bg-gold/25 transition-colors"
+              >
+                <Sparkles size={14} />
+                Auto-Enhance with AI
+              </button>
+            }
+          >
             <TextAreaField label="Reflection Questions" register={form.register("reflection_questions")} rows={3} placeholder="Questions for the reader to ponder..." />
             <TextAreaField label="Action Steps" register={form.register("action_steps")} rows={3} placeholder="Steps the reader can take..." />
             <TextAreaField label="Personal Reflection" register={form.register("personal_reflection")} rows={3} placeholder="Your personal reflection on this wisdom..." />

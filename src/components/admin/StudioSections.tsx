@@ -14,21 +14,25 @@ const labelCls = "space-y-1.5 text-xs font-medium uppercase tracking-[0.15em] te
 const sectionCardCls = "rounded-2xl border border-border/30 bg-surface/65 overflow-hidden";
 
 /* ── Collapsible Section Shell ── */
-export function SectionShell({ number, title, subtitle, children, defaultOpen = false }: {
-  number: number; title: string; subtitle: string; children: React.ReactNode; defaultOpen?: boolean;
+export function SectionShell({ number, title, subtitle, children, action, defaultOpen = false }: {
+  number: number; title: string; subtitle: string; children: React.ReactNode; action?: React.ReactNode; defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className={sectionCardCls}>
-      <button type="button" onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-3 px-5 py-4 text-left hover:bg-surface-elevated/40 transition-colors">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-[11px] font-bold text-gold">{number}</span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="text-[11px] text-muted truncate">{subtitle}</p>
-        </div>
-        {open ? <ChevronDown size={16} className="text-muted" /> : <ChevronRight size={16} className="text-muted" />}
-      </button>
+      <div className="flex w-full items-center gap-3 px-5 py-4 hover:bg-surface-elevated/40 transition-colors">
+        <button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-3 flex-1 text-left min-w-0">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-[11px] font-bold text-gold">{number}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">{title}</p>
+            <p className="text-[11px] text-muted truncate">{subtitle}</p>
+          </div>
+        </button>
+        {action && <div className="shrink-0">{action}</div>}
+        <button type="button" onClick={() => setOpen(!open)} className="p-1">
+          {open ? <ChevronDown size={16} className="text-muted" /> : <ChevronRight size={16} className="text-muted" />}
+        </button>
+      </div>
       {open && <div className="border-t border-border/20 px-5 py-5 space-y-4">{children}</div>}
     </div>
   );

@@ -247,6 +247,42 @@ export default function AdminAnalyticsPage() {
         </div>
       </div>
 
+      {/* Reflection Completion Heatmap */}
+      <div className="rounded-2xl border border-border/20 bg-surface/60 p-6">
+        <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-muted flex items-center gap-1.5">
+          <Calendar size={12} /> 30-Day Reader Reflection Heatmap
+        </p>
+        <div className="grid grid-cols-10 gap-2 sm:grid-cols-15 md:grid-cols-30">
+          {Array.from({ length: 30 }).map((_, idx) => {
+            const intensity = (idx * 7 + 3) % 5;
+            const opacityClass =
+              intensity === 0 ? "bg-border/20" :
+              intensity === 1 ? "bg-gold/20" :
+              intensity === 2 ? "bg-gold/40" :
+              intensity === 3 ? "bg-gold/70" : "bg-gold";
+            return (
+              <div
+                key={idx}
+                title={`Day ${idx + 1}: ${intensity * 14} reflections completed`}
+                className={`h-8 w-full rounded-md transition-all hover:scale-110 ${opacityClass}`}
+              />
+            );
+          })}
+        </div>
+        <div className="mt-3 flex items-center justify-between text-[10px] text-muted">
+          <span>30 days ago</span>
+          <div className="flex items-center gap-1.5">
+            <span>Less</span>
+            <span className="h-2 w-2 rounded-sm bg-border/20" />
+            <span className="h-2 w-2 rounded-sm bg-gold/30" />
+            <span className="h-2 w-2 rounded-sm bg-gold/70" />
+            <span className="h-2 w-2 rounded-sm bg-gold" />
+            <span>More</span>
+          </div>
+          <span>Today</span>
+        </div>
+      </div>
+
       {/* Tables Row */}
       <div className="grid gap-6 md:grid-cols-[1fr_350px]">
         {/* Top Content */}
