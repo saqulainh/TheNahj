@@ -81,15 +81,24 @@ function readQueue(): QueuedEvent[] {
 function writeQueue(items: QueuedEvent[]) {
   try {
     localStorage.setItem(QUEUE_KEY, JSON.stringify(items));
-  } catch {
-    // ignore
+  } catch (e: any) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      while (items.length > 0) {
+        items.splice(0, Math.ceil(items.length / 2));
+        try {
+          localStorage.setItem(QUEUE_KEY, JSON.stringify(items));
+          break;
+        } catch {
+          continue;
+        }
+      }
+    }
   }
 }
 
 function enqueueEvent(ev: QueuedEvent) {
   const items = readQueue();
   items.push(ev);
-  // keep queue size bounded
   if (items.length > 200) items.splice(0, items.length - 200);
   writeQueue(items);
 }

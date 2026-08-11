@@ -1,5 +1,6 @@
 import type { Article, Category, Wisdom } from "@/lib/types";
 import { isSupabaseConfigured, supabase } from "./supabase";
+import { cache } from "react";
 
 const LIFE_THEME_SEED: Category[] = [
   { id: "self-discipline", name: "Self Discipline", slug: "self-discipline" },
@@ -77,7 +78,7 @@ export async function getCategories(): Promise<Category[]> {
 /**
  * Fetch all published short-form wisdom cards (Imam Ali Says, Nahjul Balagha, Audio Reflections).
  */
-export async function getAllWisdom(): Promise<Wisdom[]> {
+export const getAllWisdom = cache(async (): Promise<Wisdom[]> => {
   const dbCategories = await getCategories();
 
   if (isSupabaseConfigured && supabase) {
@@ -189,7 +190,7 @@ export async function getAllWisdom(): Promise<Wisdom[]> {
   }
 
   return [];
-}
+});
 
 export async function getWisdomBySlug(slug: string): Promise<Wisdom | null> {
   const all = await getAllWisdom();
@@ -249,7 +250,7 @@ export async function getRelatedWisdom(wisdom: Wisdom): Promise<Wisdom[]> {
 /**
  * Fetch all published articles (strictly in Articles category).
  */
-export async function getAllArticles(): Promise<Article[]> {
+export const getAllArticles = cache(async (): Promise<Article[]> => {
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase
@@ -287,7 +288,7 @@ export async function getAllArticles(): Promise<Article[]> {
     }
   }
   return [];
-}
+});
 
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
   const all = await getAllArticles();
@@ -373,14 +374,17 @@ export async function toggleSaveAsync(slug: string): Promise<boolean> {
   if (isSupabaseConfigured && supabase) {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
-      await fetch('/api/saved', {
+      const res = await fetch('/api/saved', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ slug, action: isSaved ? 'save' : 'unsave' })
-      }).catch(console.error);
+      });
+      if (!res.ok) {
+        throw new Error("Failed to save wisdom to server");
+      }
     }
   }
 
@@ -396,11 +400,18 @@ export async function syncSavedSlugs(): Promise<void> {
         headers: { 'Authorization': `Bearer ${session.access_token}` }
       });
       if (res.ok) {
-        const { saved } = await res.json();
-        if (Array.isArray(saved)) {
-          localStorage.setItem("thenahj-saved", JSON.stringify(saved));
+        const text = await res.text();
+        try {
+          const { saved } = JSON.parse(text);
+          if (Array.isArray(saved)) {
+            localStorage.setItem("thenahj-saved", JSON.stringify(saved));
+          }
+        } catch {
+          console.error("Failed to parse saved wisdom response from server:", text);
         }
       }
-    } catch {}
+    } catch (e) {
+      console.error("Failed to sync saved wisdom:", e);
+    }
   }
 }

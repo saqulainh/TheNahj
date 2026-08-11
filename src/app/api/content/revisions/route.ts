@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { verifyAdminToken } from "@/lib/auth";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -7,6 +8,14 @@ export async function GET(request: Request) {
 
   if (!slug) {
     return NextResponse.json({ success: false, error: "slug is required" }, { status: 400 });
+  }
+
+  const cookieHeader = request.headers.get("cookie") || "";
+  const match = cookieHeader.match(/thenahj-admin=([^;]+)/);
+  const token = match ? match[1] : null;
+
+  if (!(await verifyAdminToken(token))) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
   if (!isSupabaseConfigured || !supabase) {

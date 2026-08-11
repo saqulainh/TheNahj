@@ -27,7 +27,17 @@ const ambientSounds = [
 export function PomodoroTimer() {
   const [seconds, setSeconds] = useState(FOCUS_SECONDS);
   const [running, setRunning] = useState(false);
-  const [onBreak, setOnBreak] = useState(false);
+  const [onBreak, setOnBreakState] = useState(false);
+  const onBreakRef = useRef(false);
+  
+  const setOnBreak = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+    setOnBreakState((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      onBreakRef.current = next;
+      return next;
+    });
+  }, []);
+  
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [zenMode, setZenMode] = useState(false);
   const [soundId, setSoundId] = useState("silent");
@@ -41,15 +51,16 @@ export function PomodoroTimer() {
     setSeconds((s) => {
       if (s <= 1) {
         setRunning(false);
-        if (!onBreak) {
+        const currentBreak = onBreakRef.current;
+        if (!currentBreak) {
           setSessionsCompleted((c) => c + 1);
         }
-        setOnBreak((b) => !b);
-        return onBreak ? FOCUS_SECONDS : BREAK_SECONDS;
+        setOnBreak(!currentBreak);
+        return !currentBreak ? BREAK_SECONDS : FOCUS_SECONDS;
       }
       return s - 1;
     });
-  }, [onBreak]);
+  }, [setOnBreak]);
 
   useEffect(() => {
     if (!running) return;

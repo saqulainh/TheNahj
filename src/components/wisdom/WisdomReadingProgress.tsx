@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useStreak } from "@/lib/streak";
 
 interface WisdomReadingProgressProps {
@@ -11,9 +11,14 @@ export function WisdomReadingProgress({ readingTime }: WisdomReadingProgressProp
   const [progress, setProgress] = useState(0);
   const { markRead } = useStreak();
 
+  const hasMarkedRead = useRef(false);
+
   // Record streak when opening a wisdom page
   useEffect(() => {
-    markRead();
+    if (!hasMarkedRead.current) {
+      markRead();
+      hasMarkedRead.current = true;
+    }
   }, [markRead]);
 
   useEffect(() => {

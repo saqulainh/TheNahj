@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { z } from "zod";
+import { verifyAdminToken } from "@/lib/auth";
+import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 
 function slugify(text: string): string {
   return text
@@ -9,8 +12,43 @@ function slugify(text: string): string {
     .slice(0, 80);
 }
 
+const payloadSchema = z.object({
+  arabic_text: z.string().min(1),
+  english_translation: z.string().min(1),
+  source: z.string().optional(),
+  category: z.string().optional(),
+  featured_image: z.string().optional(),
+  publish_date: z.string().optional(),
+  meta_title: z.string().optional(),
+  meta_description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  background_image: z.string().optional(),
+  background_type: z.string().optional(),
+});
+
 export async function POST(request: Request) {
-  const body = await request.json();
+  const ip = getRequestClientIp(request);
+  const rl = await consumeRateLimit({ key: `imam-ali-says:post:${ip}`, limit: 10, windowMs: 60000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": rl.retryAfterSec.toString() } });
+  }
+
+  const cookieHeader = request.headers.get("cookie") || "";
+  const match = cookieHeader.match(/thenahj-admin=([^;]+)/);
+  const token = match ? match[1] : null;
+
+  if (!(await verifyAdminToken(token))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rawBody = await request.json();
+  const validation = payloadSchema.safeParse(rawBody);
+
+  if (!validation.success) {
+    return NextResponse.json({ error: "Invalid payload", details: validation.error.format() }, { status: 400 });
+  }
+
+  const body = validation.data;
 
   const slug = slugify(body.english_translation ?? body.arabic_text ?? "imam-ali-says");
 

@@ -31,19 +31,51 @@ export function WisdomHeroActions({ slug, title }: WisdomHeroActionsProps) {
     }
   };
 
+  const fallbackCopy = (text: string) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand("copy");
+    } catch {
+      // ignore
+    }
+    textArea.remove();
+  };
+
+  const copyToClipboard = async (url: string) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch {
+        fallbackCopy(url);
+      }
+    } else {
+      fallbackCopy(url);
+    }
+  };
+
   const share = async () => {
     const url = `${window.location.origin}/wisdom/${slug}`;
     if (navigator.share) {
-      await navigator.share({ title, url });
-      return;
+      try {
+        await navigator.share({ title, url });
+        return;
+      } catch {
+        // user aborted or failed
+      }
     }
-
-    await navigator.clipboard.writeText(url);
+    await copyToClipboard(url);
   };
 
   const copyLink = async () => {
     const url = `${window.location.origin}/wisdom/${slug}`;
-    await navigator.clipboard.writeText(url);
+    await copyToClipboard(url);
   };
 
   return (

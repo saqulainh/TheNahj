@@ -12,7 +12,12 @@ export async function middleware(request: NextRequest) {
 
   if (isUnsafeMethod && pathname.startsWith("/api/")) {
     if (origin && host && !origin.includes(host)) {
-      return NextResponse.json({ error: "CSRF validation failed" }, { status: 403 });
+      return NextResponse.json({ error: "CSRF validation failed: Origin mismatch" }, { status: 403 });
+    }
+    const contentType = request.headers.get("content-type") || "";
+    // Allow multipart/form-data for media uploads, require application/json for everything else.
+    if (!contentType.includes("application/json") && !contentType.includes("multipart/form-data")) {
+      return NextResponse.json({ error: "CSRF validation failed: Invalid Content-Type" }, { status: 415 });
     }
   }
 

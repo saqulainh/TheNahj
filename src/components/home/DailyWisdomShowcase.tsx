@@ -35,7 +35,7 @@ export function DailyWisdomShowcase({ items }: DailyWisdomShowcaseProps) {
 
   return (
     <div 
-      className="relative w-full max-w-4xl mx-auto overflow-hidden rounded-3xl border border-gold/20 shadow-2xl bg-gradient-to-br from-[#111111] via-[#1a1714] to-[#111111]"
+      className="relative w-full max-w-4xl mx-auto overflow-hidden rounded-3xl border border-gold/20 shadow-2xl bg-surface-alt transition-colors duration-300"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -72,13 +72,13 @@ export function DailyWisdomShowcase({ items }: DailyWisdomShowcaseProps) {
             </h3>
             
             <p 
-              className="text-lg md:text-xl text-white/80 font-urdu leading-relaxed"
+              className="text-lg md:text-xl text-foreground/80 font-urdu leading-relaxed"
               dir="rtl"
             >
               {currentItem.urdu_translation}
             </p>
 
-            <p className="text-sm md:text-base text-white/70 font-light leading-relaxed">
+            <p className="text-sm md:text-base text-foreground/70 font-light leading-relaxed">
               &quot;{currentItem.english_translation}&quot;
             </p>
 

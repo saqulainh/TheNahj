@@ -5,6 +5,7 @@ import {
   isAdminAuthConfigured,
   verifyAdminPassword,
 } from "@/lib/auth";
+import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   if (!isAdminAuthConfigured()) {
@@ -14,6 +15,12 @@ export async function POST(request: Request) {
       },
       { status: 503 }
     );
+  }
+
+  const ip = getRequestClientIp(request);
+  const rl = await consumeRateLimit({ key: `admin:login:${ip}`, limit: 5, windowMs: 60000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many login attempts. Please try again later." }, { status: 429, headers: { "Retry-After": rl.retryAfterSec.toString() } });
   }
 
   const { password } = (await request.json()) as { password?: string };

@@ -2,6 +2,17 @@ import { NextResponse } from "next/server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 import { verifyAdminToken } from "@/lib/auth";
+import { z } from "zod";
+
+const payloadSchema = z.object({
+  title: z.string().min(1),
+  excerpt: z.string().optional(),
+  content: z.string().min(1),
+  cover_image: z.string().optional(),
+  seo_description: z.string().optional(),
+  type: z.string().optional(),
+  corner_topics: z.array(z.string()).optional(),
+});
 
 function slugify(text: string): string {
   return text
@@ -27,7 +38,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
+  const rawBody = await request.json();
+  const validation = payloadSchema.safeParse(rawBody);
+
+  if (!validation.success) {
+    return NextResponse.json({ error: "Invalid payload", details: validation.error.format() }, { status: 400 });
+  }
+
+  const body = validation.data;
 
   const slug = slugify(body.title ?? "article");
 
