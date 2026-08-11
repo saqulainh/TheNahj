@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/brand";
 import { SocialLinks } from "@/components/ui/social-links";
 
@@ -33,7 +34,14 @@ export function Footer({ socialLinks, links = footerLinks }: FooterProps) {
       <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-20">
         <div className="flex flex-col gap-10 md:flex-row md:justify-between">
           <div>
-            <p className="text-lg font-medium tracking-tight text-foreground">{SITE_NAME}</p>
+            <div className="relative h-12 w-36 mb-4">
+              <Image 
+                src="/TheNahj Logo.jpeg" 
+                alt={SITE_NAME} 
+                fill 
+                className="object-contain mix-blend-multiply dark:invert" 
+              />
+            </div>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted/80">
               {SITE_DESCRIPTION}
             </p>

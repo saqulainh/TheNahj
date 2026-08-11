@@ -17,9 +17,10 @@ interface ImageRoleProps {
   forceNative?: boolean;
   // When true, do not apply the role's aspect ratio to the container wrapper.
   unconstrained?: boolean;
+  priority?: boolean;
 }
 
-export function ImageRole({ src, alt = "", role = "hero", className = "", focalPoint = null, getImgRef, forceNative = false, unconstrained = false }: ImageRoleProps) {
+export function ImageRole({ src, alt = "", role = "hero", className = "", focalPoint = null, getImgRef, forceNative = false, unconstrained = false, priority }: ImageRoleProps) {
   const missing = !src;
 
   // Decide sizes and object-fit defaults per role
@@ -31,6 +32,7 @@ export function ImageRole({ src, alt = "", role = "hero", className = "", focalP
 
   const opts = roleDefaults[role];
   const objectPosition = focalPoint ? `${focalPoint.x}% ${focalPoint.y}%` : "center";
+  const isPriority = priority !== undefined ? priority : opts.priority;
 
   // Try to fetch media metadata to use generated variants (client-only)
   const [variants, setVariants] = useState<null | Array<{ width: number; url: string }>>(null);
@@ -76,7 +78,7 @@ export function ImageRole({ src, alt = "", role = "hero", className = "", focalP
           srcSet={srcset}
           sizes={opts.sizes}
           alt={alt}
-          loading={opts.priority ? "eager" : "lazy"}
+          loading={isPriority ? "eager" : "lazy"}
           style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition }}
         />
       </div>
@@ -91,7 +93,7 @@ export function ImageRole({ src, alt = "", role = "hero", className = "", focalP
         fill
         sizes={opts.sizes}
         style={{ objectFit: "cover", objectPosition }}
-        priority={!!opts.priority}
+        priority={!!isPriority}
       />
     </div>
   );

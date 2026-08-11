@@ -82,7 +82,14 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
       {/* Background image */}
       {(wisdom.featured_image || (wisdom as any).background_image) && (
         <div className="absolute inset-0 z-0">
-          <ImageRole src={wisdom.featured_image || (wisdom as any).background_image} role="card" className="opacity-15 mix-blend-luminosity" focalPoint={null} />
+          <ImageRole 
+            src={wisdom.featured_image || (wisdom as any).background_image} 
+            role="card" 
+            className="w-full h-full opacity-15 mix-blend-luminosity" 
+            focalPoint={null} 
+            unconstrained={true}
+            priority={index < 4}
+          />
         </div>
       )}
 

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { StarBorder } from "@/components/ui/StarBorder";
@@ -76,10 +77,15 @@ export function Header({
           href="/" 
           className={`group flex shrink-0 items-center gap-2 whitespace-nowrap ${isHome ? 'md:hidden' : ''}`}
         >
-          <span className="text-[1.1rem] font-semibold tracking-tight text-foreground md:text-[1.25rem] lg:text-[1.3rem]">
-            {siteName}
-          </span>
-          <div className="h-1.5 w-1.5 rounded-full bg-gold transition-all duration-300 group-hover:scale-[2.2]" />
+          <div className="relative h-10 w-32 md:h-12 md:w-36 transition-transform duration-300 group-hover:scale-105">
+            <Image 
+              src="/TheNahj Logo.jpeg" 
+              alt={siteName} 
+              fill 
+              className="object-contain mix-blend-multiply dark:invert"
+              priority 
+            />
+          </div>
         </Link>
 
         {/* Desktop Navigation */}

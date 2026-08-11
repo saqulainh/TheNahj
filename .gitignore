@@ -38,3 +38,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE & AI temp workspace directories
+/agent-transcripts
+/canvases
+/narration
+/terminals
+/mcps
+/.kilo
+/.qodo
+
