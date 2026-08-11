@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { articlePayloadSchema } from "@/lib/content-schema";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
+import { verifyAdminToken } from "@/lib/auth";
 import { SECTION_TAXONOMY, inferThemeTopicFromTagsForSection, isValidSectionThemeTopic, normalizeThemeForSection, normalizeTopicForSection, uniqueTagsWithTaxonomy } from "@/lib/taxonomy";
 import { deleteWisdomCardProjection, syncWisdomCardProjection } from "@/lib/wisdom-card-projection";
 
@@ -81,6 +82,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const cookieHeader = request.headers.get("cookie") || "";
+  const match = cookieHeader.match(/thenahj-admin=([^;]+)/);
+  const token = match ? match[1] : null;
+  if (!(await verifyAdminToken(token))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const clientKey = `content:${getRequestClientIp(request)}`;
   const limit = await consumeRateLimit({
     key: clientKey,
@@ -302,6 +310,13 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const cookieHeader = request.headers.get("cookie") || "";
+    const match = cookieHeader.match(/thenahj-admin=([^;]+)/);
+    const token = match ? match[1] : null;
+    if (!(await verifyAdminToken(token))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const slug = searchParams.get("slug");

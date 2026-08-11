@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { verifyAdminToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,14 @@ function getMockData() {
 }
 
 export async function GET(req: Request) {
+  const cookieHeader = req.headers.get("cookie") || "";
+  const match = cookieHeader.match(/thenahj-admin=([^;]+)/);
+  const token = match ? match[1] : null;
+
+  if (!(await verifyAdminToken(token))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const range = searchParams.get("range") || "7d";
 

@@ -11,6 +11,7 @@ const footerLinks = [
   { href: "/digital-diseases", label: "Digital Diseases" },
   { href: "/before-you-text", label: "Before You Text" },
   { href: "/about", label: "About" },
+  { href: "/disclaimer", label: "Privacy & Disclaimer" },
   { href: "/contact", label: "Contact" },
 ];
 
@@ -86,13 +87,13 @@ export function Footer({ socialLinks, links = footerLinks }: FooterProps) {
               Built with reverence
             </p>
           </div>
-          
           <div className="flex flex-col gap-3 max-w-4xl text-[11px] leading-relaxed font-light text-muted/70">
             <p>
-              All research, analysis, and collections on this website are created by our team. We do not claim ownership of articles, quotes, or other materials taken from external sources unless clearly mentioned. Everything is shared only for educational and non-commercial purposes. We do not earn any money from this content.
-            </p>
-            <p className="italic text-muted/60">
-              If any copyright holder wants any content removed or changed, please contact us and we will respond quickly.
+              This is a non-commercial platform built out of reverence. Read our{" "}
+              <Link href="/disclaimer" className="underline underline-offset-2 hover:text-gold transition-colors">
+                Privacy Policy & Disclaimer
+              </Link>{" "}
+              regarding data sources and copyright.
             </p>
           </div>
         </div>

@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { verifyAdminToken } from "@/lib/auth";
 import sharp from "sharp";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 
@@ -163,6 +164,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const cookieHeader = request.headers.get("cookie") || "";
+    const match = cookieHeader.match(/thenahj-admin=([^;]+)/);
+    const token = match ? match[1] : null;
+    if (!(await verifyAdminToken(token))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const clientKey = `media-write:${getRequestClientIp(request)}`;
     const limit = await consumeRateLimit({
       key: clientKey,
@@ -366,6 +374,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const cookieHeader = request.headers.get("cookie") || "";
+  const match = cookieHeader.match(/thenahj-admin=([^;]+)/);
+  const token = match ? match[1] : null;
+  if (!(await verifyAdminToken(token))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const clientKey = `media-delete:${getRequestClientIp(request)}`;
   const limit = await consumeRateLimit({
     key: clientKey,
