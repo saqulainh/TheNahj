@@ -16,7 +16,29 @@ export async function generateMetadata({ params }: PageProps) {
   const categories = await getCategories();
   const cat = categories.find((c) => c.slug === slug);
   const topic = platformTopics.find((t) => t.slug === slug);
-  return { title: cat?.name ?? topic?.title ?? "Topic" };
+  const name = cat?.name ?? topic?.title ?? "Topic";
+  const title = `${name} — Imam Ali (AS) Wisdom on ${name} | TheNahj`;
+  const description = topic?.description
+    ? `${topic.description} Explore Imam Ali (AS) teachings on ${name.toLowerCase()} from Nahjul Balagha.`
+    : `Explore authentic Imam Ali (AS) wisdom and Nahjul Balagha quotes about ${name.toLowerCase()}.`;
+
+  return {
+    title,
+    description,
+    keywords: [
+      name,
+      `Imam Ali on ${name.toLowerCase()}`,
+      "Nahjul Balagha topics",
+      "Shia Islamic wisdom",
+      "Ahlulbayt teachings",
+    ],
+    openGraph: {
+      title,
+      description,
+      url: `https://thenahj.live/topics/${slug}`,
+      type: "website",
+    },
+  };
 }
 
 export default async function TopicPage({ params }: PageProps) {

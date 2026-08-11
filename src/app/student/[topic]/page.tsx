@@ -14,7 +14,28 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps) {
   const { topic } = await params;
   const item = studentTopics.find((t) => t.slug === topic);
-  return { title: item?.title ?? "Student Topic" };
+  const title = `${item?.title ?? "Student Topic"} — Islamic Student Wisdom | TheNahj`;
+  const description = item
+    ? `${item.description} Imam Ali (AS) wisdom on ${item.title.toLowerCase()} for Muslim students — practical reflections and action steps.`
+    : "Islamic wisdom for Muslim students on focus, exams, and productivity.";
+
+  return {
+    title,
+    description,
+    keywords: [
+      item?.title || "Student Wisdom",
+      "Imam Ali student advice",
+      "Islamic study tips",
+      "Muslim student motivation",
+      "Nahjul Balagha for students",
+    ],
+    openGraph: {
+      title,
+      description,
+      url: `https://thenahj.live/student/${topic}`,
+      type: "website",
+    },
+  };
 }
 
 export default async function StudentTopicPage({ params }: PageProps) {

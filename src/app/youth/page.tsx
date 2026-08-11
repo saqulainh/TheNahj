@@ -6,8 +6,26 @@ import { getAllWisdom, getAllArticles } from "@/lib/wisdom";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 
 export const metadata = {
-  title: "Youth Corner",
-  description: "Guidance on identity, relationships, loneliness, and emotional discipline.",
+  title: "Youth Corner — Islamic Guidance on Relationships, Identity & Purpose",
+  description: "Haram relationships, loneliness, overthinking, validation addiction — Islamic wisdom from Imam Ali (AS) for Muslim youth navigating modern life with dignity.",
+  keywords: [
+    "Islamic youth guidance",
+    "Haram relationship Islam",
+    "Muslim youth loneliness",
+    "Identity crisis Islam",
+    "Overthinking Islamic advice",
+    "Validation addiction Islam",
+    "Self respect Islam",
+    "Emotional discipline Islam",
+    "Imam Ali on relationships",
+    "Before you text Islamic",
+  ],
+  openGraph: {
+    title: "Youth Corner — Islamic Guidance on Identity, Relationships & Purpose",
+    description: "Islamic wisdom from Imam Ali (AS) for youth struggling with relationships, identity, loneliness & emotional discipline.",
+    url: "https://thenahj.live/youth",
+    type: "website",
+  },
 };
 
 export default async function YouthPage() {

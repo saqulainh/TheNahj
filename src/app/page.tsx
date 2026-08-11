@@ -32,8 +32,42 @@ export default async function HomePage() {
     return cms.homepage.blocks.find(b => b.type === type)?.enabled ?? true;
   };
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
+  const homeSchema = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "TheNahj",
+      url: baseUrl,
+      description: "Navigate modern life through the wisdom of Imam Ali (AS). Wisdom for students, youth, and the distracted generation.",
+      sameAs: [
+        cms.brand.socialLinks?.instagram,
+        cms.brand.socialLinks?.youtube,
+        cms.brand.socialLinks?.telegram,
+        cms.brand.socialLinks?.facebook,
+        cms.brand.socialLinks?.twitter,
+      ].filter(Boolean),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "TheNahj",
+      url: baseUrl,
+      description: "Imam Ali (AS) Quotes, Nahjul Balagha Wisdom & Islamic Reflections for Muslim Youth and Students.",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${baseUrl}/search?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ];
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeSchema) }}
+      />
       {isEnabled("hero") && (
         <PrismaHero 
           headline={cms.homepage.hero.headline}

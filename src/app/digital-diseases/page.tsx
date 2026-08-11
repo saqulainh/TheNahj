@@ -3,8 +3,25 @@ import { digitalDiseases } from "@/data/mock";
 import { Smartphone, ScrollText, Star, UserX, Zap, Brain } from "lucide-react";
 
 export const metadata = {
-  title: "Digital Diseases",
-  description: "Instagram addiction, doomscrolling, validation hunger — wisdom for the hyper-connected age.",
+  title: "Digital Diseases — Islamic Guide to Social Media Addiction & Screen Time",
+  description: "Instagram addiction, doomscrolling, dopamine overload, validation hunger — diagnose your digital disease through the wisdom of Imam Ali (AS). Islamic digital wellness for Muslim youth.",
+  keywords: [
+    "Social media addiction Islam",
+    "Instagram addiction Islamic",
+    "Doomscrolling Islam",
+    "Dopamine detox Islam",
+    "Digital wellness Muslim",
+    "Screen time Islamic advice",
+    "Phone addiction Islamic",
+    "Imam Ali on self control",
+    "Islamic mental health",
+  ],
+  openGraph: {
+    title: "Digital Diseases — Islamic Cure for Social Media Addiction",
+    description: "Diagnose your digital diseases through Imam Ali (AS) wisdom. Instagram addiction, doomscrolling & dopamine detox for Muslim youth.",
+    url: "https://thenahj.live/digital-diseases",
+    type: "website",
+  },
 };
 
 const icons: Record<string, React.ReactNode> = {

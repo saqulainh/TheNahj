@@ -20,14 +20,46 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const article = await getUnifiedArticleBySlug(slug);
   if (!article) return { title: "Not Found" };
 
-  const title = article.seo_title || article.title;
+  const title = `${article.seo_title || article.title} — Imam Ali (AS) Wisdom`;
   const description = article.seo_description || article.excerpt;
+  const image = article.hero_image || article.featured_image || "/backgrounds/serene.jpg";
+  const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
+
   return {
     title,
     description,
+    keywords: [
+      ...(article.tags || []),
+      "Imam Ali Quotes",
+      "Nahjul Balagha",
+      "Shia Islamic Wisdom",
+      "Ahlulbayt Hadith",
+      "Islamic Motivation",
+      "Youth Guidance Islam"
+    ],
+    alternates: {
+      canonical: `${canonicalBase}/wisdom/${article.slug}`,
+    },
     openGraph: {
       title,
       description,
+      type: "article",
+      url: `${canonicalBase}/wisdom/${article.slug}`,
+      siteName: "TheNahj",
+      images: [
+        {
+          url: image.startsWith("http") ? image : `${canonicalBase}${image}`,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image.startsWith("http") ? image : `${canonicalBase}${image}`],
     },
   };
 }
@@ -106,8 +138,37 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
     return { label: "Related", className: "border-border/20 text-muted" };
   };
 
+  const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
+  const schemaImage = article.hero_image || article.featured_image || "/backgrounds/serene.jpg";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.seo_title || article.title,
+    description: article.seo_description || article.excerpt,
+    image: [schemaImage.startsWith("http") ? schemaImage : `${canonicalBase}${schemaImage}`],
+    datePublished: article.published_at || article.created_at || new Date().toISOString(),
+    mainEntityOfPage: `${canonicalBase}/wisdom/${article.slug}`,
+    articleSection: article.category,
+    keywords: article.tags?.join(", ") || "Imam Ali, Nahjul Balagha, Shia Wisdom",
+    author: {
+      "@type": "Organization",
+      name: "TheNahj Team",
+      url: canonicalBase,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "TheNahj",
+      url: canonicalBase,
+    },
+  };
+
   return (
-    <article className="min-h-screen bg-background selection:bg-gold/30 selection:text-white">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <article className="min-h-screen bg-background selection:bg-gold/30 selection:text-white">
       <header className="relative overflow-hidden border-b border-border/20">
         <div className="absolute inset-0">
           {article.hero_image || article.featured_image ? (
@@ -462,5 +523,6 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
         </aside>
       </div>
     </article>
+    </>
   );
 }

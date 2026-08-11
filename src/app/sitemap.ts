@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { studentTopics, youthTopics, platformTopics } from "@/data/mock";
 import { getCategories, getAllWisdom } from "@/lib/wisdom";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://thenahj.com";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://thenahj.live";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [categories, wisdomItems] = await Promise.all([

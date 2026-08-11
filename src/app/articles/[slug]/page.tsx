@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: PageProps) {
   const title = article.seo_title || article.title;
   const description = article.seo_description || article.excerpt;
   const image = article.hero_image || article.featured_image || "/backgrounds/serene.jpg";
-  const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.org";
+  const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
 
   return {
     title,
@@ -57,7 +57,7 @@ export default async function ArticlePage({ params }: PageProps) {
 
   const related = await getRelatedUnifiedArticles(article.slug, article.category, article.tags || []);
 
-  const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.org";
+  const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
   const image = article.hero_image || article.featured_image || "/backgrounds/serene.jpg";
   const publishedTime = article.published_at || article.created_at || new Date().toISOString();
   const jsonLd = {

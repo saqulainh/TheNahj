@@ -14,7 +14,28 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps) {
   const { topic } = await params;
   const item = youthTopics.find((t) => t.slug === topic);
-  return { title: item?.title ?? "Youth Topic" };
+  const title = `${item?.title ?? "Youth Topic"} — Islamic Youth Guidance | TheNahj`;
+  const description = item
+    ? `${item.description} Imam Ali (AS) guidance on ${item.title.toLowerCase()} for Muslim youth — with practical wisdom and emotional clarity.`
+    : "Islamic guidance for Muslim youth on identity, relationships, and purpose.";
+
+  return {
+    title,
+    description,
+    keywords: [
+      item?.title || "Youth Wisdom",
+      "Islamic youth advice",
+      "Muslim youth guidance",
+      "Imam Ali on life",
+      "Shia wisdom for youth",
+    ],
+    openGraph: {
+      title,
+      description,
+      url: `https://thenahj.live/youth/${topic}`,
+      type: "website",
+    },
+  };
 }
 
 export default async function YouthTopicPage({ params }: PageProps) {

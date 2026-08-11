@@ -1,8 +1,22 @@
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/brand";
 
 export const metadata = {
-  title: "About Mission",
-  description: `Why ${SITE_NAME} exists — a digital refuge for modern youth through the wisdom of Imam Ali (AS).`,
+  title: "About TheNahj — Our Mission | Wisdom of Imam Ali (AS) for Modern Youth",
+  description: `Why ${SITE_NAME} exists — a digital refuge for modern youth through the wisdom of Imam Ali (AS). Building an Islamic platform for students and youth fighting social media addiction, exam anxiety, and identity crisis.`,
+  keywords: [
+    "TheNahj mission",
+    "Islamic youth platform",
+    "Imam Ali wisdom website",
+    "Nahjul Balagha modern",
+    "Muslim youth digital refuge",
+    "Ahlulbayt community",
+  ],
+  openGraph: {
+    title: "About TheNahj — Wisdom of Imam Ali (AS) for Modern Youth",
+    description: `Why ${SITE_NAME} exists — a digital refuge for modern youth through Imam Ali (AS) wisdom.`,
+    url: "https://thenahj.live/about",
+    type: "website",
+  },
 };
 
 export default function AboutPage() {

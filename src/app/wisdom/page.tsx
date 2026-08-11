@@ -5,8 +5,27 @@ import { getAllWisdom, getCategories } from "@/lib/wisdom";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Imam Ali Says",
-  description: "Wisdom cards with Arabic, Urdu, and English — reflections for modern life.",
+  title: "Imam Ali (AS) Quotes — Sayings & Wisdom from Nahjul Balagha",
+  description: "Read powerful Imam Ali (AS) quotes in Arabic, Urdu, and English. Daily wisdom cards with reflections from Nahjul Balagha for Muslim students & youth.",
+  keywords: [
+    "Imam Ali Quotes",
+    "Imam Ali AS Sayings",
+    "Nahjul Balagha Quotes",
+    "Hazrat Ali Quotes in English",
+    "Hazrat Ali Quotes in Urdu",
+    "Shia Islamic Quotes",
+    "Ahlulbayt Wisdom",
+    "Islamic Motivation Quotes",
+    "Muslim Youth Guidance",
+    "Imam Ali on Knowledge",
+    "Imam Ali on Patience",
+  ],
+  openGraph: {
+    title: "Imam Ali (AS) Quotes — Nahjul Balagha Wisdom Cards",
+    description: "Authentic quotes of Imam Ali (AS) with Arabic text, Urdu & English translations. Modern reflections for the distracted generation.",
+    url: "https://thenahj.live/wisdom",
+    type: "website",
+  },
 };
 
 export default async function WisdomPage() {

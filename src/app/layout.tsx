@@ -40,16 +40,51 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export async function generateMetadata(): Promise<Metadata> {
   const cms = await getCMSConfig();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
+
   return {
+    metadataBase: new URL(baseUrl),
     title: {
       default: `${cms.brand.siteName} — ${cms.brand.tagline}`,
       template: `%s | ${cms.brand.siteName}`,
     },
     description: cms.brand.description,
+    keywords: [
+      "TheNahj",
+      "Imam Ali quotes",
+      "Nahjul Balagha",
+      "Islamic wisdom",
+      "Student motivation",
+      "Youth guidance",
+      "Digital distraction",
+      "Islamic reflections"
+    ],
+    alternates: {
+      canonical: "./",
+    },
     openGraph: {
       title: `${cms.brand.siteName} — ${cms.brand.tagline}`,
       description: cms.brand.description,
+      url: baseUrl,
+      siteName: cms.brand.siteName,
+      locale: "en_US",
       type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${cms.brand.siteName} — ${cms.brand.tagline}`,
+      description: cms.brand.description,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
   };
 }

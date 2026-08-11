@@ -6,8 +6,25 @@ import { getAllWisdom, getAllArticles } from "@/lib/wisdom";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 
 export const metadata = {
-  title: "Student Corner",
-  description: "Focus, exams, social media, and wisdom for students.",
+  title: "Student Corner — Islamic Wisdom for Focus, Exams & Study Motivation",
+  description: "Struggling with exam anxiety, procrastination, or social media addiction? Islamic wisdom from Imam Ali (AS) to help Muslim students build focus and discipline.",
+  keywords: [
+    "Islamic study motivation",
+    "Muslim student tips",
+    "Exam anxiety Islam",
+    "Focus tips for students",
+    "Social media addiction Islam",
+    "Imam Ali on knowledge",
+    "Islamic productivity",
+    "Nahjul Balagha student wisdom",
+    "Deen and studies balance",
+  ],
+  openGraph: {
+    title: "Student Corner — Islamic Wisdom for Focus & Exam Success",
+    description: "Imam Ali (AS) wisdom on focus, exams, procrastination & social media addiction for Muslim students.",
+    url: "https://thenahj.live/student",
+    type: "website",
+  },
 };
 
 export default async function StudentPage() {
