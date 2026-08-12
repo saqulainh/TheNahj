@@ -2,337 +2,186 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart2, TrendingUp, Eye, Share2, Search, BookOpen, Users, Calendar, Award } from "lucide-react";
-import { motion } from "framer-motion";
+import { BarChart3, Bot, RefreshCw, ArrowLeft, Sparkles, Database, Globe, TrendingUp, CheckCircle, Loader2 } from "lucide-react";
+import Link from "next/link";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-interface AnalyticsData {
-  overview: {
-    totalViews: number;
-    totalShares: number;
-    totalSearches: number;
-    totalSaves: number;
-    viewsDelta: number | null;
-    sharesDelta: number | null;
-  };
-  topContent: Array<{
-    slug: string;
-    title: string;
-    views: number;
-    shares: number;
-    section: string;
-  }>;
-  searchTerms: Array<{
-    term: string;
-    count: number;
-    language: "en" | "ar" | "ur";
-  }>;
-  dailyViews: Array<{
-    date: string;
-    views: number;
-  }>;
-  sectionBreakdown: Array<{
-    section: string;
-    count: number;
-    percentage: number;
-  }>;
-}
-
-type DateRange = "7d" | "30d" | "90d";
-
-// ─── Mock data for when API is not available ──────────────────────────────────
-function getMockAnalytics(): AnalyticsData {
-  return {
-    overview: {
-      totalViews: 12847,
-      totalShares: 934,
-      totalSearches: 2183,
-      totalSaves: 741,
-      viewsDelta: 18,
-      sharesDelta: 12,
-    },
-    topContent: [
-      { slug: "patience-in-hardship", title: "On Patience in Times of Hardship", views: 1423, shares: 87, section: "Imam Ali Says" },
-      { slug: "knowledge-and-wisdom", title: "The Difference Between Knowledge and Wisdom", views: 998, shares: 63, section: "Nahjul Balagha" },
-      { slug: "exam-stress-faith", title: "Dealing with Exam Stress Through Faith", views: 854, shares: 41, section: "Student Corner" },
-      { slug: "toxic-relationships-youth", title: "Recognizing Toxic Relationships", views: 712, shares: 55, section: "Youth Corner" },
-      { slug: "dua-kumayl-meaning", title: "Meaning & Power of Dua Kumayl", views: 634, shares: 72, section: "Imam Ali Says" },
-    ],
-    searchTerms: [
-      { term: "sabr", count: 342, language: "ur" },
-      { term: "patience", count: 289, language: "en" },
-      { term: "صبر", count: 198, language: "ar" },
-      { term: "exam stress", count: 167, language: "en" },
-      { term: "toxic relationship", count: 143, language: "en" },
-      { term: "ناہج البلاغہ", count: 98, language: "ur" },
-    ],
-    dailyViews: Array.from({ length: 7 }, (_, i) => ({
-      date: new Date(Date.now() - (6 - i) * 86400000).toLocaleDateString("en", { weekday: "short" }),
-      views: Math.floor(800 + Math.random() * 1200),
-    })),
-    sectionBreakdown: [
-      { section: "Imam Ali Says", count: 4823, percentage: 38 },
-      { section: "Youth Corner", count: 3214, percentage: 25 },
-      { section: "Student Corner", count: 2569, percentage: 20 },
-      { section: "Nahjul Balagha", count: 1926, percentage: 15 },
-      { section: "Audio", count: 315, percentage: 2 },
-    ],
-  };
-}
-
-// ─── Components ──────────────────────────────────────────────────────────────
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  delta,
-  delay = 0,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  delta?: number | null;
-  delay?: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="rounded-2xl border border-border/20 bg-surface/60 p-5 backdrop-blur-sm"
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold/10 text-gold">
-          <Icon size={18} />
-        </div>
-        {delta !== null && delta !== undefined && (
-          <span className={`text-xs font-medium ${delta >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-            {delta >= 0 ? "↑" : "↓"} {Math.abs(delta)}%
-          </span>
-        )}
-      </div>
-      <p className="mt-4 text-2xl font-bold text-foreground tabular-nums">{value}</p>
-      <p className="mt-1 text-[11px] uppercase tracking-wider text-muted">{label}</p>
-    </motion.div>
-  );
-}
-
-function MiniBarChart({ data }: { data: Array<{ date: string; views: number }> }) {
-  const max = Math.max(...data.map((d) => d.views));
-  return (
-    <div className="flex h-24 items-end gap-1.5">
-      {data.map((d, i) => (
-        <div key={i} className="flex flex-1 flex-col items-center gap-1">
-          <motion.div
-            initial={{ scaleY: 0 }}
-            animate={{ scaleY: 1 }}
-            transition={{ delay: i * 0.05, duration: 0.5, ease: "easeOut" }}
-            style={{ height: `${(d.views / max) * 100}%`, transformOrigin: "bottom" }}
-            className="w-full rounded-t-sm bg-gradient-to-t from-gold/60 to-gold"
-          />
-          <span className="text-[8px] text-muted">{d.date}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const LANG_COLORS: Record<string, string> = {
-  en: "bg-blue-500/70",
-  ar: "bg-emerald-500/70",
-  ur: "bg-purple-500/70",
-};
-
-const LANG_LABELS: Record<string, string> = {
-  en: "EN",
-  ar: "AR",
-  ur: "UR",
-};
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AdminAnalyticsPage() {
-  const [range, setRange] = useState<DateRange>("7d");
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-analytics", range],
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["admin-analytics"],
     queryFn: async () => {
-      try {
-        const res = await fetch(`/api/admin/analytics?range=${range}`);
-        if (!res.ok) throw new Error("API unavailable");
-        const json = await res.json();
-        if (!json.success) throw new Error("no data");
-        return json.data as AnalyticsData;
-      } catch {
-        // Fall back to mock data if API is not yet set up
-        return getMockAnalytics();
-      }
+      const res = await fetch("/api/admin/analytics");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to load analytics");
+      return json.analytics;
     },
-    staleTime: 60 * 1000,
   });
 
-  const analytics = data ?? getMockAnalytics();
+  const handleManualSync = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch("/api/admin/agent/sync-knowledge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: "https://imamandscience.com/" }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setSyncResult(`Successfully indexed ${json.indexedChunksCount} chunks from ${json.sourceTitle}`);
+        refetch();
+      } else {
+        setSyncResult(`Sync warning: ${json.error || "Failed"}`);
+      }
+    } catch {
+      setSyncResult("Network error triggering agent sync.");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   return (
-    <div className="space-y-8 px-1 py-2">
-      {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.25em] text-gold-muted font-semibold">Admin</p>
-          <h1 className="mt-1 text-2xl font-light tracking-tight text-foreground md:text-3xl flex items-center gap-2">
-            <BarChart2 size={22} className="text-gold" />
-            Analytics Dashboard
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-1 rounded-xl border border-border/20 bg-surface/40 p-1">
-          {(["7d", "30d", "90d"] as DateRange[]).map((r) => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={`rounded-lg px-4 py-1.5 text-xs font-medium uppercase tracking-wider transition-all ${
-                range === r
-                  ? "bg-gold text-black"
-                  : "text-muted hover:text-foreground"
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Stat Overview */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard icon={Eye} label="Total Views" value={analytics.overview.totalViews.toLocaleString()} delta={analytics.overview.viewsDelta} delay={0} />
-        <StatCard icon={Share2} label="Total Shares" value={analytics.overview.totalShares.toLocaleString()} delta={analytics.overview.sharesDelta} delay={0.05} />
-        <StatCard icon={Search} label="Searches" value={analytics.overview.totalSearches.toLocaleString()} delay={0.1} />
-        <StatCard icon={BookOpen} label="Saves / Bookmarks" value={analytics.overview.totalSaves.toLocaleString()} delay={0.15} />
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Daily Views Bar Chart */}
-        <div className="rounded-2xl border border-border/20 bg-surface/60 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-muted flex items-center gap-1.5">
-              <TrendingUp size={12} /> Daily Views
-            </p>
+    <div className="min-h-screen bg-background text-foreground p-6 md:p-10 max-w-7xl mx-auto space-y-8">
+      {/* Top Navigation Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/20 pb-6">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/40 bg-surface-alt hover:bg-surface-elevated transition-colors text-muted hover:text-foreground"
+          >
+            <ArrowLeft size={18} />
+          </Link>
+          <div>
+            <div className="flex items-center gap-2">
+              <BarChart3 size={18} className="text-gold" />
+              <h1 className="text-xl font-bold tracking-tight text-foreground">Executive AI Command & Telemetry</h1>
+            </div>
+            <p className="text-xs text-muted">Real-time user search intent, autonomous agent logs, and daily AI briefings</p>
           </div>
-          <MiniBarChart data={analytics.dailyViews} />
         </div>
 
-        {/* Section Breakdown */}
-        <div className="rounded-2xl border border-border/20 bg-surface/60 p-6">
-          <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-muted flex items-center gap-1.5">
-            <Award size={12} /> Content by Section
-          </p>
-          <div className="space-y-3">
-            {analytics.sectionBreakdown.map((s, i) => (
-              <div key={i} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-foreground font-medium">{s.section}</span>
-                  <span className="text-muted tabular-nums">{s.count.toLocaleString()} ({s.percentage}%)</span>
-                </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-border/20">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${s.percentage}%` }}
-                    transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }}
-                    className="h-full rounded-full bg-gradient-to-r from-gold/60 to-gold"
-                  />
-                </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/ai-studio"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gold text-black font-bold text-xs shadow-md hover:bg-gold-light transition-all"
+          >
+            <Sparkles size={14} />
+            <span>Open AI Master Studio</span>
+          </Link>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20 text-muted gap-2 text-sm">
+          <Loader2 size={18} className="animate-spin text-gold" />
+          <span>Analyzing system telemetry & generating AI briefing...</span>
+        </div>
+      ) : (
+        <div className="space-y-8 animate-in fade-in duration-500">
+          {/* Executive AI Briefing Panel */}
+          <div className="rounded-3xl border border-gold/40 bg-gradient-to-r from-surface-alt via-surface-elevated to-surface-alt p-6 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-border/20 pb-3">
+              <div className="flex items-center gap-2 text-gold text-xs uppercase tracking-widest font-bold">
+                <Sparkles size={16} className="animate-pulse" />
+                <span>Daily AI Executive Briefing</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
+              <span className="text-[10px] text-muted">{new Date().toLocaleDateString()}</span>
+            </div>
 
-      {/* Reflection Completion Heatmap */}
-      <div className="rounded-2xl border border-border/20 bg-surface/60 p-6">
-        <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-muted flex items-center gap-1.5">
-          <Calendar size={12} /> 30-Day Reader Reflection Heatmap
-        </p>
-        <div className="grid grid-cols-10 gap-2 sm:grid-cols-15 md:grid-cols-30">
-          {Array.from({ length: 30 }).map((_, idx) => {
-            const intensity = (idx * 7 + 3) % 5;
-            const opacityClass =
-              intensity === 0 ? "bg-border/20" :
-              intensity === 1 ? "bg-gold/20" :
-              intensity === 2 ? "bg-gold/40" :
-              intensity === 3 ? "bg-gold/70" : "bg-gold";
-            return (
-              <div
-                key={idx}
-                title={`Day ${idx + 1}: ${intensity * 14} reflections completed`}
-                className={`h-8 w-full rounded-md transition-all hover:scale-110 ${opacityClass}`}
-              />
-            );
-          })}
-        </div>
-        <div className="mt-3 flex items-center justify-between text-[10px] text-muted">
-          <span>30 days ago</span>
-          <div className="flex items-center gap-1.5">
-            <span>Less</span>
-            <span className="h-2 w-2 rounded-sm bg-border/20" />
-            <span className="h-2 w-2 rounded-sm bg-gold/30" />
-            <span className="h-2 w-2 rounded-sm bg-gold/70" />
-            <span className="h-2 w-2 rounded-sm bg-gold" />
-            <span>More</span>
-          </div>
-          <span>Today</span>
-        </div>
-      </div>
-
-      {/* Tables Row */}
-      <div className="grid gap-6 md:grid-cols-[1fr_350px]">
-        {/* Top Content */}
-        <div className="rounded-2xl border border-border/20 bg-surface/60 overflow-hidden">
-          <div className="border-b border-border/20 px-6 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-muted">
-              Top Performing Content
-            </p>
-          </div>
-          <div className="divide-y divide-border/10">
-            {analytics.topContent.map((item, i) => (
-              <div key={i} className="flex items-center gap-4 px-6 py-3.5 hover:bg-surface-elevated/30 transition-colors">
-                <span className="text-xs font-bold text-gold-muted tabular-nums w-5">{i + 1}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-                  <p className="text-[10px] text-muted mt-0.5">{item.section}</p>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-muted shrink-0">
-                  <span className="flex items-center gap-1"><Eye size={11} /> {item.views.toLocaleString()}</span>
-                  <span className="flex items-center gap-1"><Share2 size={11} /> {item.shares}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Top Search Terms */}
-        <div className="rounded-2xl border border-border/20 bg-surface/60 overflow-hidden">
-          <div className="border-b border-border/20 px-6 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-muted">
-              Top Search Terms
-            </p>
-          </div>
-          <div className="divide-y divide-border/10">
-            {analytics.searchTerms.map((term, i) => (
-              <div key={i} className="flex items-center justify-between gap-3 px-6 py-3 hover:bg-surface-elevated/30 transition-colors">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold text-white ${LANG_COLORS[term.language]}`}>
-                    {LANG_LABELS[term.language]}
+            <div className="space-y-2">
+              {data?.insights?.map((insight: string, idx: number) => (
+                <div key={idx} className="flex items-start gap-2.5 text-xs text-foreground/90 leading-relaxed">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold font-bold text-[10px]">
+                    {idx + 1}
                   </span>
-                  <span className={`text-sm text-foreground truncate ${term.language !== "en" ? "font-arabic" : ""}`} dir={term.language !== "en" ? "rtl" : "ltr"}>
-                    {term.term}
-                  </span>
+                  <p>{insight}</p>
                 </div>
-                <span className="text-xs font-medium text-gold tabular-nums shrink-0">{term.count}×</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Autonomous Knowledge Agent Control Panel */}
+          <div className="rounded-3xl border border-border/30 bg-surface-alt/70 p-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/20 pb-3">
+              <div className="flex items-center gap-2 text-gold text-xs uppercase tracking-widest font-bold">
+                <Bot size={16} />
+                <span>Autonomous Knowledge Agent Panel</span>
               </div>
-            ))}
+              <button
+                onClick={handleManualSync}
+                disabled={syncing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gold/40 bg-gold/10 text-gold text-xs font-semibold hover:bg-gold/20 transition-all disabled:opacity-50"
+              >
+                <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+                <span>{syncing ? "Syncing..." : "Sync Knowledge Now"}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+              <div className="p-4 rounded-2xl bg-background border border-border/30">
+                <span className="text-muted block text-[10px] uppercase font-semibold">Agent Status</span>
+                <span className="text-emerald-400 font-bold text-sm flex items-center gap-1.5 mt-1">
+                  <CheckCircle size={14} /> {data?.agentStatus?.status}
+                </span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-background border border-border/30">
+                <span className="text-muted block text-[10px] uppercase font-semibold">Target Source</span>
+                <span className="text-gold font-semibold text-xs truncate block mt-1">
+                  {data?.agentStatus?.targetSite}
+                </span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-background border border-border/30">
+                <span className="text-muted block text-[10px] uppercase font-semibold">Indexed Vectors</span>
+                <span className="text-foreground font-extrabold text-lg block mt-1">
+                  {data?.agentStatus?.indexedChunks}
+                </span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-background border border-border/30">
+                <span className="text-muted block text-[10px] uppercase font-semibold">Last Auto-Sync</span>
+                <span className="text-muted font-medium text-xs block mt-1">
+                  {data?.agentStatus?.lastScraped}
+                </span>
+              </div>
+            </div>
+
+            {syncResult && (
+              <div className="p-3 rounded-xl bg-gold/10 border border-gold/30 text-gold text-xs">
+                {syncResult}
+              </div>
+            )}
+          </div>
+
+          {/* User Search & Chat Intent Telemetry */}
+          <div className="rounded-3xl border border-border/30 bg-surface-alt/70 p-6 space-y-4">
+            <div className="flex items-center gap-2 text-gold text-xs uppercase tracking-widest font-bold border-b border-border/20 pb-3">
+              <TrendingUp size={16} />
+              <span>User Search & Chat Intent Breakdown</span>
+            </div>
+
+            <div className="space-y-3">
+              {data?.topSearchTopics?.map((item: any, idx: number) => (
+                <div key={idx} className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-semibold text-foreground">
+                    <span>{item.topic}</span>
+                    <span className="text-gold">{item.count} queries ({item.percentage})</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-background overflow-hidden border border-border/20">
+                    <div
+                      className="h-full bg-gradient-to-r from-gold/60 to-gold rounded-full transition-all duration-700"
+                      style={{ width: item.percentage }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

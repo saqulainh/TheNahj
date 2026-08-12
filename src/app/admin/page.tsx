@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SITE_NAME } from "@/lib/brand";
-import { BookOpen, Users, FileText, Headphones, ArrowRight, Home, AlertCircle, Search } from "lucide-react";
+import { BookOpen, Users, FileText, Headphones, ArrowRight, Home, AlertCircle, Search, Sparkles, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
@@ -163,11 +163,31 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      <div>
-        <h1 className="text-3xl font-medium tracking-tight text-foreground">Dashboard</h1>
-        <p className="mt-2 text-sm text-muted">
-          Welcome to {SITE_NAME} CMS. Here is an overview of your platform.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-medium tracking-tight text-foreground">Dashboard</h1>
+          <p className="mt-2 text-sm text-muted">
+            Welcome to {SITE_NAME} CMS. Here is an overview of your platform.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/admin/ai-studio"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold text-black font-bold text-xs shadow-lg transition-transform hover:scale-105"
+          >
+            <Sparkles size={16} />
+            <span>AI Master Studio</span>
+          </Link>
+
+          <Link
+            href="/admin/analytics"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gold/40 bg-surface-alt text-gold font-semibold text-xs transition-colors hover:bg-surface-elevated"
+          >
+            <BarChart3 size={16} />
+            <span>AI Analytics & Telemetry</span>
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
