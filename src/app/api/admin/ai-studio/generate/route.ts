@@ -1,5 +1,116 @@
 import { NextResponse } from "next/server";
 import { verifyAdminToken } from "@/lib/auth";
+import { z } from "zod";
+
+// Zod Schema to strictly validate the 7 Master Sections
+const MasterWisdomCardSchema = z.object({
+  basicInfo: z.object({
+    title: z.string().min(1),
+    slug: z.string().min(1),
+    excerpt: z.string().min(1),
+    category: z.string().default("Youth Corner"),
+    status: z.string().default("Published"),
+    schedule: z.string().default("Immediate"),
+    taxonomyMapping: z.string().default("Required"),
+    theme: z.string().default("Gold Luxe"),
+    topic: z.string().min(1),
+    audienceMapping: z.string().default("Youth"),
+    tags: z.array(z.string()).default([]),
+  }),
+  originalWisdom: z.object({
+    arabicText: z.string().min(1),
+    urduTranslation: z.string().min(1),
+    englishTranslation: z.string().min(1),
+    source: z.string().default("Nahjul Balagha"),
+    sourceNumber: z.string().default("Saying"),
+    bookName: z.string().default("Nahjul Balagha"),
+    sourceNote: z.string().optional().default(""),
+  }),
+  explanationArea: z.object({
+    mainExplanation: z.string().min(1),
+    detailedExplanation: z.string().min(1),
+    tafseer: z.string().min(1),
+    historicalContext: z.string().min(1),
+  }),
+  relatedNarrations: z.array(
+    z.object({
+      arabicText: z.string().optional().default(""),
+      urduTranslation: z.string().optional().default(""),
+      englishTranslation: z.string().optional().default(""),
+      narrator: z.string().default("Prophet Muhammad (SAW)"),
+      source: z.string().default("Authentic Source"),
+      explanation: z.string().optional().default(""),
+    })
+  ).default([]),
+  modernRelevance: z.object({
+    currentIssues: z.string().min(1),
+    youthRelevance: z.string().min(1),
+    studentRelevance: z.string().min(1),
+    practicalApplication: z.string().min(1),
+  }),
+  reflection: z.object({
+    reflectionQuestions: z.string().min(1),
+    actionSteps: z.string().min(1),
+    personalReflection: z.string().min(1),
+  }),
+  conclusion: z.object({
+    summary: z.string().min(1),
+    closingReflection: z.string().min(1),
+  }),
+});
+
+// Helper to enforce plain-text code block formatting for numbered lists
+function ensureCodeBlockFormatting(text: string): string {
+  if (!text) return "";
+  if (text.includes("```text") || text.includes("```")) {
+    return text;
+  }
+  // Wrap list inside ```text codeblock
+  return "```text\n" + text.trim() + "\n```";
+}
+
+async function fetchFromGeminiWithFailover(systemPrompt: string, apiKey: string) {
+  const models = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash"];
+  let lastError = "";
+
+  for (const model of models) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+            ...(apiKey.startsWith("AQ.") ? { Authorization: `Bearer ${apiKey}` } : {}),
+          },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 4000,
+              responseMimeType: "application/json",
+            },
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) return rawText;
+      } else {
+        lastError = await response.text();
+        console.warn(`Model ${model} failed, trying next fallback...`, lastError);
+      }
+    } catch (err: any) {
+      lastError = err.message || String(err);
+      console.warn(`Fetch error for model ${model}:`, lastError);
+    }
+  }
+
+  throw new Error(`All Gemini models failed. Last error: ${lastError}`);
+}
 
 export async function POST(request: Request) {
   const cookieHeader = request.headers.get("cookie") || "";
@@ -17,11 +128,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Topic is required" }, { status: 400 });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
       return NextResponse.json({ error: "GEMINI_API_KEY environment variable is not configured" }, { status: 500 });
     }
 
-    const systemPrompt = `You are "TheNahj Master AI Studio", a top-tier Islamic Scholar & Editorial Content Creator specialized in Nahjul Balagha and authentic teachings of the Ahlulbayt (AS).
+    const systemPrompt = `You are "TheNahj Master AI Studio", a top-tier Senior Islamic Scholar & Editorial Content Creator specialized in Nahjul Balagha and authentic teachings of the Ahlulbayt (AS).
 
 Your task is to generate a COMPLETE, publication-ready Wisdom Card for the topic: "${topic}".
 
@@ -74,7 +186,7 @@ OUTPUT MUST BE A VALID JSON OBJECT WITH EXACTLY THIS SCHEMA:
       "arabicText": "Arabic text",
       "urduTranslation": "Urdu text",
       "englishTranslation": "English text",
-      "narrator": "Prophet Muhammad (SAW) / Imam Ali (AS)",
+      "narrator": "Prophet Muhammad (SAW)",
       "source": "Book citation",
       "explanation": "Brief explanation"
     }
@@ -98,46 +210,24 @@ OUTPUT MUST BE A VALID JSON OBJECT WITH EXACTLY THIS SCHEMA:
 
 Return ONLY the raw JSON object. Do not include markdown code block formatting (like \`\`\`json) outside the JSON object itself.`;
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-          ...(apiKey.startsWith("AQ.") ? { "Authorization": `Bearer ${apiKey}` } : {}),
-        },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 4000,
-            responseMimeType: "application/json",
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errText = await response.text();
-      return NextResponse.json({ error: `Gemini API error: ${errText}` }, { status: 502 });
-    }
-
-    const data = await response.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!rawText) {
-      return NextResponse.json({ error: "Failed to generate wisdom card content" }, { status: 500 });
-    }
+    const rawText = await fetchFromGeminiWithFailover(systemPrompt, apiKey);
 
     const cleanJsonText = rawText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
-    const parsedCard = JSON.parse(cleanJsonText);
+    const parsedRaw = JSON.parse(cleanJsonText);
+
+    // Validate Schema with Zod
+    const validatedCard = MasterWisdomCardSchema.parse(parsedRaw);
+
+    // Enforce Rule #4: Auto-correct code block formatting for all numbered lists
+    validatedCard.modernRelevance.currentIssues = ensureCodeBlockFormatting(validatedCard.modernRelevance.currentIssues);
+    validatedCard.modernRelevance.practicalApplication = ensureCodeBlockFormatting(validatedCard.modernRelevance.practicalApplication);
+    validatedCard.reflection.reflectionQuestions = ensureCodeBlockFormatting(validatedCard.reflection.reflectionQuestions);
+    validatedCard.reflection.actionSteps = ensureCodeBlockFormatting(validatedCard.reflection.actionSteps);
 
     return NextResponse.json({
       success: true,
       topic,
-      card: parsedCard,
+      card: validatedCard,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to generate master wisdom card" }, { status: 500 });
