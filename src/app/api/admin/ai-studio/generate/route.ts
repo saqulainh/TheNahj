@@ -70,8 +70,8 @@ function ensureCodeBlockFormatting(text: string): string {
 }
 
 async function fetchFromGeminiWithFailover(systemPrompt: string, apiKey: string) {
-  const models = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash"];
-  let lastError = "";
+  const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
+  let allErrors: string[] = [];
 
   for (const model of models) {
     try {
@@ -99,16 +99,18 @@ async function fetchFromGeminiWithFailover(systemPrompt: string, apiKey: string)
         const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (rawText) return rawText;
       } else {
-        lastError = await response.text();
-        console.warn(`Model ${model} failed, trying next fallback...`, lastError);
+        const errText = await response.text();
+        allErrors.push(`[${model}]: ${errText}`);
+        console.warn(`Model ${model} failed, trying next fallback...`, errText);
       }
     } catch (err: any) {
-      lastError = err.message || String(err);
-      console.warn(`Fetch error for model ${model}:`, lastError);
+      const errMsg = err.message || String(err);
+      allErrors.push(`[${model}]: ${errMsg}`);
+      console.warn(`Fetch error for model ${model}:`, errMsg);
     }
   }
 
-  throw new Error(`All Gemini models failed. Last error: ${lastError}`);
+  throw new Error(`All Gemini models failed. Errors: ${allErrors.join(" | ")}`);
 }
 
 export async function POST(request: Request) {
