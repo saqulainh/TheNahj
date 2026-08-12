@@ -1,7 +1,7 @@
 import { env } from "process";
 import fs from "fs";
 
-const apiKey = fs.readFileSync(".env.local", "utf8").match(/GEMINI_API_KEY=(.*)/)[1];
+const apiKey = fs.readFileSync(".env.local", "utf8").match(/GEMINI_API_KEY=(.*)/)[1].trim();
 
 async function testModel(model) {
   try {
@@ -26,9 +26,16 @@ async function testModel(model) {
 }
 
 async function run() {
-  await testModel("gemini-1.5-pro");
-  await testModel("gemini-1.5-flash");
-  await testModel("gemini-2.0-flash");
-  await testModel("gemini-2.0-flash-exp");
+  const models = [
+    "gemini-2.0-flash",
+    "gemini-2.5-flash",
+    "gemini-1.5-flash-latest",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
+  ];
+  for (const m of models) {
+    await testModel(m);
+  }
 }
 run();

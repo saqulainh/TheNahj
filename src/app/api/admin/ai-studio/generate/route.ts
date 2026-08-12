@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchGeminiWithFailover } from "@/lib/gemini";
 import { verifyAdminToken } from "@/lib/auth";
 import { z } from "zod";
 
@@ -67,50 +68,6 @@ function ensureCodeBlockFormatting(text: string): string {
   }
   // Wrap list inside ```text codeblock
   return "```text\n" + text.trim() + "\n```";
-}
-
-async function fetchFromGeminiWithFailover(systemPrompt: string, apiKey: string) {
-  const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
-  let allErrors: string[] = [];
-
-  for (const model of models) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
-          },
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-            generationConfig: {
-              temperature: 0.3,
-              maxOutputTokens: 4000,
-              responseMimeType: "application/json",
-            },
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (rawText) return rawText;
-      } else {
-        const errText = await response.text();
-        allErrors.push(`[${model}]: ${errText}`);
-        console.warn(`Model ${model} failed, trying next fallback...`, errText);
-      }
-    } catch (err: any) {
-      const errMsg = err.message || String(err);
-      allErrors.push(`[${model}]: ${errMsg}`);
-      console.warn(`Fetch error for model ${model}:`, errMsg);
-    }
-  }
-
-  throw new Error(`All Gemini models failed. Errors: ${allErrors.join(" | ")}`);
 }
 
 export async function POST(request: Request) {
@@ -211,7 +168,11 @@ OUTPUT MUST BE A VALID JSON OBJECT WITH EXACTLY THIS SCHEMA:
 
 Return ONLY the raw JSON object. Do not include markdown code block formatting (like \`\`\`json) outside the JSON object itself.`;
 
-    const rawText = await fetchFromGeminiWithFailover(systemPrompt, apiKey);
+    const rawText = await fetchGeminiWithFailover(systemPrompt, apiKey, {
+      temperature: 0.3,
+      maxOutputTokens: 4000,
+      responseMimeType: "application/json",
+    });
 
     const cleanJsonText = rawText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
     const parsedRaw = JSON.parse(cleanJsonText);

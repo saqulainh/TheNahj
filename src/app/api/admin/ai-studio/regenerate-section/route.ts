@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyAdminToken } from "@/lib/auth";
+import { fetchGeminiWithFailover } from "@/lib/gemini";
 
 export async function POST(request: Request) {
   const cookieHeader = request.headers.get("cookie") || "";
@@ -31,32 +32,12 @@ Rules: Use deep, publication-ready flowing editorial paragraphs. If generating l
 
 Return ONLY a valid JSON object containing the refreshed data for "${sectionKey}".`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.5,
-            maxOutputTokens: 1500,
-            responseMimeType: "application/json",
-          },
-        }),
-      }
-    );
+    const rawText = await fetchGeminiWithFailover(prompt, apiKey, {
+      temperature: 0.5,
+      maxOutputTokens: 1500,
+      responseMimeType: "application/json",
+    });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      return NextResponse.json({ error: `Gemini API error: ${errText}` }, { status: 502 });
-    }
-
-    const data = await response.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     const cleanJson = rawText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
     const parsedData = JSON.parse(cleanJson);
 

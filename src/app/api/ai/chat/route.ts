@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 import { getAllWisdom } from "@/lib/wisdom";
 import { searchRAGContext } from "@/lib/rag/retrieval";
+import { GEMINI_MODELS } from "@/lib/gemini";
 import { z } from "zod";
 
 const chatSchema = z.object({
@@ -287,66 +288,73 @@ IMPORTANT: You must provide genuine, sourced wisdom. The user trusts you for aut
       });
 
       const apiKey = process.env.GEMINI_API_KEY;
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
-          },
-          body: JSON.stringify({
-            contents: geminiMessages,
-            tools: [{ googleSearch: {} }], // Enable Real-time Web Search Grounding
-            generationConfig: {
-              temperature: 0.7,
-              topP: 0.9,
-              maxOutputTokens: 800,
-            },
-            safetySettings: [
-              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-            ],
-          }),
-        }
-      );
+      if (apiKey) {
+        for (const model of GEMINI_MODELS) {
+          try {
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-goog-api-key": apiKey,
+                },
+                body: JSON.stringify({
+                  contents: geminiMessages,
+                  tools: [{ googleSearch: {} }],
+                  generationConfig: {
+                    temperature: 0.7,
+                    topP: 0.9,
+                    maxOutputTokens: 800,
+                  },
+                  safetySettings: [
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+                  ],
+                }),
+              }
+            );
 
-      if (response.ok) {
-        const data = await response.json();
-        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (reply) {
-          // Detect intent for Generative UI Widgets
-          let widget: any = undefined;
-          const lowerMsg = (message + " " + reply).toLowerCase();
+            if (response.ok) {
+              const data = await response.json();
+              const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (reply) {
+                let widget: any = undefined;
+                const lowerMsg = (message + " " + reply).toLowerCase();
 
-          if (lowerMsg.includes("breath") || lowerMsg.includes("anxiety") || lowerMsg.includes("stress") || lowerMsg.includes("panic")) {
-            widget = { type: "breathing", title: "4-7-8 De-Stress & Reflection Breathing" };
-          } else if (lowerMsg.includes("quiz") || lowerMsg.includes("test") || lowerMsg.includes("question")) {
-            widget = {
-              type: "quiz",
-              question: "According to Imam Ali (AS), what is the greatest form of wealth?",
-              options: ["Material Gold", "Knowledge & Wisdom", "Social Status", "Physical Strength"],
-              correctIndex: 1,
-              explanation: "Imam Ali (AS) taught: 'Knowledge is the most superior wealth. It protects you while you must protect material wealth.' (Saying 147)",
-            };
-          } else if (lowerMsg.includes("reflect") || lowerMsg.includes("meditate") || lowerMsg.includes("silence") || lowerMsg.includes("pause")) {
-            widget = { type: "reflection", prompt: "Close your eyes and reflect deeply on Imam Ali's words for 60 seconds." };
+                if (lowerMsg.includes("breath") || lowerMsg.includes("anxiety") || lowerMsg.includes("stress") || lowerMsg.includes("panic")) {
+                  widget = { type: "breathing", title: "4-7-8 De-Stress & Reflection Breathing" };
+                } else if (lowerMsg.includes("quiz") || lowerMsg.includes("test") || lowerMsg.includes("question")) {
+                  widget = {
+                    type: "quiz",
+                    question: "According to Imam Ali (AS), what is the greatest form of wealth?",
+                    options: ["Material Gold", "Knowledge & Wisdom", "Social Status", "Physical Strength"],
+                    correctIndex: 1,
+                    explanation: "Imam Ali (AS) taught: 'Knowledge is the most superior wealth. It protects you while you must protect material wealth.' (Saying 147)",
+                  };
+                } else if (lowerMsg.includes("reflect") || lowerMsg.includes("meditate") || lowerMsg.includes("silence") || lowerMsg.includes("pause")) {
+                  widget = { type: "reflection", prompt: "Close your eyes and reflect deeply on Imam Ali's words for 60 seconds." };
+                }
+
+                return NextResponse.json({
+                  success: true,
+                  reply,
+                  topics: detectedTopics,
+                  widget,
+                  relatedWisdom: relevantWisdom.slice(0, 3).map((w) => ({
+                    title: w.source,
+                    slug: w.slug,
+                    quote: w.english_translation,
+                    category: w.category?.name,
+                  })),
+                });
+              }
+            }
+          } catch (modelErr) {
+            console.warn(`Model ${model} failed in chat, trying next:`, modelErr);
           }
-
-          return NextResponse.json({
-            success: true,
-            reply,
-            topics: detectedTopics,
-            widget,
-            relatedWisdom: relevantWisdom.slice(0, 3).map((w) => ({
-              title: w.source,
-              slug: w.slug,
-              quote: w.english_translation,
-              category: w.category?.name,
-            })),
-          });
         }
       }
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyAdminToken } from "@/lib/auth";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
+import { fetchGeminiWithFailover } from "@/lib/gemini";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -36,20 +37,8 @@ export async function POST(request: Request) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (apiKey) {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: `You are an expert Islamic scholar and content editor for TheNahj platform (focusing on Imam Ali's wisdom for youth and students).
+      try {
+        const prompt = `You are an expert Islamic scholar and content editor for TheNahj platform (focusing on Imam Ali's wisdom for youth and students).
 Given the following text:
 Title: ${title || "Untitled"}
 Content: ${text}
@@ -61,23 +50,21 @@ Generate a JSON object with:
 4. "youth_relevance": 2 sentences explaining why this matters to young Muslims today.
 
 Return ONLY valid JSON matching this schema:
-{"reflection_questions": [...], "action_steps": [...], "seo_description": "...", "youth_relevance": "..."}`
-                  }
-                ]
-              }
-            ]
-          })
-        }
-      );
+{"reflection_questions": [...], "action_steps": [...], "seo_description": "...", "youth_relevance": "..."}`;
 
-      if (response.ok) {
-        const data = await response.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        const rawText = await fetchGeminiWithFailover(prompt, apiKey, {
+          temperature: 0.3,
+          maxOutputTokens: 2000,
+          responseMimeType: "application/json",
+        });
+
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
           return NextResponse.json({ success: true, provider: "gemini", result: parsed });
         }
+      } catch (geminiErr) {
+        console.warn("Gemini generation failed, using heuristic fallback:", geminiErr);
       }
     }
 

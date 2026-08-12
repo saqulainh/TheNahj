@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchGeminiWithFailover } from "@/lib/gemini";
 
 export async function POST(request: Request) {
   try {
@@ -8,7 +9,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Situation is required" }, { status: 400 });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
       return NextResponse.json({ error: "API Key not configured" }, { status: 500 });
     }
 
@@ -31,34 +33,11 @@ Return a JSON object with this exact structure:
 
 Return ONLY the raw JSON object. Do not wrap in markdown \`\`\`json.`;
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 800,
-            responseMimeType: "application/json",
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      return NextResponse.json({ error: "Failed to process situation" }, { status: 502 });
-    }
-
-    const data = await response.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!rawText) throw new Error("No text generated");
+    const rawText = await fetchGeminiWithFailover(systemPrompt, apiKey, {
+      temperature: 0.3,
+      maxOutputTokens: 800,
+      responseMimeType: "application/json",
+    });
 
     const cleanJson = rawText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
     const parsedData = JSON.parse(cleanJson);
