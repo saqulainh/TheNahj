@@ -3,7 +3,8 @@ import { verifyAdminToken } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
 
 function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const url = rawUrl.trim().replace(/\/+(rest\/)?v1\/?$/, "").replace(/\/+$/, "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key);
