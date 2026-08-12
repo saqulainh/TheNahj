@@ -42,8 +42,18 @@ export default function VoiceAssistantPage() {
         recognitionRef.current.onerror = (event: any) => {
           console.error("Speech recognition error", event.error);
           setIsListening(false);
-          if (event.error !== "no-speech") {
-            setError("Could not hear you clearly. Please try again.");
+          setTranscript(""); // Clear "Listening..." status on error
+          
+          if (event.error === "not-allowed") {
+            setError("Microphone access denied. Please allow microphone in your browser settings.");
+          } else if (event.error === "no-speech") {
+            setError("No speech detected. Please try speaking a bit louder.");
+          } else if (event.error === "network") {
+            setError("Network connection failed. Speech recognition requires internet.");
+          } else if (event.error === "audio-capture") {
+            setError("Microphone not found. Please connect a microphone.");
+          } else if (event.error !== "aborted") {
+            setError(`Could not hear you clearly (${event.error}). Please try again.`);
           }
         };
 
