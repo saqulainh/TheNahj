@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 import { getAllWisdom } from "@/lib/wisdom";
 import { searchRAGContext } from "@/lib/rag/retrieval";
+import { fetchGeminiWithFailover } from "@/lib/gemini";
 import { z } from "zod";
 
 const chatSchema = z.object({
@@ -288,113 +289,49 @@ IMPORTANT: You must provide genuine, sourced wisdom. The user trusts you for aut
 
       const apiKey = process.env.GEMINI_API_KEY;
       if (apiKey) {
-        let reply: string | undefined;
-
-        // Build the text input from geminiMessages for the Interactions API
-        const lastUserParts = geminiMessages[geminiMessages.length - 1]?.parts || [];
-        const inputText = lastUserParts.map((p: any) => p.text || "").join("\n").trim();
-
-        // ── Try Interactions API (v1beta2) with gemini-3.6-flash ──
         try {
-          const intResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta2/interactions`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": apiKey,
-              },
-              body: JSON.stringify({
-                model: "gemini-3.6-flash",
-                input: [{ type: "text", text: inputText }],
-                config: {
-                  temperature: 0.7,
-                  maxOutputTokens: 800,
-                },
-              }),
-            }
-          );
+          // Build prompt string from geminiMessages (system prompt already injected into userParts)
+          const lastUserParts = geminiMessages[geminiMessages.length - 1]?.parts || [];
+          const promptText = lastUserParts.map((p: any) => p.text || "").join("\n").trim();
 
-          if (intResponse.ok) {
-            const intData = await intResponse.json();
-            const modelStep = intData?.steps?.find(
-              (s: any) => s.type === "model_output" && s.status === "done"
-            );
-            const textContent = modelStep?.content?.find((c: any) => c.type === "text");
-            reply = textContent?.text || intData?.output_text;
-          }
-        } catch (intErr) {
-          console.warn("Interactions API failed in chat, trying generateContent:", intErr);
-        }
-
-        // ── Fallback: generateContent with gemini-2.5-flash-lite ──
-        if (!reply) {
-          try {
-            const response = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "x-goog-api-key": apiKey,
-                },
-                body: JSON.stringify({
-                  contents: geminiMessages,
-                  tools: [{ googleSearch: {} }],
-                  generationConfig: {
-                    temperature: 0.7,
-                    topP: 0.9,
-                    maxOutputTokens: 800,
-                  },
-                  safetySettings: [
-                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-                  ],
-                }),
-              }
-            );
-
-            if (response.ok) {
-              const data = await response.json();
-              reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            }
-          } catch (gcErr) {
-            console.warn("generateContent fallback also failed in chat:", gcErr);
-          }
-        }
-
-        if (reply) {
-          let widget: any = undefined;
-          const lowerMsg = (message + " " + reply).toLowerCase();
-
-          if (lowerMsg.includes("breath") || lowerMsg.includes("anxiety") || lowerMsg.includes("stress") || lowerMsg.includes("panic")) {
-            widget = { type: "breathing", title: "4-7-8 De-Stress & Reflection Breathing" };
-          } else if (lowerMsg.includes("quiz") || lowerMsg.includes("test") || lowerMsg.includes("question")) {
-            widget = {
-              type: "quiz",
-              question: "According to Imam Ali (AS), what is the greatest form of wealth?",
-              options: ["Material Gold", "Knowledge & Wisdom", "Social Status", "Physical Strength"],
-              correctIndex: 1,
-              explanation: "Imam Ali (AS) taught: 'Knowledge is the most superior wealth. It protects you while you must protect material wealth.' (Saying 147)",
-            };
-          } else if (lowerMsg.includes("reflect") || lowerMsg.includes("meditate") || lowerMsg.includes("silence") || lowerMsg.includes("pause")) {
-            widget = { type: "reflection", prompt: "Close your eyes and reflect deeply on Imam Ali's words for 60 seconds." };
-          }
-
-          return NextResponse.json({
-            success: true,
-            reply,
-            topics: detectedTopics,
-            widget,
-            relatedWisdom: relevantWisdom.slice(0, 3).map((w) => ({
-              title: w.source,
-              slug: w.slug,
-              quote: w.english_translation,
-              category: w.category?.name,
-            })),
+          const reply = await fetchGeminiWithFailover(promptText, apiKey, {
+            temperature: 0.7,
+            maxOutputTokens: 800,
           });
+
+          if (reply) {
+            let widget: any = undefined;
+            const lowerMsg = (message + " " + reply).toLowerCase();
+
+            if (lowerMsg.includes("breath") || lowerMsg.includes("anxiety") || lowerMsg.includes("stress") || lowerMsg.includes("panic")) {
+              widget = { type: "breathing", title: "4-7-8 De-Stress & Reflection Breathing" };
+            } else if (lowerMsg.includes("quiz") || lowerMsg.includes("test") || lowerMsg.includes("question")) {
+              widget = {
+                type: "quiz",
+                question: "According to Imam Ali (AS), what is the greatest form of wealth?",
+                options: ["Material Gold", "Knowledge & Wisdom", "Social Status", "Physical Strength"],
+                correctIndex: 1,
+                explanation: "Imam Ali (AS) taught: 'Knowledge is the most superior wealth. It protects you while you must protect material wealth.' (Saying 147)",
+              };
+            } else if (lowerMsg.includes("reflect") || lowerMsg.includes("meditate") || lowerMsg.includes("silence") || lowerMsg.includes("pause")) {
+              widget = { type: "reflection", prompt: "Close your eyes and reflect deeply on Imam Ali's words for 60 seconds." };
+            }
+
+            return NextResponse.json({
+              success: true,
+              reply,
+              topics: detectedTopics,
+              widget,
+              relatedWisdom: relevantWisdom.slice(0, 3).map((w) => ({
+                title: w.source,
+                slug: w.slug,
+                quote: w.english_translation,
+                category: w.category?.name,
+              })),
+            });
+          }
+        } catch (chatErr) {
+          console.warn("[Chat] Gemini call failed, using fallback:", chatErr);
         }
       }
     }
