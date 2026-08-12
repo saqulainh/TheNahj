@@ -1,6 +1,31 @@
 import type { Article, Category, Wisdom } from "@/lib/types";
 import { isSupabaseConfigured, supabase } from "./supabase";
 import { cache } from "react";
+import localWisdomData from "@/data/local_wisdom.json";
+
+function getLocalWisdom(): Wisdom[] {
+  try {
+    return (localWisdomData as any[]).map((row) => ({
+      id: row.id || row.slug,
+      slug: row.slug,
+      arabic_text: row.arabic_text || "",
+      urdu_translation: row.urdu_translation || "",
+      english_translation: row.english_translation || "",
+      short_reflection: row.excerpt || row.english_translation,
+      deep_reflection: row.master_card_json?.explanationArea?.mainExplanation || "",
+      simple_meaning: row.master_card_json?.conclusion?.summary || "",
+      why_today: row.master_card_json?.modernRelevance?.currentIssues || "",
+      reflection_questions: row.master_card_json?.reflection?.reflectionQuestions ? [row.master_card_json.reflection.reflectionQuestions] : [],
+      action_steps: row.master_card_json?.reflection?.actionSteps ? [row.master_card_json.reflection.actionSteps] : [],
+      source: row.source || "Nahjul Balagha",
+      category_id: row.category_id || "general",
+      category: { id: row.category_id || "general", name: "General", slug: row.category_id || "general" },
+      created_at: row.created_at || new Date().toISOString(),
+    }));
+  } catch (e) {
+    return [];
+  }
+}
 
 const LIFE_THEME_SEED: Category[] = [
   { id: "self-discipline", name: "Self Discipline", slug: "self-discipline" },
@@ -189,7 +214,7 @@ export const getAllWisdom = cache(async (): Promise<Wisdom[]> => {
     }
   }
 
-  return [];
+  return getLocalWisdom();
 });
 
 export async function getWisdomBySlug(slug: string): Promise<Wisdom | null> {
