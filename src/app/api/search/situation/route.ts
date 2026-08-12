@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchGeminiWithFailover } from "@/lib/gemini";
+import { fetchGeminiWithFailover, parseRobustJson } from "@/lib/gemini";
 
 export async function POST(request: Request) {
   try {
@@ -35,12 +35,11 @@ Return ONLY the raw JSON object. Do not wrap in markdown \`\`\`json.`;
 
     const rawText = await fetchGeminiWithFailover(systemPrompt, apiKey, {
       temperature: 0.3,
-      maxOutputTokens: 800,
+      maxOutputTokens: 1500,
       responseMimeType: "application/json",
     });
 
-    const cleanJson = rawText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
-    const parsedData = JSON.parse(cleanJson);
+    const parsedData = parseRobustJson(rawText);
 
     return NextResponse.json({ success: true, result: parsedData });
   } catch (error: any) {

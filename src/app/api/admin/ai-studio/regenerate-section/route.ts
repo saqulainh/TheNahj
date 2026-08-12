@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyAdminToken } from "@/lib/auth";
-import { fetchGeminiWithFailover } from "@/lib/gemini";
+import { fetchGeminiWithFailover, parseRobustJson } from "@/lib/gemini";
 
 export async function POST(request: Request) {
   const cookieHeader = request.headers.get("cookie") || "";
@@ -34,12 +34,11 @@ Return ONLY a valid JSON object containing the refreshed data for "${sectionKey}
 
     const rawText = await fetchGeminiWithFailover(prompt, apiKey, {
       temperature: 0.5,
-      maxOutputTokens: 1500,
+      maxOutputTokens: 2500,
       responseMimeType: "application/json",
     });
 
-    const cleanJson = rawText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
-    const parsedData = JSON.parse(cleanJson);
+    const parsedData = parseRobustJson(rawText);
 
     return NextResponse.json({
       success: true,

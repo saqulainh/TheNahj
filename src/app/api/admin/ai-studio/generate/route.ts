@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchGeminiWithFailover } from "@/lib/gemini";
+import { fetchGeminiWithFailover, parseRobustJson } from "@/lib/gemini";
 import { verifyAdminToken } from "@/lib/auth";
 import { z } from "zod";
 
@@ -170,12 +170,11 @@ Return ONLY the raw JSON object. Do not include markdown code block formatting (
 
     const rawText = await fetchGeminiWithFailover(systemPrompt, apiKey, {
       temperature: 0.3,
-      maxOutputTokens: 4000,
+      maxOutputTokens: 8192,
       responseMimeType: "application/json",
     });
 
-    const cleanJsonText = rawText.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
-    const parsedRaw = JSON.parse(cleanJsonText);
+    const parsedRaw = parseRobustJson(rawText);
 
     // Validate Schema with Zod
     const validatedCard = MasterWisdomCardSchema.parse(parsedRaw);

@@ -188,3 +188,150 @@ export async function fetchGeminiWithFailover(
 
   throw new Error(`All Gemini models failed. Errors: ${errors.join(" | ")}`);
 }
+
+/**
+ * Safely parse JSON from LLM output, extracting from markdown code blocks,
+ * sanitizing unescaped control characters inside strings, and repairing truncated JSON structures.
+ */
+export function parseRobustJson<T = any>(rawText: string): T {
+  if (!rawText || typeof rawText !== "string") {
+    throw new Error("Empty or invalid raw text provided for JSON parsing");
+  }
+
+  // 1. Strip markdown code fence blocks
+  let text = rawText.trim();
+  text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+
+  // 2. Find outermost JSON object or array bounds
+  const firstBrace = text.indexOf("{");
+  const firstBracket = text.indexOf("[");
+
+  let startIdx = -1;
+  let endChar = "}";
+
+  if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+    startIdx = firstBrace;
+    endChar = "}";
+  } else if (firstBracket !== -1) {
+    startIdx = firstBracket;
+    endChar = "]";
+  }
+
+  if (startIdx !== -1) {
+    const lastEnd = text.lastIndexOf(endChar);
+    if (lastEnd > startIdx) {
+      text = text.slice(startIdx, lastEnd + 1);
+    } else {
+      text = text.slice(startIdx);
+    }
+  }
+
+  // 3. Try standard JSON.parse first
+  try {
+    return JSON.parse(text);
+  } catch (firstErr) {
+    // Continue to repair attempts
+  }
+
+  // 4. Fix raw unescaped control chars inside JSON string literals
+  const sanitized = sanitizeControlCharsInJsonStrings(text);
+  try {
+    return JSON.parse(sanitized);
+  } catch (secondErr) {
+    // Continue to structural repair
+  }
+
+  // 5. Attempt structural repair for truncated JSON
+  const repaired = repairTruncatedJson(sanitized);
+  try {
+    return JSON.parse(repaired);
+  } catch (finalErr: any) {
+    throw new Error(`Failed to parse JSON response: ${finalErr.message || String(finalErr)}`);
+  }
+}
+
+function sanitizeControlCharsInJsonStrings(json: string): string {
+  let inString = false;
+  let escaped = false;
+  let result = "";
+
+  for (let i = 0; i < json.length; i++) {
+    const ch = json[i];
+    if (inString) {
+      if (escaped) {
+        result += ch;
+        escaped = false;
+      } else if (ch === "\\") {
+        result += ch;
+        escaped = true;
+      } else if (ch === '"') {
+        result += ch;
+        inString = false;
+      } else if (ch === "\n") {
+        result += "\\n";
+      } else if (ch === "\r") {
+        result += "\\r";
+      } else if (ch === "\t") {
+        result += "\\t";
+      } else {
+        result += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inString = true;
+      }
+      result += ch;
+    }
+  }
+  return result;
+}
+
+function repairTruncatedJson(json: string): string {
+  let stack: string[] = [];
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < json.length; i++) {
+    const ch = json[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+    } else {
+      if (ch === '"') {
+        inString = true;
+      } else if (ch === "{") {
+        stack.push("}");
+      } else if (ch === "[") {
+        stack.push("]");
+      } else if (ch === "}" || ch === "]") {
+        if (stack.length > 0 && stack[stack.length - 1] === ch) {
+          stack.pop();
+        }
+      }
+    }
+  }
+
+  let repaired = json.trim();
+
+  // If ended inside a string literal, close the quote
+  if (inString) {
+    repaired += '"';
+  }
+
+  // Remove trailing comma if any
+  repaired = repaired.replace(/,\s*$/, "");
+
+  // Close remaining open objects/arrays
+  while (stack.length > 0) {
+    repaired += stack.pop();
+  }
+
+  return repaired;
+}
+
