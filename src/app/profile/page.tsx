@@ -8,10 +8,21 @@ import { Flame, Bookmark, Award, LogOut, User, Sparkles, ArrowRight, ShieldCheck
 import Link from "next/link";
 
 export default function ProfilePage() {
-  const { user, loginWithGoogle, logout } = useAuth();
+  const { user, loading, loginWithGoogle, logout } = useAuth();
   const { streak } = useStreak();
   const { bookmarks, toggleBookmark } = useBookmarks();
   const [activeTab, setActiveTab] = useState<"bookmarks" | "badges">("bookmarks");
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
+        <div className="animate-pulse flex flex-col items-center space-y-4">
+          <div className="h-12 w-12 rounded-full border-2 border-gold border-t-transparent animate-spin" />
+          <p className="text-xs text-gold/80 font-medium">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

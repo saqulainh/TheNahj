@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load local stored user profile on mount
+    // 1. Load local stored user profile on mount
     const stored = localStorage.getItem("thenahj_user_profile");
     if (stored) {
       try {
@@ -45,7 +45,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn("Failed to parse stored user profile", e);
       }
     }
-    setLoading(false);
+
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
+    // 2. Fetch current Supabase session (handles OAuth callback tokens in hash)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const supaUser = session.user;
+        const profile: UserProfile = {
+          id: supaUser.id,
+          email: supaUser.email || "",
+          name: supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || supaUser.email?.split("@")[0] || "Seeker of Wisdom",
+          avatarUrl: supaUser.user_metadata?.avatar_url || supaUser.user_metadata?.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(supaUser.email || supaUser.id)}`,
+          createdAt: supaUser.created_at || new Date().toISOString(),
+        };
+        setUser(profile);
+        localStorage.setItem("thenahj_user_profile", JSON.stringify(profile));
+      }
+      setLoading(false);
+    });
+
+    // 3. Listen for auth changes (OAuth completion, sign in, sign out)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        const supaUser = session.user;
+        const profile: UserProfile = {
+          id: supaUser.id,
+          email: supaUser.email || "",
+          name: supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || supaUser.email?.split("@")[0] || "Seeker of Wisdom",
+          avatarUrl: supaUser.user_metadata?.avatar_url || supaUser.user_metadata?.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(supaUser.email || supaUser.id)}`,
+          createdAt: supaUser.created_at || new Date().toISOString(),
+        };
+        setUser(profile);
+        localStorage.setItem("thenahj_user_profile", JSON.stringify(profile));
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+        localStorage.removeItem("thenahj_user_profile");
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, name?: string) => {
@@ -61,7 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginWithGoogle = async () => {
-    const supabase = getSupabaseClient();
     if (supabase) {
       await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -73,9 +117,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
     localStorage.removeItem("thenahj_user_profile");
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
   };
 
   return (
