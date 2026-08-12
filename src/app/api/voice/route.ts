@@ -23,18 +23,13 @@ Example response format:
 "I hear you. It is completely normal to feel stressed about your exams. Remember the words of Imam Ali: 'Patience is of two kinds: patience over what pains you, and patience against what you covet.' Take a deep breath, do your best, and leave the rest to the Almighty."`;
 
     const apiKey = process.env.GEMINI_API_KEY;
-    const isOAuth = apiKey.startsWith("AQ.");
-    const url = isOAuth
-      ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`
-      : `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
     const response = await fetch(
-      url,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(isOAuth ? { Authorization: `Bearer ${apiKey}` } : { "x-goog-api-key": apiKey }),
+          "x-goog-api-key": apiKey,
         },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: systemPrompt }] }],

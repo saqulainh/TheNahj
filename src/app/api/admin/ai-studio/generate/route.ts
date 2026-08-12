@@ -75,18 +75,13 @@ async function fetchFromGeminiWithFailover(systemPrompt: string, apiKey: string)
 
   for (const model of models) {
     try {
-      const isOAuth = apiKey.startsWith("AQ.");
-      const url = isOAuth 
-        ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
-        : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
       const response = await fetch(
-        url,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(isOAuth ? { Authorization: `Bearer ${apiKey}` } : { "x-goog-api-key": apiKey }),
+            "x-goog-api-key": apiKey,
           },
           body: JSON.stringify({
             contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
