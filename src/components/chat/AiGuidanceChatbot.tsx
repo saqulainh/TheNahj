@@ -4,12 +4,16 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X, Send, Bot, User, Loader2, ArrowRight, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
+import { BreathingWidget } from "@/components/chat/widgets/BreathingWidget";
+import { InteractiveQuizWidget } from "@/components/chat/widgets/InteractiveQuizWidget";
+import { ReflectionTimerWidget } from "@/components/chat/widgets/ReflectionTimerWidget";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   image?: string;
+  widget?: any;
   relatedWisdom?: Array<{ title: string; slug: string; quote: string }>;
 }
 
@@ -107,13 +111,16 @@ export function AiGuidanceChatbot() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        const botMsg: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: data.reply,
-          relatedWisdom: data.relatedWisdom,
-        };
-        setMessages((prev) => [...prev, botMsg]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: data.reply,
+            widget: data.widget,
+            relatedWisdom: data.relatedWisdom,
+          },
+        ]);
       } else {
         setMessages((prev) => [
           ...prev,
@@ -213,6 +220,24 @@ export function AiGuidanceChatbot() {
                       )}
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                     </div>
+
+                    {/* Generative UI Dynamic Widgets */}
+                    {msg.widget && msg.widget.type === "breathing" && (
+                      <BreathingWidget title={msg.widget.title} />
+                    )}
+
+                    {msg.widget && msg.widget.type === "quiz" && (
+                      <InteractiveQuizWidget
+                        question={msg.widget.question}
+                        options={msg.widget.options}
+                        correctIndex={msg.widget.correctIndex}
+                        explanation={msg.widget.explanation}
+                      />
+                    )}
+
+                    {msg.widget && msg.widget.type === "reflection" && (
+                      <ReflectionTimerWidget prompt={msg.widget.prompt} />
+                    )}
 
                     {/* Related Wisdom Card Snippets */}
                     {msg.relatedWisdom && msg.relatedWisdom.length > 0 && (

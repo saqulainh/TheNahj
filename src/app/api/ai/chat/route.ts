@@ -313,10 +313,29 @@ IMPORTANT: You must provide genuine, sourced wisdom. The user trusts you for aut
         const data = await response.json();
         const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (reply) {
+          // Detect intent for Generative UI Widgets
+          let widget: any = undefined;
+          const lowerMsg = (message + " " + reply).toLowerCase();
+
+          if (lowerMsg.includes("breath") || lowerMsg.includes("anxiety") || lowerMsg.includes("stress") || lowerMsg.includes("panic")) {
+            widget = { type: "breathing", title: "4-7-8 De-Stress & Reflection Breathing" };
+          } else if (lowerMsg.includes("quiz") || lowerMsg.includes("test") || lowerMsg.includes("question")) {
+            widget = {
+              type: "quiz",
+              question: "According to Imam Ali (AS), what is the greatest form of wealth?",
+              options: ["Material Gold", "Knowledge & Wisdom", "Social Status", "Physical Strength"],
+              correctIndex: 1,
+              explanation: "Imam Ali (AS) taught: 'Knowledge is the most superior wealth. It protects you while you must protect material wealth.' (Saying 147)",
+            };
+          } else if (lowerMsg.includes("reflect") || lowerMsg.includes("meditate") || lowerMsg.includes("silence") || lowerMsg.includes("pause")) {
+            widget = { type: "reflection", prompt: "Close your eyes and reflect deeply on Imam Ali's words for 60 seconds." };
+          }
+
           return NextResponse.json({
             success: true,
             reply,
             topics: detectedTopics,
+            widget,
             relatedWisdom: relevantWisdom.slice(0, 3).map((w) => ({
               title: w.source,
               slug: w.slug,
