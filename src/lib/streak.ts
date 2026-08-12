@@ -15,7 +15,7 @@ export interface StreakData {
 export interface Badge {
   id: string;
   name: string;
-  emoji: string;
+  icon: string; // Changed from emoji to icon name for minimalist SVGs
   description: string;
   requiredDays: number;
   earned: boolean;
@@ -26,12 +26,12 @@ export interface Badge {
 const STREAK_KEY = "thenahj-streak";
 
 const BADGE_DEFINITIONS: Omit<Badge, "earned" | "earnedAt">[] = [
-  { id: "first-step", name: "First Step", emoji: "🌱", description: "Read your first wisdom", requiredDays: 1 },
-  { id: "week-warrior", name: "Week Warrior", emoji: "🔥", description: "7-day reading streak", requiredDays: 7 },
-  { id: "fortnight-focus", name: "Fortnight Focus", emoji: "⚡", description: "14-day reading streak", requiredDays: 14 },
-  { id: "monthly-master", name: "Monthly Master", emoji: "🌙", description: "30-day reading streak", requiredDays: 30 },
-  { id: "quarter-quest", name: "Quarter Quest", emoji: "💎", description: "90-day reading streak", requiredDays: 90 },
-  { id: "century-sage", name: "Century Sage", emoji: "👑", description: "100-day reading streak", requiredDays: 100 },
+  { id: "first-step", name: "First Step", icon: "sparkles", description: "Read your first wisdom", requiredDays: 1 },
+  { id: "week-warrior", name: "Week Seeker", icon: "moon", description: "7-day reading streak", requiredDays: 7 },
+  { id: "fortnight-focus", name: "Fortnight Focus", icon: "book-open", description: "14-day reading streak", requiredDays: 14 },
+  { id: "monthly-master", name: "Monthly Master", icon: "star", description: "30-day reading streak", requiredDays: 30 },
+  { id: "quarter-quest", name: "Quarter Quest", icon: "sun", description: "90-day reading streak", requiredDays: 90 },
+  { id: "century-sage", name: "Century Sage", icon: "compass", description: "100-day reading streak", requiredDays: 100 },
 ];
 
 // ── Helpers ──

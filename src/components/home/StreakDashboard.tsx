@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Flame, Trophy, Calendar, Star } from "lucide-react";
+import { Flame, Trophy, Calendar, Star, Sparkles, Moon, BookOpen, Sun, Compass } from "lucide-react";
 import { useStreak, getHeatmapData } from "@/lib/streak";
 
 export function StreakDashboard() {
@@ -10,6 +10,18 @@ export function StreakDashboard() {
   const heatmap = getHeatmapData(streak.readDates);
   const earnedBadges = streak.badges.filter((b) => b.earned);
   const nextBadge = streak.badges.find((b) => !b.earned);
+
+  const getIcon = (iconName: string, className: string = "") => {
+    switch (iconName) {
+      case "sparkles": return <Sparkles className={className} />;
+      case "moon": return <Moon className={className} />;
+      case "book-open": return <BookOpen className={className} />;
+      case "star": return <Star className={className} />;
+      case "sun": return <Sun className={className} />;
+      case "compass": return <Compass className={className} />;
+      default: return <Star className={className} />;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -89,7 +101,9 @@ export function StreakDashboard() {
               }`}
               title={badge.description}
             >
-              <span className="text-2xl">{badge.emoji}</span>
+              <div className={`mb-1 ${badge.earned ? "text-gold" : "text-muted"}`}>
+                {getIcon(badge.icon, "w-6 h-6")}
+              </div>
               <span className={`text-[9px] font-semibold text-center leading-tight ${badge.earned ? "text-gold-light" : "text-muted"}`}>
                 {badge.name}
               </span>
@@ -102,7 +116,9 @@ export function StreakDashboard() {
       {/* Next Badge Progress */}
       {nextBadge && (
         <div className="rounded-2xl border border-gold/15 bg-gold/5 p-4 flex items-center gap-4">
-          <span className="text-3xl grayscale-[50%]">{nextBadge.emoji}</span>
+          <div className="text-gold-muted opacity-50">
+            {getIcon(nextBadge.icon, "w-8 h-8")}
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-foreground">Next: {nextBadge.name}</p>
             <p className="text-[10px] text-muted mt-0.5">{nextBadge.description}</p>
