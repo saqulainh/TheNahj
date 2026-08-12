@@ -210,11 +210,11 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
             </div>
 
             <h1 className="max-w-4xl text-4xl font-light tracking-tight text-foreground md:text-6xl lg:text-7xl">
-              {article.title}
+              <AITranslatedText text={article.title} />
             </h1>
 
             <p className="max-w-3xl text-base leading-relaxed text-secondary/85 md:text-lg lg:text-xl">
-              {article.excerpt}
+              <AITranslatedText text={article.excerpt} />
             </p>
 
             <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.2em] text-muted">

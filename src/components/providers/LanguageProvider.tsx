@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { usePathname } from "next/navigation";
 
 export type Language = "en" | "ar" | "ur";
 
@@ -105,8 +106,9 @@ export function useLanguage() {
 // ─── Provider ───────────────────────────────────────────────────────────────
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
+  const pathname = usePathname();
 
-  const applyGoogleTranslate = (lang: Language) => {
+  const applyGoogleTranslate = useCallback((lang: Language) => {
     if (typeof window === "undefined") return;
 
     // Set cookie for Google Translate
@@ -116,13 +118,25 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.cookie = `googtrans=${cookieVal}; path=/;`;
     document.cookie = `googtrans=${cookieVal}; path=/; domain=${window.location.hostname};`;
 
-    // Try updating Google Translate combo if loaded
-    const select = document.querySelector(".goog-te-combo") as HTMLSelectElement | null;
-    if (select) {
-      select.value = targetLang;
-      select.dispatchEvent(new Event("change"));
+    const trigger = () => {
+      const select = document.querySelector(".goog-te-combo") as HTMLSelectElement | null;
+      if (select) {
+        select.value = targetLang;
+        select.dispatchEvent(new Event("change"));
+      }
+    };
+
+    trigger();
+    setTimeout(trigger, 400);
+    setTimeout(trigger, 1200);
+  }, []);
+
+  // Re-trigger translation whenever route or language changes
+  useEffect(() => {
+    if (language !== "en") {
+      applyGoogleTranslate(language);
     }
-  };
+  }, [language, pathname, applyGoogleTranslate]);
 
   useEffect(() => {
     // Load stored language preference

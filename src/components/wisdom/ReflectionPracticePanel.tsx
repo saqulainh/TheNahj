@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AITranslatedText } from "@/components/ui/AITranslatedText";
 
 interface ReflectionPracticePanelProps {
   articleSlug: string;
@@ -286,7 +287,9 @@ export function ReflectionPracticePanel({ articleSlug, questions, actionSteps }:
       {currentQuestion && (
         <article className="rounded-2xl border border-border/20 bg-background/75 p-4 md:p-5">
           <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Guided Question</p>
-          <p className="mt-3 text-base leading-relaxed text-foreground/90" dir="auto">{currentQuestion}</p>
+          <p className="mt-3 text-base leading-relaxed text-foreground/90" dir="auto">
+            <AITranslatedText text={currentQuestion} />
+          </p>
           {safeQuestions.length > 1 && (
             <div className="mt-4 flex flex-wrap gap-2">
               {safeQuestions.map((_, index) => (
@@ -342,7 +345,9 @@ export function ReflectionPracticePanel({ articleSlug, questions, actionSteps }:
                 }}
                 className="mt-0.5 h-4 w-4 rounded border-border/30 bg-background"
               />
-              <span className={completedSteps[index] ? "text-muted line-through" : "text-foreground/90"}>{step}</span>
+              <span className={completedSteps[index] ? "text-muted line-through" : "text-foreground/90"}>
+                <AITranslatedText text={step} />
+              </span>
             </label>
           ))}
         </div>

@@ -8,10 +8,53 @@ import { Flame, Bookmark, Award, LogOut, User, Sparkles, ArrowRight, ShieldCheck
 import Link from "next/link";
 
 export default function ProfilePage() {
-  const { user, loading, loginWithGoogle, logout } = useAuth();
+  const { user, loading, loginWithGoogle, updateAvatar, logout } = useAuth();
   const { streak } = useStreak();
   const { bookmarks, toggleBookmark } = useBookmarks();
   const [activeTab, setActiveTab] = useState<"bookmarks" | "badges">("bookmarks");
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Compress image to 300x300 JPEG data URL (prevents localStorage/image broken box bugs)
+  const compressAndSaveImage = (file: File) => {
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const MAX_SIZE = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+          await updateAvatar(compressedDataUrl);
+        }
+        setIsUploading(false);
+      };
+      img.onerror = () => setIsUploading(false);
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => setIsUploading(false);
+    reader.readAsDataURL(file);
+  };
 
   if (loading) {
     return (
@@ -59,30 +102,30 @@ export default function ProfilePage() {
       <div className="rounded-3xl border border-gold/30 bg-gradient-to-r from-surface-alt via-surface-elevated to-surface-alt p-6 md:p-8 shadow-xl flex flex-wrap items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <div 
-            className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-gold/50 shadow-md group cursor-pointer"
+            className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-gold/50 shadow-md group cursor-pointer bg-surface shrink-0"
             onClick={() => document.getElementById("avatar-upload")?.click()}
+            title="Click to upload profile photo"
           >
-            <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover transition-opacity group-hover:opacity-50" />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-              <span className="text-[10px] text-white font-bold uppercase">Edit</span>
+            <img 
+              src={user.avatarUrl} 
+              alt={user.name} 
+              className="h-full w-full object-cover transition-opacity group-hover:opacity-60" 
+              onError={(e) => {
+                // Fallback if image fails to load
+                (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.email || user.name)}`;
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50">
+              <span className="text-[10px] text-white font-bold uppercase tracking-wider">{isUploading ? "..." : "Edit"}</span>
             </div>
             <input 
               type="file" 
               id="avatar-upload" 
               accept="image/*" 
               className="hidden" 
-              onChange={async (e) => {
+              onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                  const base64 = reader.result as string;
-                  const updatedProfile = { ...user, avatarUrl: base64 };
-                  // Update local context manually
-                  localStorage.setItem("thenahj_user_profile", JSON.stringify(updatedProfile));
-                  window.location.reload(); // Refresh to let auth-context pick it up, or we can handle it gracefully.
-                };
-                reader.readAsDataURL(file);
+                if (file) compressAndSaveImage(file);
               }}
             />
           </div>
