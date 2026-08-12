@@ -22,7 +22,7 @@ export function Header({
   links = [] 
 }: HeaderProps) {
   const pathname = usePathname();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
 
@@ -81,15 +81,21 @@ export function Header({
           href="/" 
           className={`group flex shrink-0 items-center gap-2 whitespace-nowrap ${isHome ? 'md:hidden' : ''}`}
         >
-          <div className="relative h-10 w-32 md:h-12 md:w-36 transition-transform duration-300 group-hover:scale-105">
-            <Image 
-              src="/TheNahj Logo.jpeg" 
-              alt={siteName} 
-              fill 
-              className="object-contain rounded-xl overflow-hidden"
-              priority 
-            />
-          </div>
+          {language === "en" ? (
+            <div className="relative h-10 w-32 md:h-12 md:w-36 transition-transform duration-300 group-hover:scale-105">
+              <Image 
+                src="/TheNahj Logo.jpeg" 
+                alt={siteName} 
+                fill 
+                className="object-contain rounded-xl overflow-hidden"
+                priority 
+              />
+            </div>
+          ) : (
+            <div className="flex h-10 md:h-12 items-center px-2">
+              <span className="text-xl md:text-2xl font-bold tracking-tight text-gold translate-middle">The Nahj</span>
+            </div>
+          )}
         </Link>
 
         {/* Desktop Navigation */}

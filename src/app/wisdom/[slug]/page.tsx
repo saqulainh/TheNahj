@@ -400,12 +400,18 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
             <div className="grid gap-4 lg:grid-cols-3">
               {reflectionQuestions.length > 0 && (
                 <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6 lg:col-span-2">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Reflection Questions</p>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">
+                    <AITranslatedText text="Reflection Questions" />
+                  </p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     {reflectionQuestions.map((question, index) => (
                       <div key={`${question}-${index}`} className="rounded-2xl border border-border/20 bg-surface/60 p-4 shadow-sm">
-                        <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Question {index + 1}</p>
-                        <p className="mt-3 leading-relaxed text-foreground/90">{question}</p>
+                        <p className="text-[10px] uppercase tracking-[0.18em] text-muted">
+                          <AITranslatedText text={`Question ${index + 1}`} />
+                        </p>
+                        <p className="mt-3 leading-relaxed text-foreground/90">
+                          <AITranslatedText text={question} />
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -414,12 +420,16 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
 
               {actionSteps.length > 0 && (
                 <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6 lg:row-span-2">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Action Steps</p>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">
+                    <AITranslatedText text="Action Steps" />
+                  </p>
                   <div className="mt-4 space-y-3">
                     {actionSteps.map((step, index) => (
                       <div key={`${step}-${index}`} className="flex gap-3 rounded-2xl border border-border/20 bg-surface/60 p-4">
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold/15 text-xs font-semibold text-gold">{index + 1}</span>
-                        <p className="leading-relaxed text-foreground/90">{step}</p>
+                        <p className="leading-relaxed text-foreground/90">
+                          <AITranslatedText text={step} />
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -428,9 +438,13 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
 
               {article.personal_reflection && (
                 <article className="rounded-[1.75rem] border border-border/20 bg-[linear-gradient(180deg,_hsl(var(--surface-elevated)/0.9),_hsl(var(--surface)/0.65))] p-5 md:p-6 lg:col-span-2">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Personal Reflection</p>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">
+                    <AITranslatedText text="Personal Reflection" />
+                  </p>
                   <div className="mt-4 rounded-[1.5rem] border border-border/20 bg-background/70 p-5">
-                    <p className="text-sm uppercase tracking-[0.18em] text-muted">Journal space</p>
+                    <p className="text-sm uppercase tracking-[0.18em] text-muted">
+                      <AITranslatedText text="Journal space" />
+                    </p>
                     <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.personal_reflection)}</div>
                   </div>
                 </article>
@@ -446,21 +460,27 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
 
           <section id="conclusion" className="scroll-mt-28 rounded-[2rem] border border-border/20 bg-surface/45 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] md:p-8 lg:p-10">
             <div className="mb-8 flex items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-gold">
-              <span>Conclusion</span>
+              <span><AITranslatedText text="Conclusion" /></span>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
               {article.summary && (
                 <article className="rounded-[1.75rem] border border-border/20 bg-background/70 p-5 md:p-6">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Summary & Key Takeaways</p>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">
+                    <AITranslatedText text="Summary & Key Takeaways" />
+                  </p>
                   <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.summary)}</div>
                 </article>
               )}
               {article.closing_reflection && (
                 <article className="rounded-[1.75rem] border border-border/20 bg-[linear-gradient(180deg,_hsl(var(--surface-elevated)/0.85),_hsl(var(--surface)/0.65))] p-5 md:p-6">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">Closing Reflection</p>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-gold">
+                    <AITranslatedText text="Closing Reflection" />
+                  </p>
                   <div className="mt-4 rounded-[1.5rem] border border-gold/15 bg-background/70 p-5">
-                    <p className="text-[10px] uppercase tracking-[0.22em] text-muted">Final thought</p>
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-muted">
+                      <AITranslatedText text="Final thought" />
+                    </p>
                     <div className="prose-reflection mt-4 space-y-4">{renderParagraphs(article.closing_reflection)}</div>
                   </div>
                 </article>

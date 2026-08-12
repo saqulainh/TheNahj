@@ -108,43 +108,46 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
   const pathname = usePathname();
 
-  const applyGoogleTranslate = useCallback((lang: Language) => {
-    if (typeof window === "undefined") return;
-
-    // Set cookie for Google Translate
+  const triggerGoogleTranslate = useCallback((lang: Language) => {
     const targetLang = lang === "en" ? "" : lang;
-    const cookieVal = targetLang ? `/en/${targetLang}` : "";
-    
-    document.cookie = `googtrans=${cookieVal}; path=/;`;
-    document.cookie = `googtrans=${cookieVal}; path=/; domain=${window.location.hostname};`;
-
-    const trigger = () => {
-      const select = document.querySelector(".goog-te-combo") as HTMLSelectElement | null;
-      if (select) {
-        select.value = targetLang;
-        select.dispatchEvent(new Event("change"));
-      }
-    };
-
-    trigger();
-    setTimeout(trigger, 400);
-    setTimeout(trigger, 1200);
+    const select = document.querySelector(".goog-te-combo") as HTMLSelectElement | null;
+    if (select) {
+      select.value = targetLang;
+      select.dispatchEvent(new Event("change"));
+    }
   }, []);
 
-  // Re-trigger translation whenever route or language changes
+  // On Explicit Language Change from Toggle
+  const setLanguage = useCallback((lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem("thenahj-lang", lang);
+    document.documentElement.lang = lang;
+    
+    const targetLang = lang === "en" ? "" : lang;
+    const cookieVal = targetLang ? `/en/${targetLang}` : "";
+    document.cookie = `googtrans=${cookieVal}; path=/;`;
+    document.cookie = `googtrans=${cookieVal}; path=/; domain=${window.location.hostname};`;
+    
+    // Hard reload on explicit language switch to ensure 100% full DOM translation instantly
+    window.location.reload();
+  }, []);
+
+  // On Client-Side Route Change (Next.js Link navigation)
   useEffect(() => {
     if (language !== "en") {
-      applyGoogleTranslate(language);
+      triggerGoogleTranslate(language);
+      setTimeout(() => triggerGoogleTranslate(language), 500);
+      setTimeout(() => triggerGoogleTranslate(language), 1500);
     }
-  }, [language, pathname, applyGoogleTranslate]);
+  }, [pathname, language, triggerGoogleTranslate]);
 
   useEffect(() => {
     // Load stored language preference
     const stored = localStorage.getItem("thenahj-lang") as Language | null;
     const initialLang = (stored && ["en", "ar", "ur"].includes(stored)) ? stored : "en";
     setLanguageState(initialLang);
-    document.documentElement.dir = initialLang === "en" ? "ltr" : "rtl";
     document.documentElement.lang = initialLang;
+    // Removed RTL dir flipping as per user request to keep layout normal
 
     // Inject Google Translate script dynamically
     if (!document.getElementById("google-translate-script")) {
@@ -169,20 +172,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const setLanguage = useCallback((lang: Language) => {
-    setLanguageState(lang);
-    localStorage.setItem("thenahj-lang", lang);
-    document.documentElement.dir = lang === "en" ? "ltr" : "rtl";
-    document.documentElement.lang = lang;
-    applyGoogleTranslate(lang);
-  }, []);
 
   const t = useCallback(
     (key: string) => translations[language][key] ?? translations["en"][key] ?? key,
     [language]
   );
 
-  const dir: "ltr" | "rtl" = language === "en" ? "ltr" : "rtl";
+  const dir: "ltr" | "rtl" = "ltr"; // Forced LTR layout as requested by user
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t, dir }}>
