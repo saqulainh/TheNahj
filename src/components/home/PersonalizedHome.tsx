@@ -63,7 +63,9 @@ export function PersonalizedHome({
 
   return (
     <>
-      {hero}
+      <div key="hero-section">
+        {hero}
+      </div>
       
       {orderedSections.map((section) => (
         <div key={section.id} className="animate-in fade-in duration-700 relative">
