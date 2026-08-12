@@ -33,14 +33,22 @@ export async function POST(request: Request) {
     }
 
     const { title, text } = validation.data;
-    const apiKey = process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    if (process.env.GEMINI_API_KEY) {
+    if (apiKey) {
+      const isOAuth = apiKey.startsWith("AQ.");
+      const url = isOAuth
+        ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`
+        : `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        url,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            ...(isOAuth ? { Authorization: `Bearer ${apiKey}` } : { "x-goog-api-key": apiKey })
+          },
           body: JSON.stringify({
             contents: [
               {

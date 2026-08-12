@@ -31,14 +31,18 @@ Rules: Use deep, publication-ready flowing editorial paragraphs. If generating l
 
 Return ONLY a valid JSON object containing the refreshed data for "${sectionKey}".`;
 
+    const isOAuth = apiKey.startsWith("AQ.");
+    const url = isOAuth
+      ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`
+      : `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      url,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-          ...(apiKey.startsWith("AQ.") ? { Authorization: `Bearer ${apiKey}` } : {}),
+          ...(isOAuth ? { Authorization: `Bearer ${apiKey}` } : { "x-goog-api-key": apiKey }),
         },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],

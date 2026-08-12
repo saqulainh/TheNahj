@@ -287,14 +287,18 @@ IMPORTANT: You must provide genuine, sourced wisdom. The user trusts you for aut
       });
 
       const apiKey = process.env.GEMINI_API_KEY;
+      const isOAuth = apiKey.startsWith("AQ.");
+      const url = isOAuth
+        ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`
+        : `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        url,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
-            ...(apiKey.startsWith("AQ.") ? { "Authorization": `Bearer ${apiKey}` } : {}),
+            ...(isOAuth ? { Authorization: `Bearer ${apiKey}` } : { "x-goog-api-key": apiKey }),
           },
           body: JSON.stringify({
             contents: geminiMessages,

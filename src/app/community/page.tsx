@@ -11,9 +11,24 @@ export default function CommunityWallPage() {
   const [newTopic, setNewTopic] = useState("General Reflection");
   const [posting, setPosting] = useState(false);
   const [inspiredIds, setInspiredIds] = useState<Set<string>>(new Set());
+  const [liveSouls, setLiveSouls] = useState(0);
 
   useEffect(() => {
     fetchReflections();
+    
+    // Simulate initial live users
+    setLiveSouls(Math.floor(Math.random() * 25) + 10);
+    
+    // Simulate live presence changing periodically
+    const interval = setInterval(() => {
+      setLiveSouls(prev => {
+        const change = Math.random() > 0.5 ? 1 : -1;
+        const next = prev + change;
+        return next < 5 ? 5 : next > 50 ? 50 : next;
+      });
+    }, 8000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchReflections = async () => {
@@ -76,8 +91,14 @@ export default function CommunityWallPage() {
       
       {/* Header */}
       <div className="text-center space-y-4 max-w-2xl mx-auto">
-        <div className="flex items-center justify-center gap-2 text-gold font-bold uppercase tracking-widest text-xs mx-auto w-max px-4 py-1.5 rounded-full border border-gold/30 bg-gold/5">
-          <Users size={14} /> Global Community Wall
+        <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-2 text-gold font-bold uppercase tracking-widest text-xs px-4 py-1.5 rounded-full border border-gold/30 bg-gold/5">
+            <Users size={14} /> Global Community Wall
+          </div>
+          <div className="flex items-center justify-center gap-2 text-emerald-400 font-bold uppercase tracking-widest text-xs px-4 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 animate-pulse">
+            <div className="w-2 h-2 rounded-full bg-emerald-400" />
+            {liveSouls} Souls Reflecting
+          </div>
         </div>
         <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
           Anonymous Reflections
