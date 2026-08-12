@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 import { getAllWisdom } from "@/lib/wisdom";
+import { searchRAGContext } from "@/lib/rag/retrieval";
 import { z } from "zod";
 
 const chatSchema = z.object({
-  message: z.string().min(1, "Message cannot be empty").max(1000),
+  message: z.string().max(1000).optional().default(""),
+  image: z
+    .object({
+      mimeType: z.string(),
+      data: z.string(), // base64 string
+    })
+    .optional(),
   history: z
     .array(
       z.object({
@@ -180,39 +187,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid payload", details: validation.error.format() }, { status: 400 });
     }
 
-    const { message, history } = validation.data;
+    const { message, image, history } = validation.data;
     const detectedTopics = detectTopics(message);
 
-    // ── 1. Search local wisdom cards for relevant context ──
+    // ── 1. Vector RAG Search & Context Retrieval ──
+    const ragResults = await searchRAGContext(message, 5);
+    
+    // Also perform local fallback wisdom match for extra metadata/slug linking
     const allWisdom = await getAllWisdom();
-    const searchTerms = message
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((w) => w.length > 3);
+    const searchTerms = message.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
+    const relevantWisdom = allWisdom
+      .filter((w) => {
+        const text = `${w.english_translation} ${w.source} ${(w.corner_topics || []).join(" ")}`.toLowerCase();
+        return searchTerms.some((term) => text.includes(term)) || detectedTopics.some((t) => text.includes(t));
+      })
+      .slice(0, 3);
 
-    // Score-based ranking instead of simple filter
-    const scored = allWisdom.map((w) => {
-      const text = `${w.english_translation} ${w.urdu_translation} ${w.source} ${w.category?.name || ""} ${(w.corner_topics || []).join(" ")}`.toLowerCase();
-      let score = 0;
-      for (const term of searchTerms) {
-        if (text.includes(term)) score += 2;
-      }
-      for (const topic of detectedTopics) {
-        if (text.includes(topic)) score += 3;
-        if (w.category?.slug?.includes(topic)) score += 4;
-      }
-      return { wisdom: w, score };
-    });
-
-    const relevantWisdom = scored
-      .filter((s) => s.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
-      .map((s) => s.wisdom);
-
-    const contextSnippets = relevantWisdom.map(
-      (w) => `• [${w.source} — ${w.category?.name || "Wisdom"}]: "${w.english_translation}" (Read more: /wisdom/${w.slug})`
-    );
+    const contextSnippets = [
+      ...ragResults.map((r) => `• [RAG Citation — ${r.source}]: "${r.content}"${r.slug ? ` (Link: /wisdom/${r.slug})` : ""}`),
+      ...relevantWisdom.map((w) => `• [Wisdom Card — ${w.source}]: "${w.english_translation}" (Read more: /wisdom/${w.slug})`),
+    ];
 
     // ── 2. Build the comprehensive system prompt ──
     const conversationContext =
@@ -272,10 +266,24 @@ IMPORTANT: You must provide genuine, sourced wisdom. The user trusts you for aut
         }
       }
 
+      // Build user parts (with image if provided)
+      const userParts: any[] = [];
+      if (image && image.data && image.mimeType) {
+        userParts.push({
+          inlineData: {
+            mimeType: image.mimeType,
+            data: image.data,
+          },
+        });
+      }
+      
+      const textQuery = message || (image ? "Observe this image, identify the emotional or practical challenge shown, and provide comforting, authentic wisdom from Imam Ali (AS) and Nahjul Balagha." : "Share wisdom");
+      userParts.push({ text: `${systemPrompt}\n\nUser Input: ${textQuery}` });
+
       // Add the current user message with system context
       geminiMessages.push({
         role: "user",
-        parts: [{ text: `${systemPrompt}\n\nUser Question: ${message}` }],
+        parts: userParts,
       });
 
       const response = await fetch(

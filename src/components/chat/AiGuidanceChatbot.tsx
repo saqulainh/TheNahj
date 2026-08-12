@@ -2,13 +2,14 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, Send, Bot, User, Loader2, ArrowRight } from "lucide-react";
+import { Sparkles, X, Send, Bot, User, Loader2, ArrowRight, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  image?: string;
   relatedWisdom?: Array<{ title: string; slug: string; quote: string }>;
 }
 
@@ -31,7 +32,29 @@ export function AiGuidanceChatbot() {
     },
   ]);
   const [loading, setLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{ data: string; mimeType: string; url: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        const base64Data = result.split(",")[1];
+        setSelectedImage({
+          data: base64Data,
+          mimeType: file.type,
+          url: result,
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -45,12 +68,17 @@ export function AiGuidanceChatbot() {
 
   const handleSend = async (textToSend?: string) => {
     const text = (textToSend || input).trim();
-    if (!text || loading) return;
+    if ((!text && !selectedImage) || loading) return;
+
+    const currentImage = selectedImage;
+    setSelectedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
 
     const userMsg: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: text,
+      content: text || (currentImage ? "📷 [Uploaded Image for Analysis]" : ""),
+      image: currentImage?.url,
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -63,10 +91,18 @@ export function AiGuidanceChatbot() {
         .filter((m) => m.id !== "welcome")
         .map((m) => ({ role: m.role, content: m.content }));
 
+      const payload: any = { message: text, history };
+      if (currentImage) {
+        payload.image = {
+          mimeType: currentImage.mimeType,
+          data: currentImage.data,
+        };
+      }
+
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -170,6 +206,11 @@ export function AiGuidanceChatbot() {
                           : "bg-surface-elevated/70 text-foreground border border-border/30 rounded-tl-xs"
                       }`}
                     >
+                      {msg.image && (
+                        <div className="mb-2 overflow-hidden rounded-xl border border-black/10 max-w-[200px]">
+                          <img src={msg.image} alt="Uploaded attachment" className="w-full h-auto object-cover max-h-40" />
+                        </div>
+                      )}
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                     </div>
 
@@ -230,6 +271,23 @@ export function AiGuidanceChatbot() {
               </div>
             )}
 
+            {/* Selected Image Preview Chip */}
+            {selectedImage && (
+              <div className="flex items-center gap-2 border-t border-border/20 bg-surface-alt/90 px-3 py-2">
+                <div className="relative h-10 w-10 overflow-hidden rounded-lg border border-gold/40">
+                  <img src={selectedImage.url} alt="Attached preview" className="h-full w-full object-cover" />
+                </div>
+                <span className="text-[10px] text-gold font-medium truncate flex-1">Vision AI will analyze this photo</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedImage(null)}
+                  className="rounded-full p-1 text-muted hover:bg-surface-elevated hover:text-foreground"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
             {/* Input Bar */}
             <form
               onSubmit={(e) => {
@@ -239,16 +297,33 @@ export function AiGuidanceChatbot() {
               className="flex items-center gap-2 border-t border-border/20 bg-surface-alt/70 p-3"
             >
               <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                title="Attach photo for Vision AI analysis"
+                disabled={loading}
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-border/40 bg-surface-elevated text-gold transition-colors hover:border-gold/50 disabled:opacity-40"
+              >
+                <ImageIcon size={15} />
+              </button>
+
+              <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about focus, anxiety, Imam Ali's quote..."
+                placeholder={selectedImage ? "Add optional message..." : "Ask or attach a photo..."}
                 disabled={loading}
                 className="flex-1 rounded-xl border border-border/40 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted/60 focus:border-gold/50 focus:outline-none"
               />
               <button
                 type="submit"
-                disabled={!input.trim() || loading}
+                disabled={(!input.trim() && !selectedImage) || loading}
                 className="flex h-8 w-8 items-center justify-center rounded-xl bg-gold text-black transition-all hover:bg-gold-light disabled:opacity-40"
               >
                 <Send size={14} />

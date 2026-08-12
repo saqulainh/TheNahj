@@ -19,8 +19,15 @@ const THEMES = [
   { id: "desert", name: "Desert Sunset", bg: "from-[#2b1704] via-[#1a0a00] to-[#2b1704]", text: "text-orange-300" },
 ];
 
+const ASPECT_RATIOS = [
+  { id: "story", name: "Story (9:16)", class: "w-[340px] min-h-[560px] justify-between" },
+  { id: "square", name: "Square (1:1)", class: "w-[360px] min-h-[360px] justify-between" },
+  { id: "banner", name: "Banner (16:9)", class: "w-[460px] min-h-[260px] justify-between" },
+];
+
 export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdomCardProps) {
   const [theme, setTheme] = useState(THEMES[0]);
+  const [aspect, setAspect] = useState(ASPECT_RATIOS[0]);
   const [copied, setCopied] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   
@@ -108,68 +115,92 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
               </button>
             </div>
 
-            {/* The Shareable Card (Preview) */}
-            <div 
-              ref={cardRef}
-              className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${theme.bg} p-8 md:p-10 shadow-2xl border border-white/10`}
-            >
-              {/* Decorative Pattern Layer */}
-              <div 
-                className={`absolute inset-0 opacity-[0.03] ${theme.id === 'minimal' ? 'invert' : ''}`}
-                style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C7A654' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }}
-              />
+            {/* Aspect Ratio & Theme Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white/5 p-3 rounded-2xl border border-white/10">
+              {/* Aspect Ratio Tabs */}
+              <div className="flex gap-1 bg-black/40 p-1 rounded-xl">
+                {ASPECT_RATIOS.map((ratio) => (
+                  <button
+                    key={ratio.id}
+                    onClick={() => setAspect(ratio)}
+                    className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${
+                      aspect.id === ratio.id ? "bg-gold text-black shadow-md" : "text-white/60 hover:text-white"
+                    }`}
+                  >
+                    {ratio.name}
+                  </button>
+                ))}
+              </div>
 
-              <div className="relative flex flex-col items-center text-center space-y-6">
-                {/* Brand / Category */}
-                <div className="flex items-center gap-2">
-                  <span className={`h-px w-8 ${theme.id === 'minimal' ? 'bg-black/20' : 'bg-white/20'}`} />
-                  <span className={`text-[9px] font-bold uppercase tracking-[0.3em] ${theme.text}`}>
-                    {wisdom.category?.name || "TheNahj"}
-                  </span>
-                  <span className={`h-px w-8 ${theme.id === 'minimal' ? 'bg-black/20' : 'bg-white/20'}`} />
+              {/* Theme Selector */}
+              <div className="flex gap-2 items-center">
+                {THEMES.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTheme(t)}
+                    className={`h-7 w-7 rounded-full border-2 transition-all ${
+                      theme.id === t.id ? "border-gold scale-110" : "border-transparent opacity-50 hover:opacity-100"
+                    }`}
+                    title={t.name}
+                  >
+                    <div className={`h-full w-full rounded-full bg-gradient-to-br ${t.bg}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* The Shareable Card (Preview) */}
+            <div className="flex justify-center overflow-x-auto py-2">
+              <div 
+                ref={cardRef}
+                className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${theme.bg} p-8 shadow-2xl border border-white/10 flex flex-col ${aspect.class}`}
+              >
+                {/* Decorative Pattern Layer */}
+                <div 
+                  className={`absolute inset-0 opacity-[0.03] ${theme.id === 'minimal' ? 'invert' : ''}`}
+                  style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C7A654' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }}
+                />
+
+                <div className="relative flex flex-col items-center text-center space-y-4 my-auto">
+                  {/* Brand / Category */}
+                  <div className="flex items-center gap-2">
+                    <span className={`h-px w-6 ${theme.id === 'minimal' ? 'bg-black/20' : 'bg-white/20'}`} />
+                    <span className={`text-[9px] font-bold uppercase tracking-[0.3em] ${theme.text}`}>
+                      {wisdom.category?.name || "TheNahj"}
+                    </span>
+                    <span className={`h-px w-6 ${theme.id === 'minimal' ? 'bg-black/20' : 'bg-white/20'}`} />
+                  </div>
+
+                  {/* Arabic Text */}
+                  <h4 
+                    className={`font-arabic leading-relaxed ${
+                      aspect.id === 'banner' ? 'text-xl' : 'text-2xl md:text-3xl'
+                    } ${theme.id === 'minimal' ? 'text-black' : 'text-white'}`}
+                    dir="rtl"
+                  >
+                    {wisdom.arabic_text}
+                  </h4>
+
+                  {/* English Translation */}
+                  <p className={`text-xs md:text-sm font-medium leading-relaxed max-w-xs ${theme.id === 'minimal' ? 'text-stone-600' : 'text-white/80'}`}>
+                    &quot;{wisdom.english_translation}&quot;
+                  </p>
+
+                  {/* Source */}
+                  <p className={`text-[10px] uppercase tracking-widest font-semibold pt-1 ${theme.text}`}>
+                    — {wisdom.source}
+                  </p>
                 </div>
 
-                {/* Arabic Text */}
-                <h4 
-                  className={`text-3xl md:text-4xl font-arabic leading-relaxed ${theme.id === 'minimal' ? 'text-black' : 'text-white'}`}
-                  dir="rtl"
-                >
-                  {wisdom.arabic_text}
-                </h4>
-
-                {/* English Translation */}
-                <p className={`text-sm md:text-base font-medium leading-relaxed max-w-sm ${theme.id === 'minimal' ? 'text-stone-600' : 'text-white/80'}`}>
-                  &quot;{wisdom.english_translation}&quot;
-                </p>
-
-                {/* Source */}
-                <p className={`text-xs uppercase tracking-widest font-semibold pt-2 ${theme.text}`}>
-                  — {wisdom.source}
-                </p>
-
                 {/* Footer Logo/Link */}
-                <div className={`mt-8 pt-6 border-t w-full flex justify-between items-center ${theme.id === 'minimal' ? 'border-black/10 text-stone-500' : 'border-white/10 text-white/40'} text-[10px] tracking-wider`}>
+                <div className={`mt-6 pt-4 border-t w-full flex justify-between items-center ${theme.id === 'minimal' ? 'border-black/10 text-stone-500' : 'border-white/10 text-white/40'} text-[9px] tracking-wider font-medium`}>
                   <span>TheNahj.live</span>
-                  <span>Wisdom of Imam Ali (AS)</span>
+                  <span>Imam Ali (AS) Wisdom</span>
                 </div>
               </div>
             </div>
 
-            {/* Theme Selector */}
-            <div className="flex gap-2 justify-center">
-              {THEMES.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTheme(t)}
-                  className={`h-8 w-8 rounded-full border-2 transition-all ${
-                    theme.id === t.id ? "border-gold scale-110" : "border-transparent opacity-50 hover:opacity-100"
-                  }`}
-                  title={t.name}
-                >
-                  <div className={`h-full w-full rounded-full bg-gradient-to-br ${t.bg}`} />
-                </button>
-              ))}
-            </div>
+
 
             {/* Actions */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

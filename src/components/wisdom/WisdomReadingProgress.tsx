@@ -2,24 +2,32 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useStreak } from "@/lib/streak";
+import { usePersonalization } from "@/lib/personalization";
 
 interface WisdomReadingProgressProps {
   readingTime: number;
+  slug?: string;
+  category?: string;
+  tags?: string[];
 }
 
-export function WisdomReadingProgress({ readingTime }: WisdomReadingProgressProps) {
+export function WisdomReadingProgress({ readingTime, slug, category, tags }: WisdomReadingProgressProps) {
   const [progress, setProgress] = useState(0);
   const { markRead } = useStreak();
+  const { trackReading } = usePersonalization();
 
   const hasMarkedRead = useRef(false);
 
-  // Record streak when opening a wisdom page
+  // Record streak and personalization when opening a wisdom page
   useEffect(() => {
     if (!hasMarkedRead.current) {
       markRead();
+      if (slug) {
+        trackReading(slug, category || "Uncategorized", tags || []);
+      }
       hasMarkedRead.current = true;
     }
-  }, [markRead]);
+  }, [markRead, trackReading, slug, category, tags]);
 
   useEffect(() => {
     const updateProgress = () => {

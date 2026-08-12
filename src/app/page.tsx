@@ -11,12 +11,8 @@ import { DailyWisdomShowcase } from "@/components/home/DailyWisdomShowcase";
 import { Button } from "@/components/ui/Button";
 import { studentTopics, youthTopics } from "@/data/mock";
 import { getCMSConfig } from "@/lib/cms";
-import {
-  getDailyWisdom,
-  getFeaturedWisdom,
-  getTrendingWisdom,
-  getAllArticles,
-} from "@/lib/wisdom";
+import { getDailyWisdom, getFeaturedWisdom, getTrendingWisdom, getAllArticles } from "@/lib/wisdom";
+import { PersonalizedHome } from "@/components/home/PersonalizedHome";
 
 export default async function HomePage() {
   const [daily, featured, trending, articles, cms] = await Promise.all([
@@ -27,8 +23,6 @@ export default async function HomePage() {
     getCMSConfig(),
   ]);
 
-  const featuredItem = featured[0];
-  
   // Prepare items for Daily Wisdom Showcase (1 daily + a few top trending/featured)
   const showcaseItems = [daily, ...featured.slice(0, 2), ...trending.slice(0, 2)].filter(Boolean);
   // Deduplicate by ID
@@ -75,148 +69,98 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeSchema) }}
       />
-      {isEnabled("hero") && (
-        <PrismaHero 
-          headline={cms.homepage.hero.headline}
-          subtext={cms.homepage.hero.subtext}
-          ctaText={cms.homepage.hero.ctaText}
-          ctaLink={cms.homepage.hero.ctaLink}
-          bgMode={cms.homepage.hero.bgMode}
-          bgImage={cms.homepage.hero.bgImage}
-          mobileBgImage={cms.homepage.hero.mobileBgImage}
-          bgVideo={cms.homepage.hero.bgVideo}
-          focalPoint={cms.homepage.hero.focalPoint}
-          overlayBrightness={cms.homepage.hero.overlayBrightness}
-          overlayBlur={cms.homepage.hero.overlayBlur}
-        />
-      )}
-
-      {/* ─── Reading Streak Dashboard ─── */}
-      <section className="relative py-6 md:py-8 border-b border-border/10 bg-surface/30">
-        <div className="mx-auto max-w-4xl px-4 md:px-6">
-          <StreakDashboard />
-        </div>
-      </section>
-
-      {/* ─── Daily Wisdom ─── */}
-      {isEnabled("daily-wisdom") && (
-        <section className="relative py-12 md:py-20">
-          <div className="mx-auto max-w-5xl px-4 md:px-6">
-            <div className="mb-10 text-center">
-              <p className="text-[10px] uppercase tracking-[0.35em] text-gold-muted">
-                Today&apos;s Reflection
-              </p>
-              <h2 className="mt-3 text-xl font-light tracking-tight text-foreground md:text-3xl font-display">
-                Daily Wisdom
-              </h2>
-              <p className="mx-auto mt-3 max-w-md text-sm text-muted/60">
-                Start your day with one intentional reflection.
-              </p>
-            </div>
-            <div className="mx-auto w-full">
-              <DailyWisdomShowcase items={uniqueShowcaseItems} />
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ─── Divider ─── */}
-      {isEnabled("daily-wisdom") && (
-        <div className="mx-auto max-w-xs py-4 md:py-8">
-          <div className="divider-gold" />
-        </div>
-      )}
-
-      {/* ─── Featured Reflection ─── */}
-      {isEnabled("featured-reflection") && featuredItem && (
-        <section className="relative py-12 md:py-20">
-          <div className="mx-auto max-w-5xl px-4 md:px-6">
-            <div className="mb-10 flex items-end justify-between">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.35em] text-gold-muted">
-                  Go Deeper
-                </p>
-                <h2 className="mt-3 text-xl font-light tracking-tight text-foreground md:text-3xl font-display">
-                  Featured Reflection
-                </h2>
+      <h1 className="sr-only">{cms.brand.siteName} - {cms.brand.tagline}</h1>
+      
+      <PersonalizedHome 
+        hero={
+          <>
+            <PrismaHero 
+              headline={cms.homepage.hero.headline}
+              subtext={cms.homepage.hero.subtext}
+              ctaText={cms.homepage.hero.ctaText}
+              ctaLink={cms.homepage.hero.ctaLink}
+              bgMode={cms.homepage.hero.bgMode}
+              bgImage={cms.homepage.hero.bgImage}
+              mobileBgImage={cms.homepage.hero.mobileBgImage}
+              bgVideo={cms.homepage.hero.bgVideo}
+              focalPoint={cms.homepage.hero.focalPoint}
+              overlayBrightness={cms.homepage.hero.overlayBrightness}
+              overlayBlur={cms.homepage.hero.overlayBlur}
+            />
+            {isEnabled("streak-dashboard") && (
+              <div className="relative -mt-10 mb-12 sm:-mt-16 sm:mb-20 z-20 flex justify-center w-full px-4">
+                <StreakDashboard />
               </div>
-              <Button href={`/wisdom/${featuredItem.slug}`} variant="ghost">
-                Read full →
-              </Button>
-            </div>
-            <div className="mx-auto max-w-3xl">
-              <WisdomCard wisdom={featuredItem} />
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ─── What Are You Struggling With? ─── */}
-      {isEnabled("emotional-prompt") && (
-        <StruggleSelector />
-      )}
-
-      {/* ─── Divider ─── */}
-      {isEnabled("emotional-prompt") && (
-        <div className="mx-auto max-w-xs py-4 md:py-8">
-          <div className="divider-gold" />
-        </div>
-      )}
-
-      {/* ─── Trending Wisdom ─── */}
-      {isEnabled("trending") && (
-        <section className="relative py-12 md:py-20">
-          <div className="mx-auto max-w-6xl px-4 md:px-6">
-            <div className="mb-12 flex items-end justify-between">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.35em] text-gold-muted">
-                  This Week
-                </p>
-                <h2 className="mt-3 text-xl font-light tracking-tight text-foreground md:text-3xl font-display">
-                  Trending Wisdom
-                </h2>
-                <p className="mt-3 max-w-md text-sm text-muted/60">
-                  What youth are reflecting on this week.
-                </p>
+            )}
+          </>
+        }
+        showcase={
+          isEnabled("daily-showcase") && uniqueShowcaseItems.length > 0 ? (
+            <DailyWisdomShowcase items={uniqueShowcaseItems} />
+          ) : <div />
+        }
+        youth={
+          isEnabled("youth-corner") ? (
+            <CornerPreview
+              title="Youth Corner"
+              subtitle="Identity, relationships, loneliness, and emotional discipline."
+              basePath="/youth"
+              topics={youthTopics}
+            />
+          ) : <div />
+        }
+        student={
+          isEnabled("student-corner") ? (
+            <CornerPreview
+              title="Student Corner"
+              subtitle="Focus, exams, social media, and the pressure to perform."
+              basePath="/student"
+              topics={studentTopics}
+            />
+          ) : <div />
+        }
+        diseases={
+          isEnabled("trending") ? (
+            <section className="relative py-12 md:py-20">
+              <div className="mx-auto max-w-6xl px-4 md:px-6">
+                <div className="mb-12 flex items-end justify-between">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.35em] text-gold-muted">
+                      This Week
+                    </p>
+                    <h2 className="mt-3 text-xl font-light tracking-tight text-foreground md:text-3xl font-display">
+                      Trending Wisdom
+                    </h2>
+                    <p className="mt-3 max-w-md text-sm text-muted/60">
+                      What youth are reflecting on this week.
+                    </p>
+                  </div>
+                  <Button href="/wisdom" variant="ghost">View all →</Button>
+                </div>
+                <div className="grid gap-5 md:grid-cols-2">
+                  {trending.slice(0, 4).map((w, i) => (
+                    <WisdomCard key={w.id} wisdom={w} index={i} />
+                  ))}
+                </div>
               </div>
-              <Button href="/wisdom" variant="ghost">View all →</Button>
-            </div>
-            <div className="grid gap-5 md:grid-cols-2">
-              {trending.slice(0, 4).map((w, i) => (
-                <WisdomCard key={w.id} wisdom={w} index={i} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ─── Student Corner ─── */}
-      {isEnabled("student-corner") && (
-        <CornerPreview
-          title="Student Corner"
-          subtitle="Focus, exams, social media, and the pressure to perform."
-          basePath="/student"
-          topics={studentTopics}
-        />
-      )}
-
-      {/* ─── Divider ─── */}
-      {isEnabled("student-corner") && (
-        <div className="mx-auto max-w-xs py-4 md:py-8">
-          <div className="divider-gold" />
-        </div>
-      )}
-
-      {/* ─── Youth Corner ─── */}
-      {isEnabled("youth-corner") && (
-        <CornerPreview
-          title="Youth Corner"
-          subtitle="Identity, relationships, loneliness, and emotional discipline."
-          basePath="/youth"
-          topics={youthTopics}
-        />
-      )}
-
+            </section>
+          ) : <div />
+        }
+        corner={
+          isEnabled("emotional-prompt") ? (
+            <StruggleSelector />
+          ) : <div />
+        }
+        newsletter={
+          isEnabled("newsletter") ? (
+            <>
+              <div className="mx-auto max-w-xs py-4 md:py-8"><div className="divider-gold" /></div>
+              <NewsletterCTA />
+            </>
+          ) : <div />
+        }
+      />
+      
       {/* ─── Latest Articles ─── */}
       {isEnabled("articles") && (
         <section className="relative py-12 md:py-20">
@@ -276,11 +220,6 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
-      )}
-
-      {/* ─── Newsletter ─── */}
-      {isEnabled("newsletter") && (
-        <NewsletterCTA />
       )}
     </>
   );

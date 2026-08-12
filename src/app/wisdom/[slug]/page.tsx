@@ -267,7 +267,12 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-8 md:px-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <main className="space-y-8">
-          <WisdomReadingProgress readingTime={article.reading_time || 1} />
+          <WisdomReadingProgress 
+            readingTime={article.reading_time || 1} 
+            slug={article.slug}
+            category={article.category}
+            tags={article.tags || []}
+          />
 
           <section id="explanation" className="scroll-mt-28 rounded-[2rem] border border-border/20 bg-surface/45 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.05)] md:p-8 lg:p-10">
             <div className="mb-6 flex flex-col gap-2">
