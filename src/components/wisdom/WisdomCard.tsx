@@ -13,6 +13,7 @@ import { getSavedSlugs, toggleSaveAsync } from "@/lib/wisdom";
 import ImageRole from "@/components/ui/ImageRole";
 import { ShareableWisdomCard } from "@/components/wisdom/ShareableWisdomCard";
 import { AddToCollectionMenu } from "@/components/wisdom/CollectionManager";
+import { AudioReaderButton } from "@/components/wisdom/AudioReaderButton";
 
 interface WisdomCardProps {
   wisdom: Wisdom;
@@ -158,6 +159,11 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
         <p className="wisdom-classic-translation text-center text-[13.5px] leading-relaxed text-secondary/80 font-normal">
           {wisdom.english_translation}
         </p>
+
+        {/* Audio Voice Narration Engine */}
+        <div className="mt-3 flex justify-center pointer-events-auto relative z-30">
+          <AudioReaderButton text={wisdom.english_translation} source={wisdom.source} />
+        </div>
       </div>
 
       {/* ─── Footer Layout ─── */}

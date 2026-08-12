@@ -86,12 +86,16 @@
       },
 
       {
-        "label": "Search",
-        "href": "/search"
+        "label": "AI Search",
+        "href": "/situation-search"
       },
       {
-        "label": "Audio Reflections",
-        "href": "/audio"
+        "label": "Community",
+        "href": "/community"
+      },
+      {
+        "label": "Flashcards",
+        "href": "/flashcards"
       },
       {
         "label": "Focus Timer",

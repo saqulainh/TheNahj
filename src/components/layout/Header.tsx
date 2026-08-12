@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { StarBorder } from "@/components/ui/StarBorder";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { StreakBadge } from "@/components/ui/StreakBadge";
@@ -126,6 +126,13 @@ export function Header({
         </nav>
 
         <div className="hidden md:flex md:pl-3 items-center gap-2">
+          <Link
+            href="/profile"
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
+            title="My Profile & Saved Wisdom"
+          >
+            <User size={15} />
+          </Link>
           <StreakBadge />
           <LanguageToggle />
           <ThemeToggle />
@@ -133,6 +140,13 @@ export function Header({
 
         {/* Mobile Menu Toggle */}
         <div className="flex items-center gap-2 md:hidden">
+          <Link
+            href="/profile"
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
+            title="My Profile & Saved Wisdom"
+          >
+            <User size={15} />
+          </Link>
           <StreakBadge />
           <LanguageToggle />
           <ThemeToggle />
