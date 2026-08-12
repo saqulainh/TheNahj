@@ -98,8 +98,12 @@
         "href": "/flashcards"
       },
       {
-        "label": "Focus Timer",
-        "href": "/focus"
+        "label": "Voice AI",
+        "href": "/voice-assistant"
+      },
+      {
+        "label": "Mind Map",
+        "href": "/graph"
       }
     ],
     "footer": [
