@@ -14,6 +14,7 @@ interface AudioTrackRecord {
   duration?: string;
   cover_image?: string;
   audio_url?: string;
+  is_focus_ambient?: boolean;
   created_at?: string;
 }
 
@@ -29,6 +30,7 @@ export default function AudioReflectionsPage() {
   const [duration, setDuration] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const [coverUrl, setCoverUrl] = useState("");
+  const [isFocusAmbient, setIsFocusAmbient] = useState(false);
 
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -95,6 +97,7 @@ export default function AudioReflectionsPage() {
           duration: duration || "3:30",
           cover_image: coverUrl,
           audio_url: audioUrl,
+          is_focus_ambient: isFocusAmbient,
         }),
       });
       const json = await res.json();
@@ -110,6 +113,23 @@ export default function AudioReflectionsPage() {
       setDuration("");
       setAudioUrl("");
       setCoverUrl("");
+      setIsFocusAmbient(false);
+    },
+  });
+
+  // Toggle Focus Timer status for an existing track
+  const toggleFocusMutation = useMutation({
+    mutationFn: async ({ id, is_focus_ambient }: { id: string; is_focus_ambient: boolean }) => {
+      const res = await fetch("/api/audio", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, is_focus_ambient }),
+      });
+      if (!res.ok) throw new Error("Failed to update focus setting");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-audio-tracks"] });
     },
   });
 
@@ -248,6 +268,19 @@ export default function AudioReflectionsPage() {
             </div>
           </div>
 
+          {/* Focus Timer Ambient Sound Checkbox */}
+          <div className="pt-2">
+            <label className="inline-flex items-center gap-2 cursor-pointer rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-xs font-semibold text-gold hover:bg-gold/20 transition-colors">
+              <input
+                type="checkbox"
+                checked={isFocusAmbient}
+                onChange={(e) => setIsFocusAmbient(e.target.checked)}
+                className="h-4 w-4 rounded border-gold/40 text-gold focus:ring-gold"
+              />
+              <span>🎧 Show in Focus Timer Page as Ambient Sound</span>
+            </label>
+          </div>
+
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
@@ -300,6 +333,18 @@ export default function AudioReflectionsPage() {
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => toggleFocusMutation.mutate({ id: t.id, is_focus_ambient: !t.is_focus_ambient })}
+                    className={`rounded-lg border px-2.5 py-1 text-[10px] uppercase font-semibold transition-all ${
+                      t.is_focus_ambient
+                        ? "border-green-500/40 bg-green-500/10 text-green-400"
+                        : "border-border/30 bg-surface text-muted hover:border-gold/30 hover:text-foreground"
+                    }`}
+                    title="Toggle whether this track shows in the Focus Timer page as Ambient Sound"
+                  >
+                    {t.is_focus_ambient ? "🎧 In Focus Timer" : "+ Add to Focus"}
+                  </button>
                   <span className="rounded-md border border-gold/20 bg-gold/10 px-2 py-0.5 text-[10px] uppercase font-semibold text-gold-light">
                     {t.category}
                   </span>

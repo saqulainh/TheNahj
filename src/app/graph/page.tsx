@@ -564,101 +564,103 @@ export default function KnowledgeGraphPage() {
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px] opacity-10 pointer-events-none" />
       </div>
 
-      {/* --- TOP BAR / CONTROLS --- */}
-      <header className="absolute top-0 left-0 right-0 p-4 md:p-6 z-20 flex flex-col md:flex-row md:items-center justify-between gap-4 pointer-events-none">
-        
-        {/* Title & Back */}
-        <div className="space-y-1.5 pointer-events-auto">
-          <div className="flex items-center gap-3">
-            <Link 
-              href="/" 
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-alt/80 border border-gold/30 text-xs font-medium text-gold hover:bg-gold/10 transition-colors backdrop-blur-md"
-            >
-              &larr; Home
-            </Link>
-            <span className="text-[10px] uppercase font-bold tracking-widest text-gold/60 border border-gold/20 px-2.5 py-0.5 rounded-full bg-gold/5">
-              RAG Wisdom Graph
-            </span>
-          </div>
-
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 font-display">
-            Knowledge Constellation <Sparkles size={18} className="text-gold animate-pulse" />
-          </h1>
-          <p className="text-xs text-muted max-w-md hidden sm:block">
-            Visually trace how the authentic teachings of Imam Ali (AS) directly address modern struggles.
-          </p>
-        </div>
-
-        {/* Search & Filter Controls */}
-        <div className="flex items-center gap-2 pointer-events-auto flex-wrap sm:flex-nowrap">
-          {/* Search Input */}
-          <div className="relative flex-1 sm:w-64">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-            <input
-              type="text"
-              placeholder="Search anxiety, Letter 31, focus..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 rounded-xl bg-surface-alt/90 border border-border/40 text-xs text-foreground placeholder:text-muted/50 focus:outline-none focus:border-gold/50 backdrop-blur-md"
-            />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+      {/* --- TOP BAR & CONTROLS CONTAINER --- */}
+      <div className="absolute top-0 left-0 right-0 z-30 bg-[#08090D]/85 border-b border-gold/20 backdrop-blur-xl p-4 md:px-6 md:py-4 shadow-2xl">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
+          {/* Title & Back */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <Link 
+                href="/" 
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold/10 border border-gold/40 text-xs font-semibold text-gold-light hover:bg-gold/20 transition-all"
               >
-                <X size={12} />
+                &larr; Home
+              </Link>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-gold/80 border border-gold/30 px-2.5 py-0.5 rounded-full bg-gold/10">
+                RAG Wisdom Graph
+              </span>
+            </div>
+
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2 font-display">
+              Knowledge Constellation <Sparkles size={18} className="text-gold animate-pulse" />
+            </h1>
+            <p className="text-xs text-secondary/80 max-w-md hidden sm:block">
+              Visually trace how the authentic teachings of Imam Ali (AS) directly address modern struggles.
+            </p>
+          </div>
+
+          {/* Search & Zoom Controls */}
+          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gold-light" />
+              <input
+                type="text"
+                placeholder="Search anxiety, Letter 31, focus..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 rounded-xl bg-[#13151D] border border-gold/40 text-xs text-white placeholder:text-muted/60 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/50 shadow-inner"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            {/* Zoom Buttons */}
+            <div className="flex items-center gap-1 bg-[#13151D] border border-gold/30 rounded-xl p-1 shadow-md">
+              <button 
+                onClick={() => setZoom(z => Math.min(1.8, z + 0.15))} 
+                className="p-1.5 rounded-lg hover:bg-gold/20 text-gold-light transition-colors"
+                title="Zoom In"
+              >
+                <ZoomIn size={16} />
               </button>
-            )}
+              <button 
+                onClick={() => setZoom(z => Math.max(0.4, z - 0.15))} 
+                className="p-1.5 rounded-lg hover:bg-gold/20 text-gold-light transition-colors"
+                title="Zoom Out"
+              >
+                <ZoomOut size={16} />
+              </button>
+              <button 
+                onClick={() => { setZoom(0.9); setPan({ x: 0, y: 0 }); setSelectedNode(null); }} 
+                className="p-1.5 rounded-lg hover:bg-gold/20 text-gold-light transition-colors"
+                title="Reset View"
+              >
+                <RefreshCw size={14} />
+              </button>
+            </div>
           </div>
+        </header>
 
-          {/* Zoom Buttons */}
-          <div className="flex items-center gap-1 bg-surface-alt/90 border border-border/40 rounded-xl p-1 backdrop-blur-md">
-            <button 
-              onClick={() => setZoom(z => Math.min(1.8, z + 0.15))} 
-              className="p-1.5 rounded-lg hover:bg-surface-elevated text-muted hover:text-foreground transition-colors"
-              title="Zoom In"
+        {/* --- CATEGORY FILTER BAR --- */}
+        <div className="mt-3 flex items-center gap-2 overflow-x-auto max-w-full pb-1 scrollbar-none">
+          {[
+            { id: "all", label: "All Nodes" },
+            { id: "struggle", label: "🔴 Modern Struggles" },
+            { id: "virtue", label: "🔵 Core Virtues" },
+            { id: "source", label: "🟢 Authentic Sources" },
+            { id: "solution", label: "🟣 Practical Tools" },
+          ].map(filter => (
+            <button
+              key={filter.id}
+              onClick={() => setActiveFilter(filter.id)}
+              className={`px-3.5 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 border whitespace-nowrap ${
+                activeFilter === filter.id
+                  ? "bg-gold text-black border-gold shadow-[0_0_15px_rgba(199,166,84,0.4)]"
+                  : "bg-[#13151D] border-border/40 text-secondary hover:text-white hover:border-gold/40"
+              }`}
             >
-              <ZoomIn size={16} />
+              {filter.label}
             </button>
-            <button 
-              onClick={() => setZoom(z => Math.max(0.4, z - 0.15))} 
-              className="p-1.5 rounded-lg hover:bg-surface-elevated text-muted hover:text-foreground transition-colors"
-              title="Zoom Out"
-            >
-              <ZoomOut size={16} />
-            </button>
-            <button 
-              onClick={() => { setZoom(0.9); setPan({ x: 0, y: 0 }); setSelectedNode(null); }} 
-              className="p-1.5 rounded-lg hover:bg-surface-elevated text-muted hover:text-foreground transition-colors"
-              title="Reset View"
-            >
-              <RefreshCw size={14} />
-            </button>
-          </div>
+          ))}
         </div>
-      </header>
-
-      {/* --- CATEGORY FILTER BAR --- */}
-      <div className="absolute top-24 md:top-20 left-4 md:left-6 z-20 flex items-center gap-1.5 overflow-x-auto max-w-full pb-2 scrollbar-none pointer-events-auto">
-        {[
-          { id: "all", label: "All Nodes" },
-          { id: "struggle", label: "🔴 Modern Struggles" },
-          { id: "virtue", label: "🔵 Core Virtues" },
-          { id: "source", label: "🟢 Authentic Sources" },
-          { id: "solution", label: "🟣 Practical Tools" },
-        ].map(filter => (
-          <button
-            key={filter.id}
-            onClick={() => setActiveFilter(filter.id)}
-            className={`px-3 py-1 rounded-full text-[11px] font-medium transition-all duration-200 border whitespace-nowrap backdrop-blur-md ${
-              activeFilter === filter.id
-                ? "bg-gold/20 border-gold text-gold shadow-[0_0_12px_rgba(199,166,84,0.3)]"
-                : "bg-surface-alt/70 border-border/30 text-muted hover:text-foreground hover:border-border"
-            }`}
-          >
-            {filter.label}
-          </button>
-        ))}
       </div>
 
       {/* --- MAIN GRAPH SVG CANVAS --- */}
@@ -827,12 +829,14 @@ export default function KnowledgeGraphPage() {
                   <text
                     y={config.radius + 16}
                     textAnchor="middle"
-                    className={`text-[11px] font-semibold tracking-wide ${
-                      isSelected || isHovered ? "fill-gold font-bold text-xs" : "fill-foreground/90"
-                    }`}
+                    fill={isSelected || isHovered ? "#F3E5AB" : "#FFFFFF"}
+                    stroke="#08090D"
+                    strokeWidth="3.5"
+                    paintOrder="stroke fill"
+                    className="text-[11px] font-bold tracking-wide"
                     style={{
                       pointerEvents: "none",
-                      textShadow: "0 2px 8px rgba(0,0,0,0.9)"
+                      filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.9))"
                     }}
                   >
                     {node.label}

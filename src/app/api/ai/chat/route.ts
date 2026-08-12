@@ -187,13 +187,116 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
 
           if (lowerMsg.includes("breath") || lowerMsg.includes("anxiety") || lowerMsg.includes("stress") || lowerMsg.includes("panic")) {
             widget = { type: "breathing", title: "4-7-8 De-Stress & Reflection Breathing" };
-          } else if (lowerMsg.includes("quiz") || lowerMsg.includes("test") || lowerMsg.includes("question")) {
+          } else if (lowerMsg.includes("quiz") || lowerMsg.includes("test") || lowerMsg.includes("question") || lowerMsg.includes("knowledge check")) {
+            const QUIZ_BANK = [
+              {
+                topic: "knowledge",
+                question: "According to Imam Ali (AS), what is the greatest form of wealth?",
+                options: ["Material Gold", "Knowledge & Wisdom", "Social Status", "Physical Strength"],
+                correctIndex: 1,
+                explanation: "Imam Ali (AS) taught: 'Knowledge is the most superior wealth.' (Saying 147)",
+              },
+              {
+                topic: "patience",
+                question: "How did Imam Ali (AS) describe the relationship between Patience (Sabr) and Faith (Iman)?",
+                options: [
+                  "Patience is half of faith",
+                  "Patience is to faith what the head is to the body",
+                  "Patience comes after faith",
+                  "Patience is separate from faith"
+                ],
+                correctIndex: 1,
+                explanation: "Imam Ali (AS) said: 'Patience is to faith what the head is to the body; a body has no good in it without a head.' (Saying 82)",
+              },
+              {
+                topic: "time",
+                question: "According to Imam Ali (AS), how fast does opportunity pass away?",
+                options: ["Like water in a river", "Like a cloud", "Like a shadow", "Like the wind"],
+                correctIndex: 1,
+                explanation: "Imam Ali (AS) taught: 'Opportunity passes away like a cloud, so make use of good opportunities.' (Saying 21)",
+              },
+              {
+                topic: "anger",
+                question: "What did Imam Ali (AS) describe as the beginning of anger and its end?",
+                options: [
+                  "Beginning is passion, end is victory",
+                  "Beginning is madness, end is regret",
+                  "Beginning is fire, end is ashes",
+                  "Beginning is strength, end is weakness"
+                ],
+                correctIndex: 1,
+                explanation: "Imam Ali (AS) said: 'Anger begins with madness and ends with regret.' (Saying 255)",
+              },
+              {
+                topic: "friendship",
+                question: "Who did Imam Ali (AS) consider the most helpless of all people?",
+                options: [
+                  "The one who has no wealth",
+                  "The one who cannot gain friends, and even more helpless is one who loses them",
+                  "The one who has no health",
+                  "The one who lives in isolation"
+                ],
+                correctIndex: 1,
+                explanation: "Imam Ali (AS) said: 'The most helpless person is one who cannot acquire friends, and more helpless is the one who loses those he has.' (Saying 12)",
+              },
+              {
+                topic: "ego",
+                question: "What did Imam Ali (AS) identify as the greatest obstacle to learning & wisdom?",
+                options: ["Lack of books", "Self-conceit and vanity (Ujb)", "Poverty", "Old age"],
+                correctIndex: 1,
+                explanation: "Imam Ali (AS) taught: 'Self-conceit (vanity) is an obstacle to progress and wisdom.' (Saying 212)",
+              },
+              {
+                topic: "tongue",
+                question: "How did Imam Ali (AS) describe the human tongue?",
+                options: [
+                  "A sharp sword",
+                  "A wild beast; if left free, it devours",
+                  "A mirror of the heart",
+                  "A vessel of speech"
+                ],
+                correctIndex: 1,
+                explanation: "Imam Ali (AS) said: 'The tongue is a beast; if it is let loose, it devours.' (Saying 60)",
+              },
+              {
+                topic: "justice",
+                question: "How did Imam Ali (AS) define Justice compared to Generosity?",
+                options: [
+                  "Generosity is higher because it gives more",
+                  "Justice puts things in their proper place; generosity takes them out",
+                  "Justice and generosity are identical",
+                  "Generosity is for leaders, justice for common people"
+                ],
+                correctIndex: 1,
+                explanation: "Imam Ali (AS) explained: 'Justice puts things in their proper places, while generosity takes them out of their places. Therefore, justice is superior.' (Saying 437)",
+              },
+              {
+                topic: "contentment",
+                question: "What did Imam Ali (AS) call the capital that never diminishes?",
+                options: ["Gold coins", "Contentment (Qana'ah)", "Land property", "Inheritance"],
+                correctIndex: 1,
+                explanation: "Imam Ali (AS) taught: 'Contentment is an unexhaustible capital.' (Saying 57)",
+              },
+              {
+                topic: "forgiveness",
+                question: "When you gain power over your enemy, what did Imam Ali (AS) advise as gratitude for that power?",
+                options: ["To demand tribute", "To pardon and forgive him", "To banish him", "To imprison him"],
+                correctIndex: 1,
+                explanation: "Imam Ali (AS) said: 'When you gain power over your adversary, pardon him as a way of offering thanks for having gained power over him.' (Saying 11)",
+              }
+            ];
+
+            const matched = QUIZ_BANK.filter(q => lowerMsg.includes(q.topic));
+            const selectedQuiz = matched.length > 0
+              ? matched[Math.floor(Math.random() * matched.length)]
+              : QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)];
+
             widget = {
               type: "quiz",
-              question: "According to Imam Ali (AS), what is the greatest form of wealth?",
-              options: ["Material Gold", "Knowledge & Wisdom", "Social Status", "Physical Strength"],
-              correctIndex: 1,
-              explanation: "Imam Ali (AS) taught: 'Knowledge is the most superior wealth.' (Saying 147)",
+              question: selectedQuiz.question,
+              options: selectedQuiz.options,
+              correctIndex: selectedQuiz.correctIndex,
+              explanation: selectedQuiz.explanation,
             };
           } else if (lowerMsg.includes("reflect") || lowerMsg.includes("meditate") || lowerMsg.includes("silence")) {
             widget = { type: "reflection", prompt: "Close your eyes and reflect deeply on Imam Ali's words for 60 seconds." };

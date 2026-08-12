@@ -17,11 +17,10 @@ const focusQuotes = [
   "Protect your heart fiercely — it is your guardian.",
 ];
 
-const ambientSounds = [
+const PRESET_AMBIENT_SOUNDS = [
   { id: "rain", label: "Rain", emoji: "🌧️", src: "/sounds/rain.mp3" },
   { id: "solitude", label: "Solitude", emoji: "🏔️", src: "/sounds/solitude.mp3" },
   { id: "mosque", label: "Mosque Ambience", emoji: "🕌", src: "/sounds/mosque.mp3" },
-  { id: "silent", label: "Silent", emoji: "🤫", src: "" },
 ];
 
 export function PomodoroTimer() {
@@ -42,7 +41,32 @@ export function PomodoroTimer() {
   const [zenMode, setZenMode] = useState(false);
   const [soundId, setSoundId] = useState("silent");
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
+  const [allSounds, setAllSounds] = useState(PRESET_AMBIENT_SOUNDS);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Fetch admin audio tracks marked for Focus Timer
+  useEffect(() => {
+    fetch("/api/audio")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: any[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const focusTracks = data
+            .filter((t) => t.is_focus_ambient || t.category === "Focus" || t.category === "Audio Reflections")
+            .map((t) => ({
+              id: `db_${t.id}`,
+              label: t.title,
+              emoji: "🎧",
+              src: t.audio_url || t.src || "",
+            }))
+            .filter((t) => t.src);
+
+          if (focusTracks.length > 0) {
+            setAllSounds([...PRESET_AMBIENT_SOUNDS, ...focusTracks]);
+          }
+        }
+      })
+      .catch((e) => console.debug("Failed to fetch admin focus sounds:", e));
+  }, []);
 
   const total = onBreak ? BREAK_SECONDS : FOCUS_SECONDS;
   const progress = ((total - seconds) / total) * 100;
@@ -83,7 +107,7 @@ export function PomodoroTimer() {
     }
 
     if (soundId !== "silent") {
-      const sound = ambientSounds.find(s => s.id === soundId);
+      const sound = allSounds.find((s) => s.id === soundId);
       if (sound && sound.src) {
         audioRef.current = new Audio(sound.src);
         audioRef.current.loop = true;
@@ -97,7 +121,7 @@ export function PomodoroTimer() {
         audioRef.current.pause();
       }
     };
-  }, [soundId]);
+  }, [soundId, allSounds]);
 
   const reset = () => {
     setRunning(false);
@@ -251,23 +275,35 @@ export function PomodoroTimer() {
             <p className="mb-3 text-center text-[10px] uppercase tracking-[0.2em] text-muted/60">
               Ambient Sound
             </p>
-            <div className="flex items-center justify-center gap-2">
-              {ambientSounds.map((s) => (
+            <div className="flex flex-wrap items-center justify-center gap-2 max-w-xl mx-auto">
+              {allSounds.map((s: any) => (
                 <button
                   key={s.id}
                   type="button"
                   onClick={() => toggleSound(s.id)}
                   className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs transition-all ${
                     soundId === s.id
-                      ? "bg-gold/15 text-gold-light"
-                      : "bg-surface text-muted hover:bg-surface-elevated hover:text-foreground"
+                      ? "bg-gold/15 text-gold-light font-semibold border border-gold/30"
+                      : "bg-surface text-muted hover:bg-surface-elevated hover:text-foreground border border-border/20"
                   }`}
                 >
-                  {s.emoji}
+                  <span>{s.emoji}</span>
                   <span>{s.label}</span>
-                  {soundId === s.id && <Square size={14} className="ml-2" />}
+                  {soundId === s.id && <Square size={12} className="ml-1 text-gold" />}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => toggleSound("silent")}
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs transition-all ${
+                  soundId === "silent"
+                    ? "bg-gold/15 text-gold-light font-semibold border border-gold/30"
+                    : "bg-surface text-muted hover:bg-surface-elevated hover:text-foreground border border-border/20"
+                }`}
+              >
+                <span>🤫</span>
+                <span>Silent</span>
+              </button>
             </div>
           </motion.div>
         )}

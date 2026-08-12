@@ -108,6 +108,9 @@ export function Header({
             ) : (
               (() => {
                 const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+                const key = `nav.${link.label.toLowerCase().trim()}`;
+                const translated = t(key);
+                const navLabel = (translated && translated !== key) ? translated : link.label;
                 return (
               <Link
                 key={link.href}
@@ -116,7 +119,7 @@ export function Header({
                   isHome ? 'text-[10px] text-muted/80' : 'text-xs text-muted hover:text-gold'
                 } ${active ? "text-gold" : ""}`}
               >
-                {t(`nav.${link.label.toLowerCase().replace(" ", "")}`) || link.label}
+                {navLabel}
                 {active && (
                   <span className="absolute -bottom-2 left-1/2 h-px w-8 -translate-x-1/2 bg-gradient-to-r from-transparent via-gold/80 to-transparent" />
                 )}
@@ -172,6 +175,9 @@ export function Header({
             {links && links.map((link) => (
               (() => {
                 const active = isLinkActive(link.href);
+                const mKey = `nav.${link.label.toLowerCase().trim()}`;
+                const mTranslated = t(mKey);
+                const mLabel = (mTranslated && mTranslated !== mKey) ? mTranslated : link.label;
                 return (
               <Link
                 key={link.href}
@@ -180,7 +186,7 @@ export function Header({
                   active ? "text-gold" : "text-muted"
                 }`}
               >
-                {link.label}
+                {mLabel}
               </Link>
                 );
               })()

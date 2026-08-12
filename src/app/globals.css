@@ -40,10 +40,42 @@
   body {
     @apply bg-background text-foreground antialiased;
     transition: background-color 350ms ease, color 350ms ease;
+    top: 0px !important;
   }
 
   ::selection {
     @apply bg-gold/30 text-foreground;
+  }
+
+  /* ─── RTL Punctuation & Bidirectional Text Fix ─── */
+  [dir="rtl"] p,
+  [dir="rtl"] h1,
+  [dir="rtl"] h2,
+  [dir="rtl"] h3,
+  [dir="rtl"] h4,
+  [dir="rtl"] h5,
+  [dir="rtl"] h6,
+  [dir="rtl"] span,
+  [dir="rtl"] a,
+  [dir="rtl"] button,
+  [dir="rtl"] li,
+  [dir="rtl"] div {
+    unicode-bidi: plaintext;
+  }
+
+  /* Hide Google Translate Banner & Frames */
+  .goog-te-banner-frame,
+  .goog-te-balloon-frame,
+  #goog-gt-tt,
+  .goog-te-spinner-pos {
+    display: none !important;
+  }
+  .goog-text-highlight {
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+  .skiptranslate {
+    display: none !important;
   }
 }
 

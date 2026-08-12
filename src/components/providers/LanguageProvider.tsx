@@ -15,9 +15,16 @@ interface LanguageContextType {
 const translations: Record<Language, Record<string, string>> = {
   en: {
     "nav.home": "Home",
-    "nav.wisdom": "Wisdom",
-    "nav.student": "Student Corner",
-    "nav.youth": "Youth Corner",
+    "nav.imam ali says": "Imam Ali Says",
+    "nav.student corner": "Student Corner",
+    "nav.youth corner": "Youth Corner",
+    "nav.nahjul balagha": "Nahjul Balagha",
+    "nav.ai search": "AI Search",
+    "nav.community": "Community",
+    "nav.voice ai": "Voice AI",
+    "nav.mind map": "Mind Map",
+    "nav.audio": "Audio",
+    "nav.focus timer": "Focus Timer",
     "nav.saved": "Saved",
     "nav.search": "Search",
     "nav.focus": "Focus",
@@ -33,9 +40,16 @@ const translations: Record<Language, Record<string, string>> = {
   },
   ar: {
     "nav.home": "الرئيسية",
-    "nav.wisdom": "الحكمة",
-    "nav.student": "ركن الطالب",
-    "nav.youth": "ركن الشباب",
+    "nav.imam ali says": "أقوال الإمام علي",
+    "nav.student corner": "ركن الطالب",
+    "nav.youth corner": "ركن الشباب",
+    "nav.nahjul balagha": "نهج البلاغة",
+    "nav.ai search": "بحث الذكاء الاصطناعي",
+    "nav.community": "المجتمع",
+    "nav.voice ai": "الذكاء الصوتي",
+    "nav.mind map": "خريطة الذهن",
+    "nav.audio": "الصوتيات",
+    "nav.focus timer": "مؤقت التركيز",
     "nav.saved": "المحفوظة",
     "nav.search": "بحث",
     "nav.focus": "تركيز",
@@ -51,9 +65,16 @@ const translations: Record<Language, Record<string, string>> = {
   },
   ur: {
     "nav.home": "ہوم",
-    "nav.wisdom": "حکمت",
-    "nav.student": "طالب علم کا کونہ",
-    "nav.youth": "نوجوانوں کا کونہ",
+    "nav.imam ali says": "اقوالِ امام علی",
+    "nav.student corner": "طالب علم کا کونہ",
+    "nav.youth corner": "نوجوانوں کا کونہ",
+    "nav.nahjul balagha": "نہج البلاغہ",
+    "nav.ai search": "اے آئی سرچ",
+    "nav.community": "کمیونٹی",
+    "nav.voice ai": "وائس اے آئی",
+    "nav.mind map": "مائنڈ میپ",
+    "nav.audio": "آڈیو",
+    "nav.focus timer": "فوکس ٹائمر",
     "nav.saved": "محفوظ",
     "nav.search": "تلاش",
     "nav.focus": "توجہ",
@@ -85,19 +106,61 @@ export function useLanguage() {
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
 
+  const applyGoogleTranslate = (lang: Language) => {
+    if (typeof window === "undefined") return;
+
+    // Set cookie for Google Translate
+    const targetLang = lang === "en" ? "" : lang;
+    const cookieVal = targetLang ? `/en/${targetLang}` : "";
+    
+    document.cookie = `googtrans=${cookieVal}; path=/;`;
+    document.cookie = `googtrans=${cookieVal}; path=/; domain=${window.location.hostname};`;
+
+    // Try updating Google Translate combo if loaded
+    const select = document.querySelector(".goog-te-combo") as HTMLSelectElement | null;
+    if (select) {
+      select.value = targetLang;
+      select.dispatchEvent(new Event("change"));
+    }
+  };
+
   useEffect(() => {
+    // Load stored language preference
     const stored = localStorage.getItem("thenahj-lang") as Language | null;
-    if (stored && ["en", "ar", "ur"].includes(stored)) {
-      setLanguageState(stored);
+    const initialLang = (stored && ["en", "ar", "ur"].includes(stored)) ? stored : "en";
+    setLanguageState(initialLang);
+    document.documentElement.dir = initialLang === "en" ? "ltr" : "rtl";
+    document.documentElement.lang = initialLang;
+
+    // Inject Google Translate script dynamically
+    if (!document.getElementById("google-translate-script")) {
+      const script = document.createElement("script");
+      script.id = "google-translate-script";
+      script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      script.async = true;
+      document.body.appendChild(script);
+
+      (window as any).googleTranslateElementInit = () => {
+        if ((window as any).google && (window as any).google.translate) {
+          new (window as any).google.translate.TranslateElement(
+            {
+              pageLanguage: "en",
+              includedLanguages: "en,ar,ur",
+              autoDisplay: false,
+            },
+            "google_translate_element"
+          );
+        }
+      };
     }
   }, []);
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem("thenahj-lang", lang);
-    // Set dir on <html>
     document.documentElement.dir = lang === "en" ? "ltr" : "rtl";
     document.documentElement.lang = lang;
+    applyGoogleTranslate(lang);
   }, []);
 
   const t = useCallback(
@@ -109,6 +172,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t, dir }}>
+      <div id="google_translate_element" style={{ display: "none" }} />
       {children}
     </LanguageContext.Provider>
   );

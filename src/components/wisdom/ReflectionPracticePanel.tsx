@@ -286,7 +286,7 @@ export function ReflectionPracticePanel({ articleSlug, questions, actionSteps }:
       {currentQuestion && (
         <article className="rounded-2xl border border-border/20 bg-background/75 p-4 md:p-5">
           <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Guided Question</p>
-          <p className="mt-3 text-base leading-relaxed text-foreground/90">{currentQuestion}</p>
+          <p className="mt-3 text-base leading-relaxed text-foreground/90" dir="auto">{currentQuestion}</p>
           {safeQuestions.length > 1 && (
             <div className="mt-4 flex flex-wrap gap-2">
               {safeQuestions.map((_, index) => (
