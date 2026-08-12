@@ -9,6 +9,7 @@ import ImageRole from "@/components/ui/ImageRole";
 import { getRelatedUnifiedArticles, getUnifiedArticleBySlug } from "@/lib/content";
 import type { RelatedArticlePreview } from "@/lib/content";
 import type { Metadata } from "next";
+import { AITranslatedText } from "@/components/ui/AITranslatedText";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -118,7 +119,7 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
       .filter(Boolean)
       .map((paragraph, index) => (
         <p key={`${paragraph.slice(0, 24)}-${index}`} className="whitespace-pre-wrap leading-relaxed text-secondary/85 md:text-[1.05rem]">
-          {paragraph}
+          <AITranslatedText text={paragraph} />
         </p>
       ));
   };

@@ -10,6 +10,7 @@ import { StarBorder } from "@/components/ui/StarBorder";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { StreakBadge } from "@/components/ui/StreakBadge";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 interface HeaderProps {
   siteName?: string;
@@ -21,6 +22,7 @@ export function Header({
   links = [] 
 }: HeaderProps) {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
 
@@ -105,7 +107,7 @@ export function Header({
               </Link>
             ) : (
               (() => {
-                const active = isLinkActive(link.href);
+                const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
                 return (
               <Link
                 key={link.href}
@@ -114,7 +116,7 @@ export function Header({
                   isHome ? 'text-[10px] text-muted/80' : 'text-xs text-muted hover:text-gold'
                 } ${active ? "text-gold" : ""}`}
               >
-                {link.label}
+                {t(`nav.${link.label.toLowerCase().replace(" ", "")}`) || link.label}
                 {active && (
                   <span className="absolute -bottom-2 left-1/2 h-px w-8 -translate-x-1/2 bg-gradient-to-r from-transparent via-gold/80 to-transparent" />
                 )}

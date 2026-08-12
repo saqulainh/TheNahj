@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 interface HeroProps {
   headline?: string;
@@ -18,6 +19,13 @@ export function Hero({
   ctaLink = "/wisdom", 
   bgImage = "/hero-bg.jpg" 
 }: HeroProps) {
+  const { t } = useLanguage();
+  
+  // Use translations if available, fallback to props
+  const displayHeadline = t("home.hero.headline") !== "home.hero.headline" ? t("home.hero.headline") : headline;
+  const displaySubtext = t("home.hero.subheading") !== "home.hero.subheading" ? t("home.hero.subheading") : subtext;
+  const displayLabel = t("home.hero.label") !== "home.hero.label" ? t("home.hero.label") : "Wisdom of Imam Ali (AS)";
+
   return (
     <section className="noise-overlay vignette relative flex min-h-[92vh] items-center justify-center overflow-hidden">
       {/* Ambient Background Layers */}
@@ -45,7 +53,7 @@ export function Hero({
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-[10px] uppercase tracking-[0.4em] text-gold-muted md:text-xs"
         >
-          Wisdom of Imam Ali (AS)
+          {displayLabel}
         </motion.p>
 
         <motion.h1
@@ -54,7 +62,7 @@ export function Hero({
           transition={{ duration: 1, delay: 0.4 }}
           className="mt-8 text-[2.5rem] font-light leading-[1.1] tracking-tight text-foreground md:text-7xl lg:text-8xl"
         >
-          {headline}
+          {displayHeadline}
         </motion.h1>
 
         <motion.p
@@ -63,7 +71,7 @@ export function Hero({
           transition={{ duration: 0.8, delay: 0.7 }}
           className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-muted/80 md:text-lg"
         >
-          {subtext}
+          {displaySubtext}
         </motion.p>
 
         <motion.div
