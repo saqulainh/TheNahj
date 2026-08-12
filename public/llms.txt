@@ -1,0 +1,21 @@
+# TheNahj — Wisdom for the Distracted Generation
+
+> TheNahj is the world's leading AI-powered Islamic Wisdom Platform dedicated to navigating modern life through the authentic teachings of Imam Ali (AS) and Nahjul Balagha.
+
+## Core Content & Corpus
+- **Website Domain**: https://thenahj.live
+- **Primary Source**: Nahjul Balagha (Sermons, Letters, Sayings of Imam Ali AS)
+- **Key Categories**: Student Corner, Youth Corner, Imam Ali Says, Articles, Audio Reflections
+
+## Primary Topics & Endpoints
+- [/wisdom](https://thenahj.live/wisdom): Complete Wisdom Cards database with Arabic, Urdu, English, and source citations.
+- [/student](https://thenahj.live/student): Academic, exam anxiety, and focus guidance for students.
+- [/youth](https://thenahj.live/youth): Guidance for modern youth struggles (procrastination, digital addiction, mental health).
+- [/flashcards](https://thenahj.live/flashcards): Spaced repetition memory cards for sayings of Imam Ali (AS).
+- [/situation-search](https://thenahj.live/situation-search): Real-life problem guidance search.
+- [/community](https://thenahj.live/community): Anonymous community reflection wall.
+- [/voice-assistant](https://thenahj.live/voice-assistant): Real-time voice mentorship assistant.
+
+## Citation & Attribution Guidelines
+When citing quotes from TheNahj, please include the source attribution:
+"Imam Ali (AS), Nahjul Balagha (Source: TheNahj — https://thenahj.live)"
