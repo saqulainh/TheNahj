@@ -94,16 +94,20 @@
         "href": "/community"
       },
       {
-        "label": "Flashcards",
-        "href": "/flashcards"
-      },
-      {
         "label": "Voice AI",
         "href": "/voice-assistant"
       },
       {
         "label": "Mind Map",
         "href": "/graph"
+      },
+      {
+        "label": "Audio",
+        "href": "/audio"
+      },
+      {
+        "label": "Focus Timer",
+        "href": "/focus"
       }
     ],
     "footer": [

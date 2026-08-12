@@ -58,8 +58,33 @@ export default function ProfilePage() {
       {/* Profile Header */}
       <div className="rounded-3xl border border-gold/30 bg-gradient-to-r from-surface-alt via-surface-elevated to-surface-alt p-6 md:p-8 shadow-xl flex flex-wrap items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-gold/50 shadow-md">
-            <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+          <div 
+            className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-gold/50 shadow-md group cursor-pointer"
+            onClick={() => document.getElementById("avatar-upload")?.click()}
+          >
+            <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover transition-opacity group-hover:opacity-50" />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+              <span className="text-[10px] text-white font-bold uppercase">Edit</span>
+            </div>
+            <input 
+              type="file" 
+              id="avatar-upload" 
+              accept="image/*" 
+              className="hidden" 
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                  const base64 = reader.result as string;
+                  const updatedProfile = { ...user, avatarUrl: base64 };
+                  // Update local context manually
+                  localStorage.setItem("thenahj_user_profile", JSON.stringify(updatedProfile));
+                  window.location.reload(); // Refresh to let auth-context pick it up, or we can handle it gracefully.
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
           </div>
 
           <div>

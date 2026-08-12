@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Loader2, Heart, ArrowRight, BookOpen, Quote } from "lucide-react";
+import { Search, Loader2, Heart, ArrowRight, BookOpen, Quote, Bot } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { AudioReaderButton } from "@/components/wisdom/AudioReaderButton";
@@ -134,13 +134,45 @@ export default function SituationSearchPage() {
             </p>
           </div>
 
-          {/* Read More Link */}
-          <div className="flex justify-center pt-2">
-            <Link 
-              href={`/wisdom/${result.suggestedSearchLink || "topic"}`} 
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-gold/30 bg-gold/10 text-gold text-xs font-bold hover:bg-gold/20 transition-colors"
+          {/* Action Buttons */}
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
+            <button 
+              onClick={() => {
+                const savedItems = JSON.parse(localStorage.getItem("thenahj_saved_wisdom") || "[]");
+                const newItem = {
+                  id: `saved_${Date.now()}`,
+                  type: "situation",
+                  title: result.recommendedWisdom?.topic || "Wisdom for Situation",
+                  quote: result.recommendedWisdom?.englishTranslation,
+                  source: result.recommendedWisdom?.source,
+                  savedAt: new Date().toISOString()
+                };
+                localStorage.setItem("thenahj_saved_wisdom", JSON.stringify([newItem, ...savedItems]));
+                alert("Wisdom saved to your heart!");
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-border/40 bg-surface-alt text-foreground text-xs font-bold hover:bg-surface-elevated transition-colors"
             >
-              Read deep reflections on this topic <ArrowRight size={14} />
+              <Heart size={14} className="text-red-400" /> Save to My Heart
+            </button>
+            <button 
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("open-ai-chat", { 
+                  detail: { query: `I am struggling with: "${situation}". Imam Ali said: "${result.recommendedWisdom?.englishTranslation}". Can you explain this further?` } 
+                }));
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition-colors"
+            >
+              <Bot size={14} /> Ask Follow-up
+            </button>
+            <Link 
+              href={
+                result.matchingSlug 
+                  ? `/wisdom/${result.matchingSlug}` 
+                  : `/search?q=${encodeURIComponent(result.recommendedWisdom?.topic || situation || "wisdom")}`
+              } 
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-gold/30 bg-gold/10 text-gold text-xs font-bold hover:bg-gold/20 transition-colors"
+            >
+              Explore Topic <ArrowRight size={14} />
             </Link>
           </div>
         </motion.div>

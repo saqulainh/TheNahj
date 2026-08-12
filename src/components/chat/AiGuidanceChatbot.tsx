@@ -58,6 +58,18 @@ export function AiGuidanceChatbot() {
     setIsLoaded(true);
   }, []);
 
+  // --- Global Event Listener to Open Chat ---
+  useEffect(() => {
+    const handleOpenChat = (e: CustomEvent) => {
+      setIsOpen(true);
+      if (e.detail?.query) {
+        setInput(e.detail.query);
+      }
+    };
+    window.addEventListener("open-ai-chat", handleOpenChat as EventListener);
+    return () => window.removeEventListener("open-ai-chat", handleOpenChat as EventListener);
+  }, []);
+
   // --- Memory: Save to localStorage on every change ---
   useEffect(() => {
     if (isLoaded && messages.length > 0) {
