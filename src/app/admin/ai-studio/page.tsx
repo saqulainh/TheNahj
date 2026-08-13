@@ -98,7 +98,7 @@ export default function SeniorAiStudioPage() {
         body: JSON.stringify({
           title: card.basicInfo?.title || topic,
           slug: card.basicInfo?.slug || topic.toLowerCase().replace(/\s+/g, "-"),
-          category_id: "youth",
+          category_id: card.basicInfo?.category?.toLowerCase().replace(/\s+/g, "-") || "youth",
           arabic_text: card.originalWisdom?.arabicText || "",
           urdu_translation: card.originalWisdom?.urduTranslation || "",
           english_translation: card.originalWisdom?.englishTranslation || "",

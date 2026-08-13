@@ -28,7 +28,10 @@ Topic: "${topic}"
 Quote Context: "${currentWisdom || topic}"
 
 Regenerate ONLY the section: "${sectionKey}".
-Rules: Use deep, publication-ready flowing editorial paragraphs. If generating lists, wrap inside \`\`\`text ... \`\`\`.
+Rules: 
+1. Use extremely deep, extensively detailed, publication-ready flowing editorial paragraphs. Provide profound theological, spiritual, and practical analysis. DO NOT write short summaries.
+2. If generating lists (like Reflection Questions or Action Steps), provide 8-10 deeply probing questions or 5-7 highly specific action steps. Wrap these lists strictly inside \`\`\`text ... \`\`\` code blocks.
+3. If regenerating narrations, ensure ALL fields (Arabic, Urdu, English, Narrator, Source, Explanation) are fully populated and authentic.
 
 Return ONLY a valid JSON object containing the refreshed data for "${sectionKey}".`;
 
