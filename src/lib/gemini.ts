@@ -15,11 +15,11 @@ let cachedGenerateContentModel: string | null = null;
 
 // Preferred model ordering for generateContent (optimized for speed)
 const PREFERRED_GENERATE_MODELS = [
+  "gemini-1.5-flash",
   "gemini-2.5-flash-lite",
   "gemini-2.5-flash",
   "gemini-2.0-flash-lite",
   "gemini-2.0-flash",
-  "gemini-1.5-flash",
   "gemini-3.6-flash",
   "gemini-3.0-flash",
   "gemini-2.5-pro",
@@ -160,12 +160,8 @@ export async function fetchGeminiWithFailover(
     }
   }
 
-  // ── 2. Discover available models and try them in order ──────────────────────
-  const models = await discoverGenerateContentModels(apiKey);
-  if (models.length === 0) {
-    // Last resort: try hardcoded fallbacks
-    models.push(...PREFERRED_GENERATE_MODELS);
-  }
+  // ── 2. Try preferred models in order (skip slow discovery) ─────────────────
+  const models = [...PREFERRED_GENERATE_MODELS];
 
   for (const model of models) {
     try {
