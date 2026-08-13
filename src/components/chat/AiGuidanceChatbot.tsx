@@ -7,6 +7,7 @@ import Link from "next/link";
 import { BreathingWidget } from "@/components/chat/widgets/BreathingWidget";
 import { InteractiveQuizWidget } from "@/components/chat/widgets/InteractiveQuizWidget";
 import { ReflectionTimerWidget } from "@/components/chat/widgets/ReflectionTimerWidget";
+import { sanitizeAIResponse } from "@/lib/sanitizeAIResponse";
 
 interface Message {
   id: string;
@@ -36,6 +37,10 @@ export function AiGuidanceChatbot() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // ── Intro popup state ──
+  const [showIntro, setShowIntro] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // --- Memory: Load from localStorage on mount ---
@@ -51,12 +56,25 @@ export function AiGuidanceChatbot() {
           id: "welcome",
           role: "assistant",
           content:
-            "Peace be upon you! I am **TheNahj AI Guidance Assistant**. How can I help you today using the wisdom of Imam Ali (AS)?",
+            "Peace be upon you! I am TheNahj AI Guidance Assistant. How can I help you today using the wisdom of Imam Ali (AS)?",
         },
       ]);
     }
+
+    // Show intro popup only on first visit
+    const hasSeen = localStorage.getItem("thenahj_intro_seen");
+    if (!hasSeen) {
+      setTimeout(() => setShowIntro(true), 800);
+    }
+
     setIsLoaded(true);
   }, []);
+
+  // --- Dismiss intro popup ---
+  const handleDismissIntro = () => {
+    localStorage.setItem("thenahj_intro_seen", "1");
+    setShowIntro(false);
+  };
 
   // --- Global Event Listener to Open Chat ---
   useEffect(() => {
@@ -177,7 +195,8 @@ export function AiGuidanceChatbot() {
           {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: data.reply,
+            // ── Sanitize the reply before storing in state ──
+            content: sanitizeAIResponse(data.reply),
             widget: data.widget,
             relatedWisdom: data.relatedWisdom,
           },
@@ -221,20 +240,89 @@ export function AiGuidanceChatbot() {
 
   return (
     <>
-      {/* ─── Floating Trigger Button ─── */}
-      <motion.button
-        type="button"
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full border border-gold/40 bg-gradient-to-r from-gold/90 to-gold px-4 py-3 shadow-[0_4px_25px_rgba(199,166,84,0.4)] text-black font-semibold text-xs tracking-wider transition-all hover:brightness-110"
-        aria-label="Open AI Guidance Assistant"
-      >
-        <Sparkles size={16} className="animate-pulse" />
-        <span className="hidden sm:inline">Ask Imam Ali's Wisdom</span>
-      </motion.button>
+      {/* ─── Glassmorphism Intro Popup (first visit only) ─── */}
+      <AnimatePresence>
+        {showIntro && (
+          <motion.div
+            key="intro-popup"
+            layoutId="ai-trigger"
+            initial={{ opacity: 0, scale: 0.85, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.5, x: -60, y: -60 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed left-4 top-24 z-50 w-[min(320px,calc(100vw-2rem))] rounded-2xl border border-gold/35 bg-surface/80 p-5 shadow-[0_8px_40px_rgba(199,166,84,0.25)] backdrop-blur-2xl"
+          >
+            {/* Dismiss X */}
+            <button
+              onClick={handleDismissIntro}
+              className="absolute right-3 top-3 rounded-lg p-1 text-muted hover:text-foreground transition-colors"
+              aria-label="Dismiss intro"
+            >
+              <X size={15} />
+            </button>
+
+            {/* Icon + Title */}
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gold/40 bg-gold/15 text-gold">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-gold font-semibold">TheNahj AI</p>
+                <h3 className="text-sm font-bold text-foreground leading-tight">Your Wisdom Companion</h3>
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="text-xs leading-relaxed text-muted mb-1">
+              Grounded in <span className="text-foreground font-medium">Nahjul Balagha</span> — the peak of
+              eloquence of Imam Ali ibn Abi Talib (AS) — this AI offers guidance on life, faith, focus, and
+              character for modern Muslim youth.
+            </p>
+            <p className="text-xs leading-relaxed text-muted mb-4">
+              Ask about stress, discipline, purpose, or relationships. Wisdom from 1,400 years ago, made
+              relevant for today.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { handleDismissIntro(); setIsOpen(true); }}
+                className="flex-1 rounded-xl bg-gold px-4 py-2 text-xs font-semibold text-black transition-all hover:brightness-110 active:scale-95"
+              >
+                Ask a Question
+              </button>
+              <button
+                onClick={handleDismissIntro}
+                className="rounded-xl border border-border/40 px-3 py-2 text-xs text-muted hover:text-foreground transition-colors"
+              >
+                Got It
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Floating Trigger Button — top-left, below navbar ─── */}
+      <AnimatePresence>
+        {!showIntro && (
+          <motion.button
+            key="ai-button"
+            layoutId="ai-trigger"
+            type="button"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsOpen(true)}
+            className="fixed left-4 top-24 z-40 flex items-center gap-2 rounded-full border border-gold/40 bg-gradient-to-r from-gold/90 to-gold px-4 py-2.5 shadow-[0_4px_25px_rgba(199,166,84,0.4)] text-black font-semibold text-xs tracking-wider transition-all hover:brightness-110"
+            aria-label="Open AI Guidance Assistant"
+          >
+            <Sparkles size={15} className="animate-pulse" />
+            <span className="hidden sm:inline">Ask Imam Ali's Wisdom</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* ─── Chat Window Overlay ─── */}
       <AnimatePresence>

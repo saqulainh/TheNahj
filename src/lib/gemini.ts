@@ -13,18 +13,18 @@
 // Cached working model for generateContent fallback (reset on cold start)
 let cachedGenerateContentModel: string | null = null;
 
-// Preferred model ordering for generateContent (newest / most capable first)
+// Preferred model ordering for generateContent (optimized for speed)
 const PREFERRED_GENERATE_MODELS = [
-  "gemini-3.6-flash",       // May support generateContent too
+  "gemini-2.5-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-3.6-flash",
   "gemini-3.0-flash",
   "gemini-2.5-pro",
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
   "gemini-2.0-pro",
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
   "gemini-1.5-pro",
-  "gemini-1.5-flash",
 ];
 
 export const GEMINI_MODELS = PREFERRED_GENERATE_MODELS;
@@ -130,8 +130,9 @@ async function tryInteractionsAPI(
 }
 
 /**
- * Main entry: try Interactions API first, then dynamically discover and
- * try generateContent models until one works.
+ * Main entry: try cached model first, then discover and try
+ * generateContent models in order, and finally fall back to
+ * the Interactions API.
  */
 export async function fetchGeminiWithFailover(
   prompt: string,
@@ -149,12 +150,7 @@ export async function fetchGeminiWithFailover(
   };
   const errors: string[] = [];
 
-  // ── 1. Try Interactions API ──────────────────────────────────────────────────
-  const interactionsResult = await tryInteractionsAPI(prompt, apiKey, opts);
-  if (interactionsResult) return interactionsResult;
-  errors.push("[interactions/gemini-3.6-flash]: no result");
-
-  // ── 2. If we have a cached working model, try it first ──────────────────────
+  // ── 1. If we have a cached working model, try it first ──────────────────────
   if (cachedGenerateContentModel) {
     try {
       const result = await tryGenerateContent(cachedGenerateContentModel, prompt, apiKey, opts);
@@ -164,7 +160,7 @@ export async function fetchGeminiWithFailover(
     }
   }
 
-  // ── 3. Discover available models and try them in order ──────────────────────
+  // ── 2. Discover available models and try them in order ──────────────────────
   const models = await discoverGenerateContentModels(apiKey);
   if (models.length === 0) {
     // Last resort: try hardcoded fallbacks
@@ -185,6 +181,11 @@ export async function fetchGeminiWithFailover(
       errors.push(`[${model}]: ${err.message}`);
     }
   }
+
+  // ── 3. Try Interactions API as fallback ──────────────────────────────────────
+  const interactionsResult = await tryInteractionsAPI(prompt, apiKey, opts);
+  if (interactionsResult) return interactionsResult;
+  errors.push("[interactions/gemini-3.6-flash]: no result");
 
   throw new Error(`All Gemini models failed. Errors: ${errors.join(" | ")}`);
 }

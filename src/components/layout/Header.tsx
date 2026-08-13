@@ -149,18 +149,9 @@ export function Header({
           <ThemeToggle />
         </div>
 
-        {/* Mobile Menu Toggle */}
+        {/* Mobile Menu Toggle — streamlined: only Streak + Hamburger */}
         <div className="flex items-center gap-2 md:hidden">
-          <Link
-            href="/profile"
-            className="flex h-8 w-8 items-center justify-center rounded-xl border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
-            title="My Profile & Saved Wisdom"
-          >
-            <User size={15} />
-          </Link>
           <StreakBadge />
-          <LanguageToggle />
-          <ThemeToggle />
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="rounded-full border border-border/25 bg-surface/80 p-2 text-muted hover:text-foreground"
@@ -175,9 +166,9 @@ export function Header({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute left-3 right-3 top-full mt-2 rounded-2xl border border-border/25 bg-surface/95 p-6 backdrop-blur-xl md:hidden"
+          className="absolute left-3 right-3 top-full mt-2 rounded-2xl border border-border/25 bg-surface/95 p-5 backdrop-blur-xl md:hidden"
         >
-          <nav className="flex flex-col gap-6">
+          <nav className="flex flex-col gap-5">
             {links && links.map((link) => (
               (() => {
                 const active = isLinkActive(link.href);
@@ -198,6 +189,20 @@ export function Header({
               })()
             ))}
           </nav>
+
+          {/* Settings row inside mobile menu */}
+          <div className="mt-5 flex items-center gap-3 border-t border-border/20 pt-4">
+            <Link
+              href="/profile"
+              className="flex h-8 w-8 items-center justify-center rounded-xl border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
+              title="My Profile"
+            >
+              <User size={15} />
+            </Link>
+            <LanguageToggle />
+            <ThemeToggle />
+            <span className="ml-auto text-[10px] uppercase tracking-widest text-muted">Settings</span>
+          </div>
         </motion.div>
       )}
     </header>
