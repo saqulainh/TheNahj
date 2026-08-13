@@ -75,14 +75,14 @@ export function Header({
             }`
       }`}
     >
-      <div className={`${isHome ? 'w-full md:w-auto flex items-center justify-between rounded-[2rem] border border-border/25 bg-surface/65 px-6 md:px-10 py-4 backdrop-blur-xl shadow-[0_14px_50px_-24px_rgba(0,0,0,0.55)]' : 'mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 md:px-6 md:py-4'}`}>
+      <div className={`${isHome ? 'w-full md:w-auto flex items-center justify-between rounded-[2rem] border border-border/25 bg-surface/65 px-4 md:px-6 py-3.5 md:py-4 backdrop-blur-xl shadow-[0_14px_50px_-24px_rgba(0,0,0,0.55)]' : 'mx-auto flex max-w-7xl items-center justify-between px-4 md:px-6 py-3.5 md:py-4'}`}>
         {/* Site Name (Hidden on Desktop Home) */}
         <Link 
           href="/" 
-          className={`group flex shrink-0 items-center gap-2 whitespace-nowrap ${isHome ? 'md:hidden' : ''}`}
+          className={`group flex shrink-0 items-center gap-2 whitespace-nowrap pl-2 md:pl-4 ${isHome ? 'md:hidden' : ''}`}
         >
           {language === "en" ? (
-            <div className="relative h-10 w-32 md:h-12 md:w-36 transition-transform duration-300 group-hover:scale-105">
+            <div className="relative h-8 w-28 md:h-9 md:w-32 transition-transform duration-300 group-hover:scale-105">
               <Image 
                 src="/TheNahj Logo.jpeg" 
                 alt={siteName} 
@@ -92,7 +92,7 @@ export function Header({
               />
             </div>
           ) : (
-            <div className="flex h-10 md:h-12 items-center px-2">
+            <div className="flex h-8 md:h-9 items-center px-2">
               <span className="text-xl md:text-2xl font-bold tracking-tight text-gold translate-middle">The Nahj</span>
             </div>
           )}
@@ -136,13 +136,13 @@ export function Header({
           ))}
         </nav>
 
-        <div className="hidden md:flex md:pl-3 items-center gap-2">
+        <div className="hidden md:flex md:pl-3 items-center gap-3">
           <Link
             href="/profile"
-            className="flex h-8 w-8 items-center justify-center rounded-xl border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
+            className="flex h-10 w-10 min-h-[40px] min-w-[40px] items-center justify-center rounded-xl border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
             title="My Profile & Saved Wisdom"
           >
-            <User size={15} />
+            <User size={18} />
           </Link>
           <StreakBadge />
           <LanguageToggle />
@@ -150,23 +150,23 @@ export function Header({
         </div>
 
         {/* Mobile Menu Toggle & Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2 md:hidden">
+        <div className="flex items-center gap-2 sm:gap-3 md:hidden">
           <Link
             href="/profile"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
+            className="flex h-10 w-10 min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-xl border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
             title="My Profile"
           >
-            <User size={15} />
+            <User size={18} />
           </Link>
-          <div className="flex items-center scale-90 shrink-0">
+          <div className="flex items-center shrink-0">
             <LanguageToggle />
           </div>
-          <div className="flex items-center scale-90 shrink-0">
+          <div className="flex items-center shrink-0">
             <ThemeToggle />
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="ml-1 rounded-full border border-border/25 bg-surface/80 p-1.5 text-muted hover:text-foreground shrink-0"
+            className="ml-1 flex h-10 w-10 min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-full border border-border/25 bg-surface/80 p-2 text-muted hover:text-foreground"
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>

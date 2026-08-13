@@ -66,12 +66,23 @@ export default function VoiceAssistantPage() {
     }
   }, []);
 
-  const toggleListening = () => {
+  const toggleListening = async () => {
     setError(null);
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
     } else {
+      // Explicitly request microphone access first (fixes permission issues on some browsers/mobile)
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+      } catch (err) {
+        console.error("Microphone permission error:", err);
+        setError("Microphone access denied. Please allow microphone in your browser settings.");
+        return;
+      }
+
       setTranscript("Listening...");
       setAiResponse("");
       window.speechSynthesis.cancel(); // Stop any ongoing speech
@@ -81,7 +92,8 @@ export default function VoiceAssistantPage() {
         recognitionRef.current?.start();
         setIsListening(true);
       } catch (e) {
-        console.error(e);
+        console.error("Failed to start speech recognition:", e);
+        setError("Could not start microphone. Please try again.");
       }
     }
   };
