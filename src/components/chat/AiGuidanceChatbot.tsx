@@ -61,18 +61,14 @@ export function AiGuidanceChatbot() {
       ]);
     }
 
-    // Show intro popup only on first visit
-    const hasSeen = localStorage.getItem("thenahj_intro_seen");
-    if (!hasSeen) {
-      setTimeout(() => setShowIntro(true), 800);
-    }
+    // Show intro popup on every visit
+    setTimeout(() => setShowIntro(true), 800);
 
     setIsLoaded(true);
   }, []);
 
   // --- Dismiss intro popup ---
   const handleDismissIntro = () => {
-    localStorage.setItem("thenahj_intro_seen", "1");
     setShowIntro(false);
   };
 
@@ -315,7 +311,7 @@ export function AiGuidanceChatbot() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed left-4 top-24 z-40 flex items-center gap-2 rounded-full border border-gold/40 bg-gradient-to-r from-gold/90 to-gold px-4 py-2.5 shadow-[0_4px_25px_rgba(199,166,84,0.4)] text-black font-semibold text-xs tracking-wider transition-all hover:brightness-110"
+            className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full border border-gold/40 bg-gradient-to-r from-gold/90 to-gold px-4 py-2.5 shadow-[0_4px_25px_rgba(199,166,84,0.4)] text-black font-semibold text-xs tracking-wider transition-all hover:brightness-110"
             aria-label="Open AI Guidance Assistant"
           >
             <Sparkles size={15} className="animate-pulse" />
