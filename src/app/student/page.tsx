@@ -37,8 +37,37 @@ export default async function StudentPage() {
       w.category?.slug === "time"
   );
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": "https://www.thenahj.live/student#webpage",
+        "url": "https://www.thenahj.live/student",
+        "name": "Student Corner — Focus & Exams",
+        "isPartOf": { "@id": "https://www.thenahj.live/#website" },
+        "about": { "@id": "https://www.thenahj.live/student#itemlist" }
+      },
+      {
+        "@type": "ItemList",
+        "@id": "https://www.thenahj.live/student#itemlist",
+        "itemListElement": studentTopics.map((topic, index) => ({
+          "@type": "ListItem",
+          "position": index + 1,
+          "url": `https://www.thenahj.live/student/${topic.slug}`,
+          "name": topic.title
+        }))
+      }
+    ]
+  };
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
       <nav className="mb-4 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted">
         <Link href="/" className="transition-colors hover:text-gold">Home</Link>
         <span>→</span>
@@ -81,5 +110,6 @@ export default async function StudentPage() {
         ))}
       </div>
     </div>
+    </>
   );
 }

@@ -139,28 +139,88 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
     return { label: "Related", className: "border-border/20 text-muted" };
   };
 
-  const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
+  const canonicalBase = "https://www.thenahj.live";
+  const pageUrl = `${canonicalBase}/wisdom/${article.slug}`;
   const schemaImage = article.hero_image || article.featured_image || "/backgrounds/serene.jpg";
+  const absoluteImage = schemaImage.startsWith("http") ? schemaImage : `${canonicalBase}${schemaImage}`;
+  
+  const citations = Array.isArray((article as any).related_narrations) ? (article as any).related_narrations.map((narration: any) => ({
+    "@type": "Quotation",
+    "text": narration.english_translation || narration.text || "",
+    "creator": { "@type": "Person", "name": narration.narrator || "Ahlulbayt (AS)" },
+    "isBasedOn": narration.source || "Islamic Texts"
+  })) : [];
+
+  // Add the primary quote as the first citation
+  citations.unshift({
+    "@type": "Quotation",
+    "text": article.english_translation || "",
+    "creator": { "@type": "Person", "name": "Imam Ali (AS)" },
+    "isBasedOn": article.source || "Nahjul Balagha"
+  });
+
+  const graphItems: any[] = [
+    {
+      "@type": "WebPage",
+      "@id": `${pageUrl}#webpage`,
+      "url": pageUrl,
+      "name": `${article.seo_title || article.title} — Imam Ali (AS) Wisdom`,
+      "isPartOf": { "@id": `${canonicalBase}/#website` },
+      "about": { "@id": `${pageUrl}#article` },
+      "breadcrumb": { "@id": `${pageUrl}#breadcrumb` },
+      "inLanguage": "en-US"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": `${pageUrl}#breadcrumb`,
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": canonicalBase },
+        { "@type": "ListItem", "position": 2, "name": "Wisdom Repository", "item": `${canonicalBase}/wisdom` },
+        { "@type": "ListItem", "position": 3, "name": article.category || "General", "item": `${canonicalBase}/topics/${article.category?.toLowerCase() || 'general'}` },
+        { "@type": "ListItem", "position": 4, "name": article.title }
+      ]
+    },
+    {
+      "@type": "Article",
+      "@id": `${pageUrl}#article`,
+      "headline": article.seo_title || article.title,
+      "description": article.seo_description || article.excerpt,
+      "image": [absoluteImage],
+      "author": { "@id": `${canonicalBase}/#organization` },
+      "publisher": { "@id": `${canonicalBase}/#organization` },
+      "mainEntityOfPage": { "@id": `${pageUrl}#webpage` },
+      "articleSection": article.category || "Wisdom",
+      "keywords": article.tags?.join(", ") || "Imam Ali, Nahjul Balagha, Shia Wisdom",
+      "inLanguage": "en-US",
+      "datePublished": article.published_at || article.created_at || new Date().toISOString(),
+      "dateModified": (article as any).updated_at || article.published_at || article.created_at || new Date().toISOString(),
+      "citation": citations,
+      ...(actionSteps.length > 0 ? { "hasPart": { "@id": `${pageUrl}#howto` } } : {})
+    }
+  ];
+
+  if (actionSteps.length > 0) {
+    graphItems.push({
+      "@type": "HowTo",
+      "@id": `${pageUrl}#howto`,
+      "name": `Action Plan: ${article.title}`,
+      "description": `Practical steps to internalize the wisdom of Imam Ali (AS) regarding ${article.category || 'this topic'}.`,
+      "step": actionSteps.map((step, index) => {
+        // Strip markdown list numbers (e.g., "1. ") from step text
+        const cleanStep = step.replace(/^\d+\.\s*/, "").trim();
+        return {
+          "@type": "HowToStep",
+          "position": index + 1,
+          "name": `Step ${index + 1}`,
+          "text": cleanStep
+        };
+      })
+    });
+  }
+
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
-    headline: article.seo_title || article.title,
-    description: article.seo_description || article.excerpt,
-    image: [schemaImage.startsWith("http") ? schemaImage : `${canonicalBase}${schemaImage}`],
-    datePublished: article.published_at || article.created_at || new Date().toISOString(),
-    mainEntityOfPage: `${canonicalBase}/wisdom/${article.slug}`,
-    articleSection: article.category,
-    keywords: article.tags?.join(", ") || "Imam Ali, Nahjul Balagha, Shia Wisdom",
-    author: {
-      "@type": "Organization",
-      name: "TheNahj Team",
-      url: canonicalBase,
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "TheNahj",
-      url: canonicalBase,
-    },
+    "@graph": graphItems
   };
 
   return (
@@ -219,7 +279,9 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
 
             <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.2em] text-muted">
               <span>{article.reading_time || 1} min read</span>
-              {article.source && <span>{article.source}</span>}
+              {article.source && <span>• {article.source}</span>}
+              <span>• {new Date(article.published_at || article.created_at || new Date()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+
               {article.source_number && <span>Ref {article.source_number}</span>}
               {article.book_name && <span>{article.book_name}</span>}
             </div>

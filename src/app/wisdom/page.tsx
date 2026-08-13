@@ -31,8 +31,37 @@ export const metadata = {
 export default async function WisdomPage() {
   const [wisdom, categories] = await Promise.all([getAllWisdom(), getCategories()]);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": "https://www.thenahj.live/wisdom#webpage",
+        "url": "https://www.thenahj.live/wisdom",
+        "name": "Imam Ali Says — Wisdom Repository",
+        "isPartOf": { "@id": "https://www.thenahj.live/#website" },
+        "about": { "@id": "https://www.thenahj.live/wisdom#itemlist" }
+      },
+      {
+        "@type": "ItemList",
+        "@id": "https://www.thenahj.live/wisdom#itemlist",
+        "itemListElement": wisdom.map((w, index) => ({
+          "@type": "ListItem",
+          "position": index + 1,
+          "url": `https://www.thenahj.live/wisdom/${w.slug}`,
+          "name": (w as any).title || w.english_translation
+        }))
+      }
+    ]
+  };
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 md:px-6 md:py-16">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="mx-auto max-w-3xl px-4 py-12 md:px-6 md:py-16">
       <nav className="mb-4 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted">
         <Link href="/" className="transition-colors hover:text-gold">Home</Link>
         <span>→</span>
@@ -71,5 +100,6 @@ export default async function WisdomPage() {
         ))}
       </div>
     </div>
+    </>
   );
 }

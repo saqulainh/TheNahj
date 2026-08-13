@@ -43,7 +43,8 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export async function generateMetadata(): Promise<Metadata> {
   const cms = await getCMSConfig();
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
+  // Hardcoded to strictly fix P0 canonicals bug across the site
+  const baseUrl = "https://www.thenahj.live";
 
   return {
     metadataBase: new URL(baseUrl),
@@ -105,8 +106,59 @@ export default async function RootLayout({
 }>) {
   const cms = await getCMSConfig();
 
+  const sitewideGraph = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.thenahj.live/#organization",
+        "name": cms.brand.siteName,
+        "url": "https://www.thenahj.live/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.thenahj.live/TheNahj%20Logo.jpeg",
+          "width": 512,
+          "height": 512
+        },
+        "description": cms.brand.description,
+        "sameAs": [
+          cms.brand.socialLinks?.facebook || "",
+          cms.brand.socialLinks?.twitter || "",
+          cms.brand.socialLinks?.instagram || "",
+          cms.brand.socialLinks?.youtube || "",
+          cms.brand.socialLinks?.telegram || ""
+        ].filter(Boolean),
+        "nonprofitStatus": "Nonprofit",
+        "slogan": cms.brand.tagline
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.thenahj.live/#website",
+        "url": "https://www.thenahj.live/",
+        "name": cms.brand.siteName,
+        "description": cms.brand.description,
+        "publisher": { "@id": "https://www.thenahj.live/#organization" },
+        "inLanguage": "en-US",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://www.thenahj.live/situation-search?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(sitewideGraph) }}
+        />
+      </head>
       <body
         className={`${inter.variable} ${amiri.variable} ${notoUrdu.variable} ${instrumentSerif.variable} ${plusJakarta.variable} font-sans antialiased bg-background text-foreground`}
         suppressHydrationWarning

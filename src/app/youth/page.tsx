@@ -31,8 +31,37 @@ export const metadata = {
 export default async function YouthPage() {
   const wisdom = await getAllWisdom();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": "https://www.thenahj.live/youth#webpage",
+        "url": "https://www.thenahj.live/youth",
+        "name": "Youth Corner — Islamic Guidance",
+        "isPartOf": { "@id": "https://www.thenahj.live/#website" },
+        "about": { "@id": "https://www.thenahj.live/youth#itemlist" }
+      },
+      {
+        "@type": "ItemList",
+        "@id": "https://www.thenahj.live/youth#itemlist",
+        "itemListElement": youthTopics.map((topic, index) => ({
+          "@type": "ListItem",
+          "position": index + 1,
+          "url": `https://www.thenahj.live/youth/${topic.slug}`,
+          "name": topic.title
+        }))
+      }
+    ]
+  };
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
       <nav className="mb-4 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted">
         <Link href="/" className="transition-colors hover:text-gold">Home</Link>
         <span>→</span>
@@ -74,5 +103,6 @@ export default async function YouthPage() {
         ))}
       </section>
     </div>
+    </>
   );
 }
