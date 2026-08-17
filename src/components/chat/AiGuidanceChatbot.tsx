@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, Send, Bot, User, Loader2, ArrowRight, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Sparkles, X, Send, Bot, User, Loader2, ArrowRight, Mic, MicOff, Volume2, VolumeX, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { BreathingWidget } from "@/components/chat/widgets/BreathingWidget";
 import { InteractiveQuizWidget } from "@/components/chat/widgets/InteractiveQuizWidget";
@@ -476,6 +476,27 @@ export function AiGuidanceChatbot() {
                           )}
                         </div>
                       )}
+
+                      {/* Error / Retry State */}
+                      {streamError && msg.id === streamingMsgIdRef.current && (
+                        <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-red-500/20 pt-2.5">
+                          <span className="text-[10px] text-red-400 font-medium leading-tight max-w-[70%]">{streamError}</span>
+                          <button
+                            onClick={() => {
+                              // Find the last user message
+                              const lastUserMsg = messages.filter(m => m.role === "user").pop();
+                              if (lastUserMsg) {
+                                // Remove the failed assistant message and the user message so we don't duplicate
+                                setMessages(prev => prev.filter(m => m.id !== msg.id && m.id !== lastUserMsg.id));
+                                handleSend(lastUserMsg.content);
+                              }
+                            }}
+                            className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-red-500/10 px-2.5 py-1 text-[10px] font-bold text-red-400 hover:bg-red-500/20 transition-all border border-red-500/20 hover:border-red-500/40"
+                          >
+                            <RotateCcw size={10} /> Retry
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Voice Read Button for completed Assistant messages */}
@@ -588,15 +609,15 @@ export function AiGuidanceChatbot() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={isStreaming ? "Receiving wisdom..." : "Ask Imam Ali's wisdom..."}
-                disabled={isStreaming}
+                disabled={isStreaming && !streamError}
                 className="flex-1 rounded-xl border border-border/40 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted/60 focus:border-gold/50 focus:outline-none disabled:opacity-50"
               />
               <button
                 type="submit"
-                disabled={!input.trim() || isStreaming}
+                disabled={!input.trim() || (isStreaming && !streamError)}
                 className="flex h-8 w-8 items-center justify-center rounded-xl bg-gold text-black transition-all hover:bg-gold-light disabled:opacity-40"
               >
-                {isStreaming ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                {isStreaming && !streamError ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
               </button>
             </form>
           </motion.div>

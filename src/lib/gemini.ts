@@ -173,8 +173,10 @@ async function tryStreamGenerateContent(
           maxOutputTokens: options.maxOutputTokens,
         },
       }),
+      signal: AbortSignal.timeout(25000), // 25s hard timeout
     });
-  } catch {
+  } catch (err) {
+    console.warn(`[Gemini] fetch failed or timed out for ${model}:`, err);
     return null;
   }
 

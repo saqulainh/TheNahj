@@ -91,9 +91,10 @@ export function useStreamingResponse(options?: {
     scrollRef?.current?.scrollIntoView({ behavior: "smooth" });
   }, [scrollRef]);
 
-  /** Instantly reveal all accumulated text */
+  /** Instantly reveal all accumulated text and cancel stream */
   const skipToEnd = useCallback(() => {
     skippedRef.current = true;
+    abortRef.current?.abort(); // Cancel the fetch so we don't wait indefinitely
     setDisplayedText(fullTextRef.current);
     scrollToBottom();
   }, [scrollToBottom]);
@@ -114,6 +115,22 @@ export function useStreamingResponse(options?: {
       setError(null);
       setIsStreaming(true);
 
+      // Idle timeout reference
+      let idleTimeout: NodeJS.Timeout;
+
+      const resetIdleTimeout = () => {
+        clearTimeout(idleTimeout);
+        if (!controller.signal.aborted) {
+          idleTimeout = setTimeout(() => {
+            console.warn("[useStreamingResponse] 15s idle timeout reached, aborting stream.");
+            controller.abort();
+            if (!fullTextRef.current) {
+              setError("Response was interrupted. Please tap retry.");
+            }
+          }, 15000);
+        }
+      };
+
       try {
         const res = await fetch(endpoint, {
           method: "POST",
@@ -125,6 +142,7 @@ export function useStreamingResponse(options?: {
         // ── Non-SSE fallback (no streaming / error response) ────────────────
         if (!res.ok || !res.body || res.headers.get("content-type")?.includes("application/json")) {
           const data = await res.json().catch(() => ({}));
+          if (controller.signal.aborted) return;
           if (data.reply) {
             fullTextRef.current = data.reply;
             setDisplayedText(data.reply);
@@ -146,7 +164,12 @@ export function useStreamingResponse(options?: {
         let buffer = "";
         let currentEvent = ""; // tracks the current SSE event type
 
+        // Start idle timeout
+        resetIdleTimeout();
+
         const processLine = (line: string) => {
+          if (controller.signal.aborted) return;
+
           if (line.startsWith("event: ")) {
             currentEvent = line.slice(7).trim();
             return;
@@ -211,12 +234,15 @@ export function useStreamingResponse(options?: {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
+          if (controller.signal.aborted) break;
+          
+          resetIdleTimeout(); // Reset timer on each chunk
           buffer += decoder.decode(value, { stream: true });
           processBuffer();
         }
 
         // Process any remaining data in buffer
-        if (buffer.trim()) {
+        if (!controller.signal.aborted && buffer.trim()) {
           for (const line of buffer.split("\n")) {
             processLine(line.trim());
           }
@@ -227,10 +253,17 @@ export function useStreamingResponse(options?: {
       } catch (err: any) {
         if (err?.name !== "AbortError") {
           console.error("[useStreamingResponse] Error:", err);
-          setError("Connection error. Please check your network and try again.");
+          if (!controller.signal.aborted) {
+            setError("Connection error. Please check your network and try again.");
+          }
         }
       } finally {
-        setIsStreaming(false);
+        clearTimeout(idleTimeout!);
+        if (!controller.signal.aborted || fullTextRef.current === "") {
+           // We only clear isStreaming if we haven't been forcefully aborted by a NEW message,
+           // OR if we were aborted by the timeout (in which case we need to end the state).
+           setIsStreaming(false);
+        }
       }
     },
     [endpoint, scrollToBottom]

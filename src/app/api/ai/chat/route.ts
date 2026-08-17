@@ -416,6 +416,7 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
           send("status", { stage: STATUS.COMPOSING, message: "Composing response..." });
 
           // Stage 2: open streaming connection to Gemini
+          console.log("[Chat SSE] Stream started");
           const geminiStream = await streamGeminiWithFailover(fullPrompt, apiKey, {
             temperature: 0.7,
             maxOutputTokens: 1500,
@@ -430,6 +431,8 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
             fullReply += value;
             send("token", { text: value });
           }
+
+          console.log("[Chat SSE] Stream completed chunks");
 
           // Stage 4: post-processing (sanitize, detect widget)
           const sanitized = sanitizeAIResponse(fullReply);
@@ -450,9 +453,20 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
             relatedWisdom: relatedWisdomPayload,
             cached: false,
           });
+          console.log("[Chat SSE] Stream successfully finished");
         } catch (err: any) {
-          console.error("[Chat SSE] Error:", err);
-          send("error", { message: err?.message || "Failed to generate response" });
+          console.error("[Chat SSE] Error during streaming:", err);
+          if (fullReply.length > 50) {
+             // If we already sent significant text, finish gracefully so user can read it
+             send("done", {
+                topics: detectedTopics,
+                widget: undefined,
+                relatedWisdom: relatedWisdomPayload,
+                cached: false,
+             });
+          } else {
+             send("error", { message: err?.message || "Response was interrupted. Please try again." });
+          }
         } finally {
           controller.close();
         }
