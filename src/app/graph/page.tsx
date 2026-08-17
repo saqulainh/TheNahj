@@ -913,7 +913,7 @@ export default function KnowledgeGraphPage() {
                 <div className="flex items-center gap-1.5 text-gold text-[10px] font-bold uppercase tracking-widest">
                   <Flame size={14} /> Practical Action Step
                 </div>
-                <p className="text-xs text-foreground font-medium leading-relaxed">
+                <p className="text-xs text-muted font-medium leading-relaxed">
                   {selectedNode.actionStep}
                 </p>
               </div>

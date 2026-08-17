@@ -822,12 +822,17 @@ html[dir="rtl"] .flex-rtl-row {
   flex-direction: row-reverse;
 }
 
-/* In RTL mode, left-anchored items go right */
 html[dir="rtl"] .ltr-only {
   display: none;
 }
 
 html[dir="ltr"] .rtl-only {
   display: none;
+}
+
+/* ─── TheNahj AI Chat — Streaming cursor blink ─── */
+@keyframes thenahj-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
 

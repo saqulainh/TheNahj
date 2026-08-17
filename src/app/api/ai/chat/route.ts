@@ -2,8 +2,21 @@ import { NextResponse } from "next/server";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 import { getAllWisdom } from "@/lib/wisdom";
 import { searchRAGContext } from "@/lib/rag/retrieval";
-import { fetchGeminiWithFailover } from "@/lib/gemini";
+import { streamGeminiWithFailover } from "@/lib/gemini";
+import { sanitizeAIResponse } from "@/lib/sanitizeAIResponse";
+import { getCachedResponse, setCachedResponse } from "@/lib/rag/cache";
 
+// ─── Pipeline status messages sent as SSE events ──────────────────────────────
+// These drive the dynamic progress indicator in the frontend.
+const STATUS = {
+  CACHE_CHECK:  "cache_check",
+  RETRIEVING:   "retrieving",         // "Searching Nahjul Balagha..."
+  COMPOSING:    "composing",          // "Composing response..."
+  DONE:         "done",               // carries metadata (widget, relatedWisdom, topics)
+  ERROR:        "error",
+} as const;
+
+// ─── Static knowledge corpus (inline, no I/O cost) ────────────────────────────
 const NAHJUL_BALAGHA_CORPUS = `
 ## KEY SERMONS OF IMAM ALI (AS) FROM NAHJUL BALAGHA
 
@@ -73,7 +86,7 @@ The famous sermon describing the qualities of the God-fearing (Muttaqeen):
 "The sin that grieves you is better in the sight of God than the good deed that makes you vain."
 `;
 
-// ─── Topic Mapping for Better Search ─────────────────────────────────────────
+// ─── Topic Mapping for Better Search ──────────────────────────────────────────
 const TOPIC_KEYWORDS: Record<string, string[]> = {
   anxiety: ["anxiety", "worry", "stress", "tension", "fear", "panic", "nervous", "overwhelm", "anxious"],
   patience: ["patience", "sabr", "endure", "hardship", "suffering", "difficulty", "persevere", "wait"],
@@ -100,6 +113,143 @@ function detectTopics(message: string): string[] {
   return detected.length > 0 ? detected : ["general"];
 }
 
+// ─── Widget Detection ──────────────────────────────────────────────────────────
+const QUIZ_BANK = [
+  {
+    topic: "knowledge",
+    question: "According to Imam Ali (AS), what is the greatest form of wealth?",
+    options: ["Material Gold", "Knowledge & Wisdom", "Social Status", "Physical Strength"],
+    correctIndex: 1,
+    explanation: "Imam Ali (AS) taught: 'Knowledge is the most superior wealth.' (Saying 147)",
+  },
+  {
+    topic: "patience",
+    question: "How did Imam Ali (AS) describe the relationship between Patience (Sabr) and Faith (Iman)?",
+    options: [
+      "Patience is half of faith",
+      "Patience is to faith what the head is to the body",
+      "Patience comes after faith",
+      "Patience is separate from faith",
+    ],
+    correctIndex: 1,
+    explanation: "Imam Ali (AS) said: 'Patience is to faith what the head is to the body; a body has no good in it without a head.' (Saying 82)",
+  },
+  {
+    topic: "time",
+    question: "According to Imam Ali (AS), how fast does opportunity pass away?",
+    options: ["Like water in a river", "Like a cloud", "Like a shadow", "Like the wind"],
+    correctIndex: 1,
+    explanation: "Imam Ali (AS) taught: 'Opportunity passes away like a cloud, so make use of good opportunities.' (Saying 21)",
+  },
+  {
+    topic: "anger",
+    question: "What did Imam Ali (AS) describe as the beginning of anger and its end?",
+    options: [
+      "Beginning is passion, end is victory",
+      "Beginning is madness, end is regret",
+      "Beginning is fire, end is ashes",
+      "Beginning is strength, end is weakness",
+    ],
+    correctIndex: 1,
+    explanation: "Imam Ali (AS) said: 'Anger begins with madness and ends with regret.' (Saying 255)",
+  },
+  {
+    topic: "friendship",
+    question: "Who did Imam Ali (AS) consider the most helpless of all people?",
+    options: [
+      "The one who has no wealth",
+      "The one who cannot gain friends, and even more helpless is one who loses them",
+      "The one who has no health",
+      "The one who lives in isolation",
+    ],
+    correctIndex: 1,
+    explanation: "Imam Ali (AS) said: 'The most helpless person is one who cannot acquire friends, and more helpless is the one who loses those he has.' (Saying 12)",
+  },
+  {
+    topic: "ego",
+    question: "What did Imam Ali (AS) identify as the greatest obstacle to learning & wisdom?",
+    options: ["Lack of books", "Self-conceit and vanity (Ujb)", "Poverty", "Old age"],
+    correctIndex: 1,
+    explanation: "Imam Ali (AS) taught: 'Self-conceit (vanity) is an obstacle to progress and wisdom.' (Saying 212)",
+  },
+  {
+    topic: "tongue",
+    question: "How did Imam Ali (AS) describe the human tongue?",
+    options: [
+      "A sharp sword",
+      "A wild beast; if left free, it devours",
+      "A mirror of the heart",
+      "A vessel of speech",
+    ],
+    correctIndex: 1,
+    explanation: "Imam Ali (AS) said: 'The tongue is a beast; if it is let loose, it devours.' (Saying 60)",
+  },
+  {
+    topic: "justice",
+    question: "How did Imam Ali (AS) define Justice compared to Generosity?",
+    options: [
+      "Generosity is higher because it gives more",
+      "Justice puts things in their proper place; generosity takes them out",
+      "Justice and generosity are identical",
+      "Generosity is for leaders, justice for common people",
+    ],
+    correctIndex: 1,
+    explanation: "Imam Ali (AS) explained: 'Justice puts things in their proper places, while generosity takes them out of their places. Therefore, justice is superior.' (Saying 437)",
+  },
+  {
+    topic: "contentment",
+    question: "What did Imam Ali (AS) call the capital that never diminishes?",
+    options: ["Gold coins", "Contentment (Qana'ah)", "Land property", "Inheritance"],
+    correctIndex: 1,
+    explanation: "Imam Ali (AS) taught: 'Contentment is an unexhaustible capital.' (Saying 57)",
+  },
+  {
+    topic: "forgiveness",
+    question: "When you gain power over your enemy, what did Imam Ali (AS) advise as gratitude for that power?",
+    options: ["To demand tribute", "To pardon and forgive him", "To banish him", "To imprison him"],
+    correctIndex: 1,
+    explanation: "Imam Ali (AS) said: 'When you gain power over your adversary, pardon him as a way of offering thanks for having gained power over him.' (Saying 11)",
+  },
+];
+
+function buildWidget(lowerMsg: string): any {
+  if (lowerMsg.includes("breath") || lowerMsg.includes("anxiety") || lowerMsg.includes("stress") || lowerMsg.includes("panic")) {
+    return { type: "breathing", title: "4-7-8 De-Stress & Reflection Breathing" };
+  }
+  if (lowerMsg.includes("quiz") || lowerMsg.includes("test") || lowerMsg.includes("knowledge check")) {
+    const matched = QUIZ_BANK.filter((q) => lowerMsg.includes(q.topic));
+    const selected = matched.length > 0
+      ? matched[Math.floor(Math.random() * matched.length)]
+      : QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)];
+    return {
+      type: "quiz",
+      question: selected.question,
+      options: selected.options,
+      correctIndex: selected.correctIndex,
+      explanation: selected.explanation,
+    };
+  }
+  if (lowerMsg.includes("reflect") || lowerMsg.includes("meditate") || lowerMsg.includes("silence")) {
+    return { type: "reflection", prompt: "Close your eyes and reflect deeply on Imam Ali's words for 60 seconds." };
+  }
+  return undefined;
+}
+
+// ─── SSE helper ───────────────────────────────────────────────────────────────
+function sseEvent(event: string, data: unknown): string {
+  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+// ─── Fallback response (no API key) ───────────────────────────────────────────
+const FALLBACK_RESPONSES: Record<string, string> = {
+  anxiety: `Peace be upon you, dear friend. I understand the weight of anxiety you carry.\n\nImam Ali (AS) reminds us in Nahjul Balagha: "Do not let your heart be troubled by that which is destined and cannot be averted." He also taught: "Contentment is the capital that never diminishes."\n\nThe Quran itself assures us: "Verily, in the remembrance of Allah do hearts find rest" (13:28).\n\nSteps for today:\n1. Take 5 slow breaths and recite "La hawla wa la quwwata illa billah"\n2. Write down 3 things within your control and focus only on those\n3. Before sleep, reflect on one blessing you received today`,
+  focus: `Peace be upon you! Imam Ali (AS) said: "Opportunity passes away like a cloud, so make use of good opportunities." (Saying 21)\n\nHe also taught us: "Lost wealth can be replaced by effort, but lost time can never be recovered."\n\nSteps for today:\n1. Put your phone in another room for 45 minutes while studying\n2. Set one clear intention for what you want to accomplish\n3. Remember: "The value of every person is in what he does well" (Saying 81)`,
+  patience: `Peace be upon you. Imam Ali (AS) said in Nahjul Balagha: "Patience is of two kinds: patience over what pains you, and patience against what you covet." (Sermon 87)\n\nHe also taught: "The one who has patience will never be deprived of success, even though it may take a long time."\n\nSteps for today:\n1. When frustration arises, pause and say "Inna lillahi wa inna ilayhi rajioon"\n2. Journal one lesson this hardship is teaching you\n3. Remember that stars shine brightest in the darkest nights`,
+  time: `Peace be upon you! Imam Ali (AS) taught profound wisdom about time management:\n\n"Opportunity passes away like a cloud, so make use of good opportunities." (Saying 21)\n\n"Lost wealth can be replaced by effort, but lost time can never be recovered."\n\n"The value of every person is in what he does well." (Saying 81)\n\nSteps for today:\n1. Prioritize your most important task first thing in the morning\n2. Block distractions for focused work periods of 45 minutes\n3. Before sleeping, plan tomorrow's 3 most important tasks`,
+  general: `Peace be upon you, dear friend!\n\nImam Ali (AS) taught us in his famous Letter 31 to his son Imam Hasan (AS): "Make yourself the judge between yourself and others. Wish for others what you wish for yourself."\n\nHe also said: "Your remedy is within you, but you do not sense it." (Saying 108)\n\nSteps for today:\n1. Take a moment of quiet reflection — even 2 minutes of stillness\n2. Identify one small good deed you can do before the day ends\n3. Read one saying of Imam Ali and let it guide your actions today`,
+};
+
+// ─── Main Route Handler ────────────────────────────────────────────────────────
 export async function POST(request: Request) {
   const ip = getRequestClientIp(request);
   const rl = await consumeRateLimit({ key: `ai:chat:${ip}`, limit: 15, windowMs: 60000 });
@@ -115,7 +265,7 @@ export async function POST(request: Request) {
     const rawBody = await request.json();
     const message = rawBody.message || "";
     const history = rawBody.history || [];
-    // Also support Vercel AI SDK message format
+    // Support both direct message and Vercel AI SDK message array format
     const messages = rawBody.messages;
     const userMessage = messages
       ? (messages[messages.length - 1]?.content || "")
@@ -123,10 +273,55 @@ export async function POST(request: Request) {
 
     const detectedTopics = detectTopics(userMessage);
 
-    // ── 1. Vector RAG Search & Context Retrieval ──
-    const ragResults = await searchRAGContext(userMessage, 5);
-    const allWisdom = await getAllWisdom();
+    // ── Cache check: return instantly for repeated queries ──────────────────
+    const cached = getCachedResponse(userMessage);
+    if (cached) {
+      console.log("[Chat] Cache hit for query:", userMessage.slice(0, 60));
+      // Stream the cached response with the same SSE format so the frontend
+      // renders it identically (typewriter effect still plays on cached responses)
+      const stream = new ReadableStream({
+        start(controller) {
+          const enc = new TextEncoder();
+          // Send status then simulate token chunks from cache
+          controller.enqueue(enc.encode(sseEvent("status", { stage: STATUS.COMPOSING, message: "From wisdom archive..." })));
+          // Split cached reply into ~4-word chunks for natural reveal
+          const words = cached.reply.split(" ");
+          const chunkSize = 4;
+          for (let i = 0; i < words.length; i += chunkSize) {
+            const chunk = words.slice(i, i + chunkSize).join(" ") + (i + chunkSize < words.length ? " " : "");
+            controller.enqueue(enc.encode(sseEvent("token", { text: chunk })));
+          }
+          controller.enqueue(enc.encode(sseEvent("done", {
+            topics: cached.topics,
+            relatedWisdom: cached.relatedWisdom,
+            cached: true,
+          })));
+          controller.close();
+        },
+      });
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+          "X-Accel-Buffering": "no",
+        },
+      });
+    }
+
+    // ── Parallel retrieval: RAG + wisdom search run concurrently ───────────
+    const conversationHistory = (messages || history || [])
+      .slice(-6)
+      .map((m: any) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
+      .join("\n");
+
     const searchTerms = userMessage.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+
+    const [ragResults, allWisdom] = await Promise.all([
+      searchRAGContext(userMessage, 5),
+      getAllWisdom(),
+    ]);
+
     const relevantWisdom = allWisdom
       .filter((w) => {
         const text = `${w.english_translation} ${w.source} ${(w.corner_topics || []).join(" ")}`.toLowerCase();
@@ -139,12 +334,14 @@ export async function POST(request: Request) {
       ...relevantWisdom.map((w) => `• [Wisdom Card — ${w.source}]: "${w.english_translation}" (Read more: /wisdom/${w.slug})`),
     ];
 
-    // ── 2. Build the comprehensive system prompt ──
-    const conversationHistory = (messages || history || [])
-      .slice(-6)
-      .map((m: any) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
-      .join("\n");
+    const relatedWisdomPayload = relevantWisdom.slice(0, 3).map((w) => ({
+      title: w.source,
+      slug: w.slug,
+      quote: w.english_translation,
+      category: w.category?.name,
+    }));
 
+    // ── Build system prompt ─────────────────────────────────────────────────
     const systemPrompt = `You are "TheNahj AI Guidance Assistant", a deeply knowledgeable, compassionate, and authentic advisor grounded in the teachings of Imam Ali ibn Abi Talib (AS), Nahjul Balagha, and broader Islamic wisdom.
 
 YOUR IDENTITY
@@ -185,182 +382,90 @@ ${conversationHistory ? `CONVERSATION HISTORY\n${conversationHistory}` : ""}
 
 IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
 
-    // ── 3. Call Gemini API ──
+    const fullPrompt = `${systemPrompt}\n\nUser: ${userMessage}`;
     const apiKey = process.env.GEMINI_API_KEY;
-    if (apiKey) {
-      try {
-        const fullPrompt = `${systemPrompt}\n\nUser: ${userMessage}`;
-        const reply = await fetchGeminiWithFailover(fullPrompt, apiKey, {
-          temperature: 0.7,
-          maxOutputTokens: 8192,
-        });
 
-        if (reply) {
-          let widget: any = undefined;
-          const lowerMsg = (userMessage + " " + reply).toLowerCase();
+    // ── No API key — use static fallback ───────────────────────────────────
+    if (!apiKey) {
+      const primaryTopic = detectedTopics[0] || "general";
+      let fallbackReply = FALLBACK_RESPONSES[primaryTopic] || FALLBACK_RESPONSES.general;
+      if (relevantWisdom.length > 0) {
+        fallbackReply += `\n\nFrom our collection, Imam Ali (AS) also said: "${relevantWisdom[0].english_translation}" (${relevantWisdom[0].source})`;
+      }
+      return NextResponse.json({
+        success: true,
+        reply: fallbackReply,
+        topics: detectedTopics,
+        relatedWisdom: relatedWisdomPayload,
+      });
+    }
 
-          if (lowerMsg.includes("breath") || lowerMsg.includes("anxiety") || lowerMsg.includes("stress") || lowerMsg.includes("panic")) {
-            widget = { type: "breathing", title: "4-7-8 De-Stress & Reflection Breathing" };
-          } else if (lowerMsg.includes("quiz") || lowerMsg.includes("test") || lowerMsg.includes("question") || lowerMsg.includes("knowledge check")) {
-            const QUIZ_BANK = [
-              {
-                topic: "knowledge",
-                question: "According to Imam Ali (AS), what is the greatest form of wealth?",
-                options: ["Material Gold", "Knowledge & Wisdom", "Social Status", "Physical Strength"],
-                correctIndex: 1,
-                explanation: "Imam Ali (AS) taught: 'Knowledge is the most superior wealth.' (Saying 147)",
-              },
-              {
-                topic: "patience",
-                question: "How did Imam Ali (AS) describe the relationship between Patience (Sabr) and Faith (Iman)?",
-                options: [
-                  "Patience is half of faith",
-                  "Patience is to faith what the head is to the body",
-                  "Patience comes after faith",
-                  "Patience is separate from faith"
-                ],
-                correctIndex: 1,
-                explanation: "Imam Ali (AS) said: 'Patience is to faith what the head is to the body; a body has no good in it without a head.' (Saying 82)",
-              },
-              {
-                topic: "time",
-                question: "According to Imam Ali (AS), how fast does opportunity pass away?",
-                options: ["Like water in a river", "Like a cloud", "Like a shadow", "Like the wind"],
-                correctIndex: 1,
-                explanation: "Imam Ali (AS) taught: 'Opportunity passes away like a cloud, so make use of good opportunities.' (Saying 21)",
-              },
-              {
-                topic: "anger",
-                question: "What did Imam Ali (AS) describe as the beginning of anger and its end?",
-                options: [
-                  "Beginning is passion, end is victory",
-                  "Beginning is madness, end is regret",
-                  "Beginning is fire, end is ashes",
-                  "Beginning is strength, end is weakness"
-                ],
-                correctIndex: 1,
-                explanation: "Imam Ali (AS) said: 'Anger begins with madness and ends with regret.' (Saying 255)",
-              },
-              {
-                topic: "friendship",
-                question: "Who did Imam Ali (AS) consider the most helpless of all people?",
-                options: [
-                  "The one who has no wealth",
-                  "The one who cannot gain friends, and even more helpless is one who loses them",
-                  "The one who has no health",
-                  "The one who lives in isolation"
-                ],
-                correctIndex: 1,
-                explanation: "Imam Ali (AS) said: 'The most helpless person is one who cannot acquire friends, and more helpless is the one who loses those he has.' (Saying 12)",
-              },
-              {
-                topic: "ego",
-                question: "What did Imam Ali (AS) identify as the greatest obstacle to learning & wisdom?",
-                options: ["Lack of books", "Self-conceit and vanity (Ujb)", "Poverty", "Old age"],
-                correctIndex: 1,
-                explanation: "Imam Ali (AS) taught: 'Self-conceit (vanity) is an obstacle to progress and wisdom.' (Saying 212)",
-              },
-              {
-                topic: "tongue",
-                question: "How did Imam Ali (AS) describe the human tongue?",
-                options: [
-                  "A sharp sword",
-                  "A wild beast; if left free, it devours",
-                  "A mirror of the heart",
-                  "A vessel of speech"
-                ],
-                correctIndex: 1,
-                explanation: "Imam Ali (AS) said: 'The tongue is a beast; if it is let loose, it devours.' (Saying 60)",
-              },
-              {
-                topic: "justice",
-                question: "How did Imam Ali (AS) define Justice compared to Generosity?",
-                options: [
-                  "Generosity is higher because it gives more",
-                  "Justice puts things in their proper place; generosity takes them out",
-                  "Justice and generosity are identical",
-                  "Generosity is for leaders, justice for common people"
-                ],
-                correctIndex: 1,
-                explanation: "Imam Ali (AS) explained: 'Justice puts things in their proper places, while generosity takes them out of their places. Therefore, justice is superior.' (Saying 437)",
-              },
-              {
-                topic: "contentment",
-                question: "What did Imam Ali (AS) call the capital that never diminishes?",
-                options: ["Gold coins", "Contentment (Qana'ah)", "Land property", "Inheritance"],
-                correctIndex: 1,
-                explanation: "Imam Ali (AS) taught: 'Contentment is an unexhaustible capital.' (Saying 57)",
-              },
-              {
-                topic: "forgiveness",
-                question: "When you gain power over your enemy, what did Imam Ali (AS) advise as gratitude for that power?",
-                options: ["To demand tribute", "To pardon and forgive him", "To banish him", "To imprison him"],
-                correctIndex: 1,
-                explanation: "Imam Ali (AS) said: 'When you gain power over your adversary, pardon him as a way of offering thanks for having gained power over him.' (Saying 11)",
-              }
-            ];
+    // ── SSE streaming response ──────────────────────────────────────────────
+    let fullReply = "";
 
-            const matched = QUIZ_BANK.filter(q => lowerMsg.includes(q.topic));
-            const selectedQuiz = matched.length > 0
-              ? matched[Math.floor(Math.random() * matched.length)]
-              : QUIZ_BANK[Math.floor(Math.random() * QUIZ_BANK.length)];
+    const responseStream = new ReadableStream({
+      async start(controller) {
+        const enc = new TextEncoder();
 
-            widget = {
-              type: "quiz",
-              question: selectedQuiz.question,
-              options: selectedQuiz.options,
-              correctIndex: selectedQuiz.correctIndex,
-              explanation: selectedQuiz.explanation,
-            };
-          } else if (lowerMsg.includes("reflect") || lowerMsg.includes("meditate") || lowerMsg.includes("silence")) {
-            widget = { type: "reflection", prompt: "Close your eyes and reflect deeply on Imam Ali's words for 60 seconds." };
+        const send = (event: string, data: unknown) => {
+          controller.enqueue(enc.encode(sseEvent(event, data)));
+        };
+
+        try {
+          // Stage 1: retrieval already done — signal composing
+          send("status", { stage: STATUS.COMPOSING, message: "Composing response..." });
+
+          // Stage 2: open streaming connection to Gemini
+          const geminiStream = await streamGeminiWithFailover(fullPrompt, apiKey, {
+            temperature: 0.7,
+            maxOutputTokens: 1500,
+          });
+
+          const reader = geminiStream.getReader();
+
+          // Stage 3: forward tokens as they arrive
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            fullReply += value;
+            send("token", { text: value });
           }
 
-          return NextResponse.json({
-            success: true,
-            reply,
+          // Stage 4: post-processing (sanitize, detect widget)
+          const sanitized = sanitizeAIResponse(fullReply);
+          const lowerMsg = (userMessage + " " + sanitized).toLowerCase();
+          const widget = buildWidget(lowerMsg);
+
+          // Store in cache for future identical queries
+          setCachedResponse(userMessage, {
+            reply: sanitized,
+            topics: detectedTopics,
+            relatedWisdom: relatedWisdomPayload,
+          });
+
+          // Stage 5: done — send metadata
+          send("done", {
             topics: detectedTopics,
             widget,
-            relatedWisdom: relevantWisdom.slice(0, 3).map((w) => ({
-              title: w.source,
-              slug: w.slug,
-              quote: w.english_translation,
-              category: w.category?.name,
-            })),
+            relatedWisdom: relatedWisdomPayload,
+            cached: false,
           });
+        } catch (err: any) {
+          console.error("[Chat SSE] Error:", err);
+          send("error", { message: err?.message || "Failed to generate response" });
+        } finally {
+          controller.close();
         }
-      } catch (chatErr) {
-        console.warn("[Chat] Gemini call failed, using fallback:", chatErr);
-      }
-    }
+      },
+    });
 
-    // ── 4. Enhanced Fallback (No API key) ──
-    const topicResponses: Record<string, string> = {
-      anxiety: `Peace be upon you, dear friend. I understand the weight of anxiety you carry.\n\nImam Ali (AS) reminds us in Nahjul Balagha: "Do not let your heart be troubled by that which is destined and cannot be averted." He also taught: "Contentment is the capital that never diminishes."\n\nThe Quran itself assures us: "Verily, in the remembrance of Allah do hearts find rest" (13:28).\n\n**Steps for today:**\n1. Take 5 slow breaths and recite "La hawla wa la quwwata illa billah"\n2. Write down 3 things within your control and focus only on those\n3. Before sleep, reflect on one blessing you received today`,
-      focus: `Peace be upon you! Imam Ali (AS) said: "Opportunity passes away like a cloud, so make use of good opportunities." (Saying 21)\n\nHe also taught us: "Lost wealth can be replaced by effort, but lost time can never be recovered."\n\n**Steps for today:**\n1. Put your phone in another room for 45 minutes while studying\n2. Set one clear intention for what you want to accomplish\n3. Remember: "The value of every person is in what he does well" (Saying 81)`,
-      patience: `Peace be upon you. Imam Ali (AS) said in Nahjul Balagha: "Patience is of two kinds: patience over what pains you, and patience against what you covet." (Sermon 87)\n\nHe also taught: "The one who has patience will never be deprived of success, even though it may take a long time."\n\n**Steps for today:**\n1. When frustration arises, pause and say "Inna lillahi wa inna ilayhi rajioon"\n2. Journal one lesson this hardship is teaching you\n3. Remember that stars shine brightest in the darkest nights`,
-      time: `Peace be upon you! Imam Ali (AS) taught profound wisdom about time management:\n\n"Opportunity passes away like a cloud, so make use of good opportunities." (Saying 21)\n\n"Lost wealth can be replaced by effort, but lost time can never be recovered."\n\n"The value of every person is in what he does well." (Saying 81)\n\n**Steps for today:**\n1. Prioritize your most important task first thing in the morning\n2. Block distractions for focused work periods of 45 minutes\n3. Before sleeping, plan tomorrow's 3 most important tasks`,
-      general: `Peace be upon you, dear friend!\n\nImam Ali (AS) taught us in his famous Letter 31 to his son Imam Hasan (AS): "Make yourself the judge between yourself and others. Wish for others what you wish for yourself."\n\nHe also said: "Your remedy is within you, but you do not sense it." (Saying 108)\n\n**Steps for today:**\n1. Take a moment of quiet reflection — even 2 minutes of stillness\n2. Identify one small good deed you can do before the day ends\n3. Read one saying of Imam Ali and let it guide your actions today`,
-    };
-
-    const primaryTopic = detectedTopics[0] || "general";
-    const fallbackReply = topicResponses[primaryTopic] || topicResponses.general;
-
-    let finalReply = fallbackReply;
-    if (relevantWisdom.length > 0) {
-      finalReply += `\n\nFrom our collection, Imam Ali (AS) also said: "${relevantWisdom[0].english_translation}" (${relevantWisdom[0].source})`;
-    }
-
-    return NextResponse.json({
-      success: true,
-      reply: finalReply,
-      topics: detectedTopics,
-      relatedWisdom: relevantWisdom.slice(0, 3).map((w) => ({
-        title: w.source,
-        slug: w.slug,
-        quote: w.english_translation,
-        category: w.category?.name,
-      })),
+    return new Response(responseStream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no", // Disable Nginx/Vercel buffering
+      },
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to process chat query" }, { status: 500 });
