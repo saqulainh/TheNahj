@@ -6,6 +6,29 @@ import { streamGeminiWithFailover } from "@/lib/gemini";
 import { sanitizeAIResponse } from "@/lib/sanitizeAIResponse";
 import { getCachedResponse, setCachedResponse } from "@/lib/rag/cache";
 
+// ⏱ Time budgets for each pipeline stage. These guarantee that a hung
+// retrieval / embedding / generation step can NEVER hold a request open
+// forever, even if the underlying Supabase or Gemini call never responds.
+const RETRIEVAL_TIMEOUT_MS = 15000;   // getAllWisdom + RAG search + embeddings
+const GENERATION_TIMEOUT_MS = 30000;  // total budget for the whole chat request
+
+// Reject a promise if it does not settle within `ms`. Used as a hard safety
+// net around RAG retrieval (which can hang on Supabase/embedding calls that
+// have no built-in timeout).
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`[${label}] timed out after ${ms}ms`)), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 // ─── Pipeline status messages sent as SSE events ──────────────────────────────
 // These drive the dynamic progress indicator in the frontend.
 const STATUS = {
@@ -245,9 +268,25 @@ export async function POST(request: Request) {
 
     const searchTerms = userMessage.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
 
-    // Fetch all wisdom once and reuse for both RAG and topic filtering
-    const allWisdom = await getAllWisdom();
-    const ragResults = await searchRAGContext(userMessage, 5, allWisdom);
+    // Fetch all wisdom once and reuse for both RAG and topic filtering.
+    // Wrapped in a hard timeout so a slow/hung Supabase response cannot stall
+    // the request before the Gemini stream even starts.
+    let allWisdom: Awaited<ReturnType<typeof getAllWisdom>> = [];
+    let ragResults: Awaited<ReturnType<typeof searchRAGContext>> = [];
+    try {
+      allWisdom = await withTimeout(getAllWisdom(), RETRIEVAL_TIMEOUT_MS, "getAllWisdom");
+      ragResults = await withTimeout(
+        searchRAGContext(userMessage, 5, allWisdom),
+        RETRIEVAL_TIMEOUT_MS,
+        "searchRAGContext"
+      );
+    } catch (retrievalErr) {
+      // Retrieval is best-effort — on timeout, fall back to the static corpus
+      // so the chat still answers instead of hanging forever.
+      console.warn("[Chat] Retrieval failed/timed out, continuing without RAG:", retrievalErr);
+      allWisdom = [];
+      ragResults = [];
+    }
 
     const relevantWisdom = allWisdom
       .filter((w) => {
@@ -329,27 +368,60 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
     // ── Standard Generation with Streaming ──────────────────────────────────
     try {
       console.log("[Chat] Requesting streaming generation");
-      const stream = await streamGeminiWithFailover(fullPrompt, apiKey, {
-        temperature: 0.7,
-        maxOutputTokens: 1500,
-      });
+      const stream = await withTimeout(
+        streamGeminiWithFailover(fullPrompt, apiKey, {
+          temperature: 0.7,
+          maxOutputTokens: 1500,
+        }),
+        GENERATION_TIMEOUT_MS,
+        "streamGeminiWithFailover"
+      );
 
       // Create SSE response stream
       const encoder = new TextEncoder();
+      // Hard end-to-end deadline for the whole streamed reply. If the pipeline
+      // (retrieval + generation + streaming) exceeds this, we emit an error
+      // event and close so the client can show Retry instead of hanging forever.
+      const deadline = Date.now() + GENERATION_TIMEOUT_MS;
       const sseStream = new ReadableStream({
         async start(controller) {
           const reader = stream.getReader();
           let fullText = "";
           try {
             while (true) {
-              const { done, value } = await reader.read();
+              const remaining = deadline - Date.now();
+              if (remaining <= 0) {
+                throw new Error("Generation exceeded time budget");
+              }
+              // Bound each read to the remaining budget so a stalled upstream
+              // never leaves this loop waiting indefinitely.
+              const readResult = await Promise.race([
+                reader.read(),
+                new Promise<{ done: boolean; value?: string }>((_, reject) => {
+                  setTimeout(() => reject(new Error("Stream stalled")), remaining);
+                }),
+              ]);
+              const { done, value } = readResult as { done: boolean; value?: string };
               if (done) break;
-              fullText += value;
-              // Send each chunk as SSE event
-              controller.enqueue(
-                encoder.encode(`event: chunk\ndata: ${JSON.stringify({ text: value })}\n\n`)
-              );
+              if (value) {
+                fullText += value;
+                // Send each chunk as SSE event
+                controller.enqueue(
+                  encoder.encode(`event: chunk\ndata: ${JSON.stringify({ text: value })}\n\n`)
+                );
+              }
             }
+          } catch (streamErr: any) {
+            console.warn("[Chat] Stream aborted by deadline:", streamErr?.message);
+            // Tell the client the request timed out so it can offer Retry.
+            controller.enqueue(
+              encoder.encode(
+                `event: error\ndata: ${JSON.stringify({
+                  error: "The response took too long. Please try again.",
+                  timedOut: true,
+                })}\n\n`
+              )
+            );
           } finally {
             // Post-processing after stream completes
             const sanitized = sanitizeAIResponse(fullText);
@@ -371,6 +443,7 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
                   topics: detectedTopics,
                   widget,
                   relatedWisdom: relatedWisdomPayload,
+                  timedOut: false,
                 })}\n\n`
               )
             );

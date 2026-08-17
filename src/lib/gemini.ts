@@ -144,9 +144,23 @@ export async function fetchGeminiWithFailover(
 
 // ─── Streaming support ─────────────────────────────────────────────────────────
 
+// Max time waiting for the Gemini stream to establish / first chunk to arrive.
+// If no token arrives within this window, the fetch aborts so failover can race.
+const STREAM_FIRST_TOKEN_TIMEOUT_MS = 25000;
+// Max silence between tokens once the stream has started.
+const STREAM_IDLE_TIMEOUT_MS = 15000;
+
 /**
  * Try a single streaming generateContent call.
  * Returns a ReadableStream<string> of text chunks or null on error.
+ *
+ * Timeout strategy:
+ *  - A single AbortController guards the whole call.
+ *  - An idle timer starts at fetch time (first-token budget).
+ *  - Every received chunk resets the idle timer, so a healthy but long
+ *    stream is never cut off mid-response.
+ *  - If the timer fires (no first token, or stalled mid-stream), the fetch
+ *    is aborted and the stream closes → caller can failover.
  */
 async function tryStreamContent(
   model: string,
@@ -154,12 +168,27 @@ async function tryStreamContent(
   apiKey: string,
   options: { temperature: number; maxOutputTokens: number }
 ): Promise<ReadableStream<string> | null> {
+  const controller = new AbortController();
+  let idleTimer: ReturnType<typeof setTimeout> | null = null;
+  // First arm uses the first-token budget (can be a long wait); once data
+  // starts flowing, subsequent arms use the shorter mid-stream idle budget.
+  let useFirstTokenBudget = true;
+  const armIdle = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    const ms = useFirstTokenBudget ? STREAM_FIRST_TOKEN_TIMEOUT_MS : STREAM_IDLE_TIMEOUT_MS;
+    idleTimer = setTimeout(() => controller.abort(), ms);
+  };
+
   try {
+    armIdle();
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        // Abort if the Gemini connection never establishes / first chunk never
+        // arrives, or if the stream stalls mid-response.
+        signal: controller.signal,
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: {
@@ -175,12 +204,18 @@ async function tryStreamContent(
     const decoder = new TextDecoder();
 
     return new ReadableStream({
-      async start(controller) {
+      async start(streamController) {
         try {
           let buffer = "";
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
+            // Any network activity = stream is alive. Once the first byte
+            // arrives, switch from the first-token budget to the idle budget.
+            if (useFirstTokenBudget) {
+              useFirstTokenBudget = false;
+            }
+            armIdle();
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split("\n");
@@ -191,7 +226,7 @@ async function tryStreamContent(
                 try {
                   const data = JSON.parse(line.slice(6));
                   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                  if (text) controller.enqueue(text);
+                  if (text) streamController.enqueue(text);
                 } catch {
                   // skip malformed SSE lines
                 }
@@ -203,17 +238,21 @@ async function tryStreamContent(
             try {
               const data = JSON.parse(buffer.slice(6));
               const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (text) controller.enqueue(text);
+              if (text) streamController.enqueue(text);
             } catch {
               // skip
             }
           }
+        } catch {
+          // Aborted / network error. Close quietly so failover can proceed.
         } finally {
-          controller.close();
+          if (idleTimer) clearTimeout(idleTimer);
+          streamController.close();
         }
       },
     });
   } catch {
+    if (idleTimer) clearTimeout(idleTimer);
     return null;
   }
 }

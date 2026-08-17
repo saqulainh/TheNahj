@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, Send, Bot, User, Loader2, ArrowRight, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Sparkles, X, Send, Bot, User, Loader2, ArrowRight, Mic, MicOff, Volume2, VolumeX, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { BreathingWidget } from "@/components/chat/widgets/BreathingWidget";
 import { InteractiveQuizWidget } from "@/components/chat/widgets/InteractiveQuizWidget";
@@ -15,7 +15,16 @@ interface Message {
   content: string;
   widget?: any;
   relatedWisdom?: Array<{ title: string; slug: string; quote: string }>;
+  pending?: boolean;
+  error?: boolean;
 }
+
+// Total budget for the ENTIRE request lifecycle (submission → first token →
+// final token). Security net for any backend hang, regardless of pipeline stage.
+const REQUEST_TIMEOUT_MS = 30000;
+// Per-message retry helper text.
+const TIMEOUT_MESSAGE =
+  "The response took too long. Please check your connection and try again.";
 
 const PRESET_PROMPTS = [
   "How to deal with exam anxiety & stress?",
@@ -35,8 +44,9 @@ export function AiGuidanceChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  // True while any message is streaming pending → keeps input disabled.
+  const hasPending = messages.some((m) => m.pending);
 
   // ── Intro popup state ──
   const [showIntro, setShowIntro] = useState(false);
@@ -161,7 +171,7 @@ export function AiGuidanceChatbot() {
   // --- Send Message ---
   const handleSend = async (textToSend?: string) => {
     const text = (textToSend || input).trim();
-    if (!text || loading) return;
+    if (!text) return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -169,29 +179,48 @@ export function AiGuidanceChatbot() {
       content: text,
     };
 
-    setMessages((prev) => [...prev, userMsg]);
-    if (!textToSend) setInput("");
-    setLoading(true);
-
-    // Add placeholder for streaming response
+    // Placeholder for the streaming response. Per-message pending state lets
+    // this message time out independently without affecting other messages.
     const assistantMsgId = (Date.now() + 1).toString();
     setMessages((prev) => [
       ...prev,
+      userMsg,
       {
         id: assistantMsgId,
         role: "assistant",
         content: "",
+        pending: true,
       },
     ]);
+    if (!textToSend) setInput("");
+
+    await requestReply(text, assistantMsgId);
+  };
+
+  // Shared generation request: streams SSE and updates the message with the id
+  // `assistantMsgId`. A single AbortController with an overall budget covers the
+  // ENTIRE lifecycle — if no first token ever arrives (or it stalls anywhere),
+  // the request aborts and that message becomes a retryable error.
+  const requestReply = async (text: string, assistantMsgId: string) => {
+    const controller = new AbortController();
+    const pendingId = assistantMsgId;
+    const timeoutTimer = setTimeout(() => {
+      controller.abort();
+    }, REQUEST_TIMEOUT_MS);
+
+    // Locally-tracked streamed text so a chunk that races ahead of the final
+    // "done" event is never overwritten while updating state via functional setState.
+    let streamedText = "";
 
     try {
       const history = messages
-        .filter((m) => m.id !== "welcome")
+        .filter((m) => m.id !== "welcome" && !m.pending && !m.error && m.content !== "")
         .map((m) => ({ role: m.role, content: m.content }));
 
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({ message: text, history }),
       });
 
@@ -204,7 +233,6 @@ export function AiGuidanceChatbot() {
 
       const decoder = new TextDecoder();
       let buffer = "";
-      let streamedText = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -215,65 +243,79 @@ export function AiGuidanceChatbot() {
         buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (line.startsWith("event: chunk")) {
-            // Next data line is the chunk
-            continue;
-          }
-          if (line.startsWith("event: done")) {
-            // Next data line is the final metadata
+          if (line.startsWith("event: chunk") || line.startsWith("event: done") || line.startsWith("event: error")) {
+            // Event type — parsed on the following `data:` line.
             continue;
           }
           if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
               if (data.text) {
-                // This is a chunk event data
                 streamedText += data.text;
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m.id === assistantMsgId
-                      ? { ...m, content: sanitizeAIResponse(streamedText) }
+                    m.id === pendingId
+                      ? { ...m, content: sanitizeAIResponse(streamedText), pending: true }
                       : m
                   )
                 );
               } else if (data.reply) {
-                // This is the done event with full metadata
+                // Final `done` event with full metadata.
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m.id === assistantMsgId
+                    m.id === pendingId
                       ? {
                           ...m,
                           content: sanitizeAIResponse(data.reply),
                           widget: data.widget,
                           relatedWisdom: data.relatedWisdom,
+                          pending: false,
+                          error: false,
                         }
                       : m
                   )
                 );
+              } else if (data.error) {
+                // Backend explicitly reported a timeout / failure.
+                throw new Error(data.timedOut ? "TimeoutError" : data.error);
               }
             } catch {
-              // skip malformed data
+              // malformed data line — ignore
             }
           }
         }
       }
-    } catch (error) {
-      console.error("Chat error:", error);
-      setMessages((prev) => {
-        // Remove empty placeholder and add error message
-        const filtered = prev.filter((m) => m.id !== assistantMsgId);
-        return [
-          ...filtered,
-          {
-            id: (Date.now() + 1).toString(),
-            role: "assistant",
-            content: "Network error. Please check your connection and try again.",
-          },
-        ];
-      });
+    } catch (error: any) {
+      const isTimeout = error?.name === "AbortError" || error?.message === "TimeoutError";
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === pendingId
+            ? {
+                ...m,
+                pending: false,
+                error: true,
+                content: m.content || (isTimeout ? TIMEOUT_MESSAGE : "Network error. Please check your connection and try again."),
+              }
+            : m
+        )
+      );
     } finally {
-      setLoading(false);
+      clearTimeout(timeoutTimer);
     }
+  };
+
+  // Retry a failed message: reuse the original query text, reset the assistant
+  // bubble to pending, and re-run generation. Does NOT add a duplicate user msg.
+  const handleRetry = (msgId: string) => {
+    const idx = messages.findIndex((m) => m.id === msgId);
+    if (idx === -1) return;
+    const userMsg = [...messages].slice(0, idx).reverse().find((m) => m.role === "user");
+    if (!userMsg) return;
+
+    setMessages((prev) =>
+      prev.map((m) => (m.id === msgId ? { ...m, content: "", pending: true, error: false } : m))
+    );
+    requestReply(userMsg.content, msgId);
   };
 
   const handleClearHistory = () => {
@@ -433,8 +475,29 @@ export function AiGuidanceChatbot() {
                           : "bg-surface-elevated/70 text-foreground border border-border/30 rounded-tl-xs"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      {msg.pending && !msg.content ? (
+                        // Pre-first-token loading state — this message only.
+                        <div className="flex items-center gap-2 text-muted text-xs">
+                          <Loader2 size={14} className="animate-spin text-gold" />
+                          <span className="animate-pulse">Seeking wisdom...</span>
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      )}
                     </div>
+
+                    {msg.error && (
+                      <div className="flex justify-start px-1">
+                        <button
+                          onClick={() => handleRetry(msg.id)}
+                          className="text-[10px] text-gold flex items-center gap-1 font-medium hover:brightness-110 transition-colors"
+                          title="Retry this question"
+                        >
+                          <RefreshCw size={11} />
+                          <span>Retry</span>
+                        </button>
+                      </div>
+                    )}
 
                     {/* Voice Read Button for Assistant */}
                     {msg.role === "assistant" && msg.id !== "welcome" && (
@@ -497,17 +560,11 @@ export function AiGuidanceChatbot() {
                 </div>
               ))}
 
-              {loading && (
-                <div className="flex items-center gap-2 text-muted text-xs pl-8">
-                  <Loader2 size={14} className="animate-spin text-gold" />
-                  <span className="animate-pulse">Seeking wisdom...</span>
-                </div>
-              )}
               <div ref={messagesEndRef} />
             </div>
 
             {/* Presets */}
-            {messages.length <= 1 && !loading && (
+            {messages.length <= 1 && !hasPending && (
               <div className="px-4 pb-2">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2">Suggested:</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -552,12 +609,12 @@ export function AiGuidanceChatbot() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask Imam Ali's wisdom..."
-                disabled={loading}
+                disabled={hasPending}
                 className="flex-1 rounded-xl border border-border/40 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted/60 focus:border-gold/50 focus:outline-none"
               />
               <button
                 type="submit"
-                disabled={!input.trim() || loading}
+                disabled={!input.trim() || hasPending}
                 className="flex h-8 w-8 items-center justify-center rounded-xl bg-gold text-black transition-all hover:bg-gold-light disabled:opacity-40"
               >
                 <Send size={14} />
