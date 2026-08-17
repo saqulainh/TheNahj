@@ -142,6 +142,164 @@ export async function fetchGeminiWithFailover(
   throw new Error("All Gemini models failed (non-streaming).");
 }
 
+// ─── Streaming support ─────────────────────────────────────────────────────────
+
+/**
+ * Try a single streaming generateContent call.
+ * Returns a ReadableStream<string> of text chunks or null on error.
+ */
+async function tryStreamContent(
+  model: string,
+  prompt: string,
+  apiKey: string,
+  options: { temperature: number; maxOutputTokens: number }
+): Promise<ReadableStream<string> | null> {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: options.temperature,
+            maxOutputTokens: options.maxOutputTokens,
+          },
+        }),
+      }
+    );
+    if (!res.ok || !res.body) return null;
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    return new ReadableStream({
+      async start(controller) {
+        try {
+          let buffer = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (text) controller.enqueue(text);
+                } catch {
+                  // skip malformed SSE lines
+                }
+              }
+            }
+          }
+          // Process remaining buffer
+          if (buffer.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(buffer.slice(6));
+              const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text) controller.enqueue(text);
+            } catch {
+              // skip
+            }
+          }
+        } finally {
+          controller.close();
+        }
+      },
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Stream Gemini response with parallel failover.
+ * Returns a ReadableStream<string> that yields text chunks as they arrive.
+ *
+ * On warm calls: uses cached winning model directly.
+ * On cold start: races top models in parallel, first to produce a chunk wins.
+ */
+export async function streamGeminiWithFailover(
+  prompt: string,
+  apiKey: string,
+  options: {
+    temperature?: number;
+    maxOutputTokens?: number;
+  } = {}
+): Promise<ReadableStream<string>> {
+  const opts = {
+    temperature: options.temperature ?? 0.7,
+    maxOutputTokens: options.maxOutputTokens ?? 1500,
+  };
+
+  // ── 1. Fast path: cached winning model ──────────────────────────────────────
+  if (cachedGenerateContentModel) {
+    const stream = await tryStreamContent(cachedGenerateContentModel, prompt, apiKey, opts);
+    if (stream) return stream;
+    cachedGenerateContentModel = null;
+  }
+
+  // ── 2. Parallel race: top N models ──────────────────────────────────────────
+  const parallelModels = PREFERRED_GENERATE_MODELS.slice(0, PARALLEL_RACE_COUNT);
+  const streams = parallelModels.map(async (model) => {
+    const stream = await tryStreamContent(model, prompt, apiKey, opts);
+    if (!stream) throw new Error(`[${model}]: no stream`);
+    // Read first chunk to verify it works
+    const reader = stream.getReader();
+    const { done, value } = await reader.read();
+    if (done || !value) throw new Error(`[${model}]: empty stream`);
+    // Return model + re-wrap with the first chunk prepended
+    return { model, stream, firstChunk: value };
+  });
+
+  try {
+    const winner = await Promise.any(streams);
+    cachedGenerateContentModel = winner.model;
+    console.log(`[Gemini] Streaming winner: ${winner.model}`);
+
+    // Create a new stream that yields the first chunk then continues from the original
+    const originalStream = winner.stream;
+    let firstChunkEmitted = false;
+    const combinedStream = new ReadableStream<string>({
+      async start(controller) {
+        if (!firstChunkEmitted) {
+          controller.enqueue(winner.firstChunk);
+          firstChunkEmitted = true;
+        }
+        const reader = originalStream.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+        } finally {
+          controller.close();
+        }
+      },
+    });
+    return combinedStream;
+  } catch {
+    // ── 3. Sequential fallback: remaining models ──────────────────────────────
+    const remaining = PREFERRED_GENERATE_MODELS.slice(PARALLEL_RACE_COUNT);
+    for (const model of remaining) {
+      const stream = await tryStreamContent(model, prompt, apiKey, opts);
+      if (stream) {
+        cachedGenerateContentModel = model;
+        console.log(`[Gemini] Streaming sequential fallback winner: ${model}`);
+        return stream;
+      }
+    }
+    throw new Error("All Gemini models failed (streaming).");
+  }
+}
+
 
 /**
  * Safely parse JSON from LLM output, extracting from markdown code blocks,

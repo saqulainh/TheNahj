@@ -1,6 +1,7 @@
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { generateEmbedding } from "./embeddings";
 import { getAllWisdom } from "@/lib/wisdom";
+import type { Wisdom } from "@/lib/types";
 
 export interface RAGSearchResult {
   content: string;
@@ -13,7 +14,7 @@ export interface RAGSearchResult {
  * High-precision RAG Search Engine
  * Combines vector search via Supabase pgvector with hybrid local semantic retrieval.
  */
-export async function searchRAGContext(query: string, matchCount = 5): Promise<RAGSearchResult[]> {
+export async function searchRAGContext(query: string, matchCount = 5, preloadedWisdom?: Wisdom[]): Promise<RAGSearchResult[]> {
   const cleanQuery = query.trim();
   if (!cleanQuery) return [];
 
@@ -43,14 +44,14 @@ export async function searchRAGContext(query: string, matchCount = 5): Promise<R
   }
 
   // 2. Hybrid Local Semantic Search Fallback
-  return searchLocalHybridContext(cleanQuery, matchCount);
+  return searchLocalHybridContext(cleanQuery, matchCount, preloadedWisdom);
 }
 
 /**
  * Hybrid local semantic matcher as zero-dependency fallback
  */
-async function searchLocalHybridContext(query: string, count: number): Promise<RAGSearchResult[]> {
-  const allWisdom = await getAllWisdom();
+async function searchLocalHybridContext(query: string, count: number, preloadedWisdom?: Wisdom[]): Promise<RAGSearchResult[]> {
+  const allWisdom = preloadedWisdom || await getAllWisdom();
   const searchTerms = query
     .toLowerCase()
     .split(/\s+/)

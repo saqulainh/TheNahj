@@ -173,6 +173,17 @@ export function AiGuidanceChatbot() {
     if (!textToSend) setInput("");
     setLoading(true);
 
+    // Add placeholder for streaming response
+    const assistantMsgId = (Date.now() + 1).toString();
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: assistantMsgId,
+        role: "assistant",
+        content: "",
+      },
+    ]);
+
     try {
       const history = messages
         .filter((m) => m.id !== "welcome")
@@ -184,38 +195,82 @@ export function AiGuidanceChatbot() {
         body: JSON.stringify({ message: text, history }),
       });
 
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: (Date.now() + 1).toString(),
-            role: "assistant",
-            // ── Sanitize the reply before storing in state ──
-            content: sanitizeAIResponse(data.reply),
-            widget: data.widget,
-            relatedWisdom: data.relatedWisdom,
-          },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: (Date.now() + 1).toString(),
-            role: "assistant",
-            content: data.error || "Sorry, I encountered an issue. Please try again.",
-          },
-        ]);
+      if (!res.ok) {
+        throw new Error("Network response was not ok");
       }
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: "Network error. Please check your connection and try again.",
-        },
-      ]);
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No reader available");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let streamedText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("event: chunk")) {
+            // Next data line is the chunk
+            continue;
+          }
+          if (line.startsWith("event: done")) {
+            // Next data line is the final metadata
+            continue;
+          }
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.text) {
+                // This is a chunk event data
+                streamedText += data.text;
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsgId
+                      ? { ...m, content: sanitizeAIResponse(streamedText) }
+                      : m
+                  )
+                );
+              } else if (data.reply) {
+                // This is the done event with full metadata
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsgId
+                      ? {
+                          ...m,
+                          content: sanitizeAIResponse(data.reply),
+                          widget: data.widget,
+                          relatedWisdom: data.relatedWisdom,
+                        }
+                      : m
+                  )
+                );
+              }
+            } catch {
+              // skip malformed data
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Chat error:", error);
+      setMessages((prev) => {
+        // Remove empty placeholder and add error message
+        const filtered = prev.filter((m) => m.id !== assistantMsgId);
+        return [
+          ...filtered,
+          {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: "Network error. Please check your connection and try again.",
+          },
+        ];
+      });
     } finally {
       setLoading(false);
     }

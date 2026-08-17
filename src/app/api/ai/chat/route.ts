@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 import { getAllWisdom } from "@/lib/wisdom";
 import { searchRAGContext } from "@/lib/rag/retrieval";
-import { fetchGeminiWithFailover } from "@/lib/gemini";
+import { streamGeminiWithFailover } from "@/lib/gemini";
 import { sanitizeAIResponse } from "@/lib/sanitizeAIResponse";
 import { getCachedResponse, setCachedResponse } from "@/lib/rag/cache";
 
@@ -18,72 +18,28 @@ const STATUS = {
 
 // ─── Static knowledge corpus (inline, no I/O cost) ────────────────────────────
 const NAHJUL_BALAGHA_CORPUS = `
-## KEY SERMONS OF IMAM ALI (AS) FROM NAHJUL BALAGHA
+KEY TEACHINGS OF IMAM ALI (AS) FROM NAHJUL BALAGHA:
 
-### Sermon 1 (Khutba-e-Shiqshiqiyya – The Sermon of Complaint)
-In which he speaks about the caliphate and those who preceded him.
+SERMONS:
+- Sermon 18: "O people! This world is a passage while the next is the permanent abode."
+- Sermon 40: "Knowledge is the most superior form of wealth."
+- Sermon 87: "Patience is of two kinds: patience over what pains you, and patience against what you covet."
+- Sermon 110: Describes qualities of the God-fearing (Muttaqeen).
+- Sermon 193: "Beware, the world is deceitful and treacherous."
 
-### Sermon 3 (Khutba-e-Jihadiyya – On Jihad)
-"I swear by Allah that the son of Abu Talib is more accustomed to death than an infant is to the breast of its mother."
+LETTERS:
+- Letter 31 (To Imam Hasan): "Make yourself the judge between yourself and others."
+- Letter 53 (To Malik al-Ashtar): "People are of two kinds: either your brother in faith or your equal in humanity."
 
-### Sermon 18 (On Warning Against the World)
-"O people! This world is a passage while the next is the permanent abode. So take from the passage for the permanent abode."
-"Do not let the worldly life deceive you, for it is treacherous."
-
-### Sermon 40 (On the Value of Knowledge)
-"Knowledge is the most superior form of wealth. It protects you while you protect material wealth."
-
-### Sermon 87 (On Patience and Gratitude)
-"Patience is of two kinds: patience over what pains you, and patience against what you covet."
-"Gratitude is the adornment of prosperity, and patience is the adornment of adversity."
-
-### Sermon 110 (On the Piety – Khutba Muttaqeen)
-The famous sermon describing the qualities of the God-fearing (Muttaqeen):
-"Their walk is modest, their speech gentle, they lower their gaze from what is forbidden, they dedicate their hearing to beneficial knowledge."
-
-### Sermon 193 (On the World – Khutba Qasi'a)
-"Beware, the world is deceitful and treacherous. It gives and takes back, clothes and strips."
-
-## KEY LETTERS OF IMAM ALI (AS)
-
-### Letter 31 (To His Son Imam Hasan – The Greatest Advice)
-"My dear son, understand that the One who controls death also controls life."
-"Make yourself the judge between yourself and others. Wish for others what you wish for yourself."
-"Do not enslave yourself to another person, for Allah has made you free."
-
-### Letter 53 (To Malik al-Ashtar – On Governance)
-"Remember that people are of two kinds: either your brother in faith or your equal in humanity."
-"Let mercy and compassion and love for your subjects be your distinguishing quality."
-
-## FAMOUS SHORT SAYINGS (HIKAM) OF IMAM ALI (AS)
-
-### On Self-Knowledge
-"One who knows himself knows his Lord." (Saying 149)
-"Your remedy is within you, but you do not sense it." (Saying 108)
-
-### On Knowledge & Education
-"Knowledge is the most superior wealth." (Saying 147)
-"People are enemies of what they do not know." (Saying 172)
-
-### On Patience & Hardship
-"Do not let your difficulties fill you with anxiety — after all, it is in the darkest nights that stars shine most brightly."
-"The one who has patience will never be deprived of success, even though it may take a long time."
-
-### On Character & Relationships
-"The tongue is a beast: if it is let loose, it devours." (Saying 60)
-"Associate with people in such a way that when you die they weep for you, and when you are alive they long for your company." (Saying 10)
-
-### On Time & Action
-"Opportunity passes away like a cloud, so make use of good opportunities." (Saying 21)
-"The value of every person is in what he does well." (Saying 81)
-"Lost wealth can be replaced by effort, but lost time can never be recovered."
-
-### On Justice & Leadership
-"Fear the sighs of the oppressed, for they go straight to Allah."
-
-### On Spiritual Growth
-"Asceticism is not that you own nothing; it is that nothing owns you."
-"The sin that grieves you is better in the sight of God than the good deed that makes you vain."
+HIKAM (Sayings):
+- "One who knows himself knows his Lord." (149)
+- "Your remedy is within you." (108)
+- "The tongue is a beast: if it is let loose, it devours." (60)
+- "Opportunity passes away like a cloud." (21)
+- "The value of every person is in what he does well." (81)
+- "Contentment is an unexhausted capital." (57)
+- "Do not let difficulties fill you with anxiety — stars shine brightest in darkest nights."
+- "Anger begins with madness and ends with regret." (255)
 `;
 
 // ─── Topic Mapping for Better Search ──────────────────────────────────────────
@@ -235,11 +191,6 @@ function buildWidget(lowerMsg: string): any {
   return undefined;
 }
 
-// ─── SSE helper ───────────────────────────────────────────────────────────────
-function sseEvent(event: string, data: unknown): string {
-  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-}
-
 // ─── Fallback response (no API key) ───────────────────────────────────────────
 const FALLBACK_RESPONSES: Record<string, string> = {
   anxiety: `Peace be upon you, dear friend. I understand the weight of anxiety you carry.\n\nImam Ali (AS) reminds us in Nahjul Balagha: "Do not let your heart be troubled by that which is destined and cannot be averted." He also taught: "Contentment is the capital that never diminishes."\n\nThe Quran itself assures us: "Verily, in the remembrance of Allah do hearts find rest" (13:28).\n\nSteps for today:\n1. Take 5 slow breaths and recite "La hawla wa la quwwata illa billah"\n2. Write down 3 things within your control and focus only on those\n3. Before sleep, reflect on one blessing you received today`,
@@ -294,10 +245,9 @@ export async function POST(request: Request) {
 
     const searchTerms = userMessage.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
 
-    const [ragResults, allWisdom] = await Promise.all([
-      searchRAGContext(userMessage, 5),
-      getAllWisdom(),
-    ]);
+    // Fetch all wisdom once and reuse for both RAG and topic filtering
+    const allWisdom = await getAllWisdom();
+    const ragResults = await searchRAGContext(userMessage, 5, allWisdom);
 
     const relevantWisdom = allWisdom
       .filter((w) => {
@@ -376,33 +326,65 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
         relatedWisdom: relatedWisdomPayload,
       });
     }
-    // ── Standard Generation (No Streaming) ──────────────────────────────────
+    // ── Standard Generation with Streaming ──────────────────────────────────
     try {
-      console.log("[Chat] Requesting generation");
-      const fullReply = await fetchGeminiWithFailover(fullPrompt, apiKey, {
+      console.log("[Chat] Requesting streaming generation");
+      const stream = await streamGeminiWithFailover(fullPrompt, apiKey, {
         temperature: 0.7,
         maxOutputTokens: 1500,
       });
 
-      // Post-processing (sanitize, detect widget)
-      const sanitized = sanitizeAIResponse(fullReply);
-      const lowerMsg = (userMessage + " " + sanitized).toLowerCase();
-      const widget = buildWidget(lowerMsg);
+      // Create SSE response stream
+      const encoder = new TextEncoder();
+      const sseStream = new ReadableStream({
+        async start(controller) {
+          const reader = stream.getReader();
+          let fullText = "";
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              fullText += value;
+              // Send each chunk as SSE event
+              controller.enqueue(
+                encoder.encode(`event: chunk\ndata: ${JSON.stringify({ text: value })}\n\n`)
+              );
+            }
+          } finally {
+            // Post-processing after stream completes
+            const sanitized = sanitizeAIResponse(fullText);
+            const lowerMsg = (userMessage + " " + sanitized).toLowerCase();
+            const widget = buildWidget(lowerMsg);
 
-      // Store in cache for future identical queries
-      setCachedResponse(userMessage, {
-        reply: sanitized,
-        topics: detectedTopics,
-        relatedWisdom: relatedWisdomPayload,
+            // Store in cache for future identical queries
+            setCachedResponse(userMessage, {
+              reply: sanitized,
+              topics: detectedTopics,
+              relatedWisdom: relatedWisdomPayload,
+            });
+
+            // Send final done event with metadata
+            controller.enqueue(
+              encoder.encode(
+                `event: done\ndata: ${JSON.stringify({
+                  reply: sanitized,
+                  topics: detectedTopics,
+                  widget,
+                  relatedWisdom: relatedWisdomPayload,
+                })}\n\n`
+              )
+            );
+            controller.close();
+          }
+        },
       });
 
-      return NextResponse.json({
-        success: true,
-        reply: sanitized,
-        topics: detectedTopics,
-        widget,
-        relatedWisdom: relatedWisdomPayload,
-        cached: false,
+      return new Response(sseStream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache, no-transform",
+          Connection: "keep-alive",
+        },
       });
     } catch (err: any) {
       console.error("[Chat] Error generating response:", err);
