@@ -877,7 +877,7 @@ export default function KnowledgeGraphPage() {
               </span>
               <button 
                 onClick={() => setSelectedNode(null)} 
-                className="h-8 w-8 rounded-full bg-surface-alt flex items-center justify-center text-muted hover:text-foreground transition-colors"
+                className="h-8 w-8 rounded-full bg-surface-alt flex items-center justify-center text-muted hover:text-white transition-colors"
               >
                 <X size={16} />
               </button>
@@ -885,7 +885,7 @@ export default function KnowledgeGraphPage() {
 
             {/* Node Title & Arabic */}
             <div className="my-4 space-y-2">
-              <h2 className="text-xl md:text-2xl font-bold text-foreground tracking-tight font-display">
+              <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight font-display">
                 {selectedNode.label}
               </h2>
               {selectedNode.arabic && (
@@ -897,7 +897,7 @@ export default function KnowledgeGraphPage() {
 
             {/* Quote / Reflection Box */}
             {selectedNode.quote && (
-              <div className="my-3 p-4 rounded-2xl bg-surface-alt/70 border border-gold/20 text-xs italic text-foreground/90 leading-relaxed font-serif">
+              <div className="my-3 p-4 rounded-2xl bg-surface-alt/70 border border-gold/20 text-xs italic text-muted leading-relaxed font-serif">
                 &quot;{selectedNode.quote}&quot;
               </div>
             )}
