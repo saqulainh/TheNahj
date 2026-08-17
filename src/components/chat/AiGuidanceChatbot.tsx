@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, Send, Bot, User, Loader2, ArrowRight, Mic, MicOff, Volume2, VolumeX, RotateCcw } from "lucide-react";
+import { Sparkles, X, Send, Bot, User, Loader2, ArrowRight, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { BreathingWidget } from "@/components/chat/widgets/BreathingWidget";
 import { InteractiveQuizWidget } from "@/components/chat/widgets/InteractiveQuizWidget";
 import { ReflectionTimerWidget } from "@/components/chat/widgets/ReflectionTimerWidget";
 import { sanitizeAIResponse } from "@/lib/sanitizeAIResponse";
-import { useStreamingResponse } from "@/lib/useStreamingResponse";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Message {
   id: string;
@@ -18,8 +15,6 @@ interface Message {
   content: string;
   widget?: any;
   relatedWisdom?: Array<{ title: string; slug: string; quote: string }>;
-  /** True while this specific assistant message is still streaming */
-  isStreaming?: boolean;
 }
 
 const PRESET_PROMPTS = [
@@ -36,39 +31,17 @@ declare global {
   }
 }
 
-// ─── Dynamic loading messages cycling while waiting for first token ───────────
-const LOADING_STAGES = [
-  "Searching Nahjul Balagha...",
-  "Consulting wisdom sources...",
-  "Composing response...",
-];
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export function AiGuidanceChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // ── Intro popup state ──
   const [showIntro, setShowIntro] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // ── Streaming hook ──
-  const {
-    displayedText,
-    isStreaming,
-    statusMessage,
-    metadata,
-    error: streamError,
-    skipToEnd,
-    sendMessage: sendStreamingMessage,
-  } = useStreamingResponse({ scrollRef: messagesEndRef as React.RefObject<HTMLElement | null> });
-
-  // ID of the in-progress assistant message (so we can update it in place)
-  const streamingMsgIdRef = useRef<string | null>(null);
 
   // --- Memory: Load from localStorage on mount ---
   useEffect(() => {
@@ -90,6 +63,7 @@ export function AiGuidanceChatbot() {
 
     // Show intro popup on every visit
     setTimeout(() => setShowIntro(true), 800);
+
     setIsLoaded(true);
   }, []);
 
@@ -113,53 +87,9 @@ export function AiGuidanceChatbot() {
   // --- Memory: Save to localStorage on every change ---
   useEffect(() => {
     if (isLoaded && messages.length > 0) {
-      // Don't persist the temporary streaming-in-progress message
-      const toSave = messages.map((m) => ({ ...m, isStreaming: undefined }));
-      localStorage.setItem("thenahj_chat_history", JSON.stringify(toSave));
+      localStorage.setItem("thenahj_chat_history", JSON.stringify(messages));
     }
   }, [messages, isLoaded]);
-
-  // --- Update the in-progress assistant message as tokens arrive ---
-  useEffect(() => {
-    const msgId = streamingMsgIdRef.current;
-    if (!msgId) return;
-    if (!displayedText && !streamError) return;
-
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.id === msgId
-          ? {
-              ...m,
-              content: streamError
-                ? sanitizeAIResponse(displayedText) || streamError
-                : sanitizeAIResponse(displayedText),
-              isStreaming,
-            }
-          : m
-      )
-    );
-  }, [displayedText, isStreaming, streamError]);
-
-  // --- Finalize message when streaming completes ---
-  useEffect(() => {
-    if (isStreaming || !streamingMsgIdRef.current) return;
-    const msgId = streamingMsgIdRef.current;
-
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.id === msgId
-          ? {
-              ...m,
-              isStreaming: false,
-              widget: metadata?.widget,
-              relatedWisdom: metadata?.relatedWisdom,
-            }
-          : m
-      )
-    );
-
-    streamingMsgIdRef.current = null;
-  }, [isStreaming, metadata]);
 
   // --- Voice Input (Speech to Text) ---
   const [isListening, setIsListening] = useState(false);
@@ -229,40 +159,67 @@ export function AiGuidanceChatbot() {
   }, [messages, isOpen]);
 
   // --- Send Message ---
-  const handleSend = useCallback(
-    async (textToSend?: string) => {
-      const text = (textToSend || input).trim();
-      if (!text || isStreaming) return;
+  const handleSend = async (textToSend?: string) => {
+    const text = (textToSend || input).trim();
+    if (!text || loading) return;
 
-      const userMsg: Message = {
-        id: Date.now().toString(),
-        role: "user",
-        content: text,
-      };
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: text,
+    };
 
-      // Create a placeholder assistant message that will be filled by streaming
-      const assistantMsgId = (Date.now() + 1).toString();
-      streamingMsgIdRef.current = assistantMsgId;
+    setMessages((prev) => [...prev, userMsg]);
+    if (!textToSend) setInput("");
+    setLoading(true);
 
-      const assistantPlaceholder: Message = {
-        id: assistantMsgId,
-        role: "assistant",
-        content: "",
-        isStreaming: true,
-      };
-
-      setMessages((prev) => [...prev, userMsg, assistantPlaceholder]);
-      if (!textToSend) setInput("");
-
+    try {
       const history = messages
-        .filter((m) => m.id !== "welcome" && !m.isStreaming)
+        .filter((m) => m.id !== "welcome")
         .map((m) => ({ role: m.role, content: m.content }));
 
-      // Kick off streaming — the hook updates displayedText via state
-      await sendStreamingMessage({ message: text, history });
-    },
-    [input, isStreaming, messages, sendStreamingMessage]
-  );
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            // ── Sanitize the reply before storing in state ──
+            content: sanitizeAIResponse(data.reply),
+            widget: data.widget,
+            relatedWisdom: data.relatedWisdom,
+          },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: data.error || "Sorry, I encountered an issue. Please try again.",
+          },
+        ]);
+      }
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "Network error. Please check your connection and try again.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleClearHistory = () => {
     localStorage.removeItem("thenahj_chat_history");
@@ -275,29 +232,11 @@ export function AiGuidanceChatbot() {
     ]);
   };
 
-  // ─── Dynamic progress message ─────────────────────────────────────────────
-  // While isStreaming and no text yet, cycle through loading stages
-  const [stageIndex, setStageIndex] = useState(0);
-  useEffect(() => {
-    if (!isStreaming) {
-      setStageIndex(0);
-      return;
-    }
-    const id = setInterval(() => {
-      setStageIndex((i) => (i + 1) % LOADING_STAGES.length);
-    }, 1800);
-    return () => clearInterval(id);
-  }, [isStreaming]);
-
-  const currentStatusMessage =
-    statusMessage ||
-    (isStreaming ? LOADING_STAGES[stageIndex] : "");
-
   if (!isLoaded) return null;
 
   return (
     <>
-      {/* ─── Glassmorphism Intro Popup ─── */}
+      {/* ─── Glassmorphism Intro Popup (first visit only) ─── */}
       <AnimatePresence>
         {showIntro && (
           <motion.div
@@ -359,7 +298,7 @@ export function AiGuidanceChatbot() {
         )}
       </AnimatePresence>
 
-      {/* ─── Floating Trigger Button ─── */}
+      {/* ─── Floating Trigger Button — top-left, below navbar ─── */}
       <AnimatePresence>
         {!showIntro && (
           <motion.button
@@ -401,8 +340,7 @@ export function AiGuidanceChatbot() {
                   <h3 className="text-sm font-bold text-foreground">TheNahj AI</h3>
                   <div className="flex items-center gap-2">
                     <p className="text-[10px] text-green-500 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                      {isStreaming ? "Thinking..." : "Online"}
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Online
                     </p>
                     <button onClick={handleClearHistory} className="text-[10px] text-muted hover:text-red-400 transition-colors">
                       Clear
@@ -440,67 +378,11 @@ export function AiGuidanceChatbot() {
                           : "bg-surface-elevated/70 text-foreground border border-border/30 rounded-tl-xs"
                       }`}
                     >
-                      {msg.isStreaming && msg.content === "" ? (
-                        /* ── Loading state: dynamic progress messages ── */
-                        <div className="flex items-center gap-2 text-muted min-h-[1.2em]">
-                          <Loader2 size={11} className="animate-spin text-gold shrink-0" />
-                          <span className="animate-pulse transition-all duration-500">
-                            {currentStatusMessage}
-                          </span>
-                        </div>
-                      ) : (
-                        /* ── Content: streaming or complete ── */
-                        <div>
-                          <p
-                            className="whitespace-pre-wrap"
-                            onClick={msg.isStreaming ? skipToEnd : undefined}
-                            style={{ cursor: msg.isStreaming ? "pointer" : "auto" }}
-                            title={msg.isStreaming ? "Click to reveal full response" : undefined}
-                          >
-                            {msg.content}
-                            {/* Blinking cursor while streaming this specific message */}
-                            {msg.isStreaming && (
-                              <span
-                                aria-hidden="true"
-                                className="inline-block w-[2px] h-[0.9em] bg-gold ml-[1px] align-text-bottom animate-pulse"
-                              />
-                            )}
-                          </p>
-                          {msg.isStreaming && (
-                            <button
-                              onClick={skipToEnd}
-                              className="mt-1 text-[10px] text-gold/60 hover:text-gold transition-colors"
-                            >
-                              Skip →
-                            </button>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Error / Retry State */}
-                      {streamError && msg.id === streamingMsgIdRef.current && (
-                        <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-red-500/20 pt-2.5">
-                          <span className="text-[10px] text-red-400 font-medium leading-tight max-w-[70%]">{streamError}</span>
-                          <button
-                            onClick={() => {
-                              // Find the last user message
-                              const lastUserMsg = messages.filter(m => m.role === "user").pop();
-                              if (lastUserMsg) {
-                                // Remove the failed assistant message and the user message so we don't duplicate
-                                setMessages(prev => prev.filter(m => m.id !== msg.id && m.id !== lastUserMsg.id));
-                                handleSend(lastUserMsg.content);
-                              }
-                            }}
-                            className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-red-500/10 px-2.5 py-1 text-[10px] font-bold text-red-400 hover:bg-red-500/20 transition-all border border-red-500/20 hover:border-red-500/40"
-                          >
-                            <RotateCcw size={10} /> Retry
-                          </button>
-                        </div>
-                      )}
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
                     </div>
 
-                    {/* Voice Read Button for completed Assistant messages */}
-                    {msg.role === "assistant" && msg.id !== "welcome" && !msg.isStreaming && (
+                    {/* Voice Read Button for Assistant */}
+                    {msg.role === "assistant" && msg.id !== "welcome" && (
                       <div className="flex justify-start px-1">
                         <button
                           onClick={() => speakText(msg.content, msg.id)}
@@ -513,12 +395,12 @@ export function AiGuidanceChatbot() {
                       </div>
                     )}
 
-                    {/* Generative UI Dynamic Widgets (only after streaming complete) */}
-                    {!msg.isStreaming && msg.widget?.type === "breathing" && (
+                    {/* Generative UI Dynamic Widgets */}
+                    {msg.widget && msg.widget.type === "breathing" && (
                       <BreathingWidget title={msg.widget.title} />
                     )}
 
-                    {!msg.isStreaming && msg.widget?.type === "quiz" && (
+                    {msg.widget && msg.widget.type === "quiz" && (
                       <InteractiveQuizWidget
                         question={msg.widget.question}
                         options={msg.widget.options}
@@ -527,12 +409,12 @@ export function AiGuidanceChatbot() {
                       />
                     )}
 
-                    {!msg.isStreaming && msg.widget?.type === "reflection" && (
+                    {msg.widget && msg.widget.type === "reflection" && (
                       <ReflectionTimerWidget prompt={msg.widget.prompt} />
                     )}
 
-                    {/* Related Wisdom Card Snippets (only after streaming complete) */}
-                    {!msg.isStreaming && msg.relatedWisdom && msg.relatedWisdom.length > 0 && (
+                    {/* Related Wisdom Card Snippets */}
+                    {msg.relatedWisdom && msg.relatedWisdom.length > 0 && (
                       <div className="space-y-1.5 pt-1">
                         <p className="text-[10px] uppercase tracking-wider text-gold font-semibold">Related Reflection:</p>
                         {msg.relatedWisdom.map((w, idx) => (
@@ -560,11 +442,17 @@ export function AiGuidanceChatbot() {
                 </div>
               ))}
 
+              {loading && (
+                <div className="flex items-center gap-2 text-muted text-xs pl-8">
+                  <Loader2 size={14} className="animate-spin text-gold" />
+                  <span className="animate-pulse">Seeking wisdom...</span>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
             {/* Presets */}
-            {messages.length <= 1 && !isStreaming && (
+            {messages.length <= 1 && !loading && (
               <div className="px-4 pb-2">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2">Suggested:</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -608,22 +496,21 @@ export function AiGuidanceChatbot() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isStreaming ? "Receiving wisdom..." : "Ask Imam Ali's wisdom..."}
-                disabled={isStreaming && !streamError}
-                className="flex-1 rounded-xl border border-border/40 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted/60 focus:border-gold/50 focus:outline-none disabled:opacity-50"
+                placeholder="Ask Imam Ali's wisdom..."
+                disabled={loading}
+                className="flex-1 rounded-xl border border-border/40 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted/60 focus:border-gold/50 focus:outline-none"
               />
               <button
                 type="submit"
-                disabled={!input.trim() || (isStreaming && !streamError)}
+                disabled={!input.trim() || loading}
                 className="flex h-8 w-8 items-center justify-center rounded-xl bg-gold text-black transition-all hover:bg-gold-light disabled:opacity-40"
               >
-                {isStreaming && !streamError ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                <Send size={14} />
               </button>
             </form>
           </motion.div>
         )}
       </AnimatePresence>
-
     </>
   );
 }

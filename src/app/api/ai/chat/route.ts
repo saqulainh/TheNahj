@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 import { getAllWisdom } from "@/lib/wisdom";
 import { searchRAGContext } from "@/lib/rag/retrieval";
-import { streamGeminiWithFailover } from "@/lib/gemini";
+import { fetchGeminiWithFailover } from "@/lib/gemini";
 import { sanitizeAIResponse } from "@/lib/sanitizeAIResponse";
 import { getCachedResponse, setCachedResponse } from "@/lib/rag/cache";
 
@@ -277,35 +277,12 @@ export async function POST(request: Request) {
     const cached = getCachedResponse(userMessage);
     if (cached) {
       console.log("[Chat] Cache hit for query:", userMessage.slice(0, 60));
-      // Stream the cached response with the same SSE format so the frontend
-      // renders it identically (typewriter effect still plays on cached responses)
-      const stream = new ReadableStream({
-        start(controller) {
-          const enc = new TextEncoder();
-          // Send status then simulate token chunks from cache
-          controller.enqueue(enc.encode(sseEvent("status", { stage: STATUS.COMPOSING, message: "From wisdom archive..." })));
-          // Split cached reply into ~4-word chunks for natural reveal
-          const words = cached.reply.split(" ");
-          const chunkSize = 4;
-          for (let i = 0; i < words.length; i += chunkSize) {
-            const chunk = words.slice(i, i + chunkSize).join(" ") + (i + chunkSize < words.length ? " " : "");
-            controller.enqueue(enc.encode(sseEvent("token", { text: chunk })));
-          }
-          controller.enqueue(enc.encode(sseEvent("done", {
-            topics: cached.topics,
-            relatedWisdom: cached.relatedWisdom,
-            cached: true,
-          })));
-          controller.close();
-        },
-      });
-      return new Response(stream, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          "Connection": "keep-alive",
-          "X-Accel-Buffering": "no",
-        },
+      return NextResponse.json({
+        success: true,
+        reply: cached.reply,
+        topics: cached.topics,
+        relatedWisdom: cached.relatedWisdom,
+        cached: true,
       });
     }
 
@@ -399,88 +376,41 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
         relatedWisdom: relatedWisdomPayload,
       });
     }
+    // ── Standard Generation (No Streaming) ──────────────────────────────────
+    try {
+      console.log("[Chat] Requesting generation");
+      const fullReply = await fetchGeminiWithFailover(fullPrompt, apiKey, {
+        temperature: 0.7,
+        maxOutputTokens: 1500,
+      });
 
-    // ── SSE streaming response ──────────────────────────────────────────────
-    let fullReply = "";
+      // Post-processing (sanitize, detect widget)
+      const sanitized = sanitizeAIResponse(fullReply);
+      const lowerMsg = (userMessage + " " + sanitized).toLowerCase();
+      const widget = buildWidget(lowerMsg);
 
-    const responseStream = new ReadableStream({
-      async start(controller) {
-        const enc = new TextEncoder();
+      // Store in cache for future identical queries
+      setCachedResponse(userMessage, {
+        reply: sanitized,
+        topics: detectedTopics,
+        relatedWisdom: relatedWisdomPayload,
+      });
 
-        const send = (event: string, data: unknown) => {
-          controller.enqueue(enc.encode(sseEvent(event, data)));
-        };
-
-        try {
-          // Stage 1: retrieval already done — signal composing
-          send("status", { stage: STATUS.COMPOSING, message: "Composing response..." });
-
-          // Stage 2: open streaming connection to Gemini
-          console.log("[Chat SSE] Stream started");
-          const geminiStream = await streamGeminiWithFailover(fullPrompt, apiKey, {
-            temperature: 0.7,
-            maxOutputTokens: 1500,
-          });
-
-          const reader = geminiStream.getReader();
-
-          // Stage 3: forward tokens as they arrive
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            fullReply += value;
-            send("token", { text: value });
-          }
-
-          console.log("[Chat SSE] Stream completed chunks");
-
-          // Stage 4: post-processing (sanitize, detect widget)
-          const sanitized = sanitizeAIResponse(fullReply);
-          const lowerMsg = (userMessage + " " + sanitized).toLowerCase();
-          const widget = buildWidget(lowerMsg);
-
-          // Store in cache for future identical queries
-          setCachedResponse(userMessage, {
-            reply: sanitized,
-            topics: detectedTopics,
-            relatedWisdom: relatedWisdomPayload,
-          });
-
-          // Stage 5: done — send metadata
-          send("done", {
-            topics: detectedTopics,
-            widget,
-            relatedWisdom: relatedWisdomPayload,
-            cached: false,
-          });
-          console.log("[Chat SSE] Stream successfully finished");
-        } catch (err: any) {
-          console.error("[Chat SSE] Error during streaming:", err);
-          if (fullReply.length > 50) {
-             // If we already sent significant text, finish gracefully so user can read it
-             send("done", {
-                topics: detectedTopics,
-                widget: undefined,
-                relatedWisdom: relatedWisdomPayload,
-                cached: false,
-             });
-          } else {
-             send("error", { message: err?.message || "Response was interrupted. Please try again." });
-          }
-        } finally {
-          controller.close();
-        }
-      },
-    });
-
-    return new Response(responseStream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        "X-Accel-Buffering": "no", // Disable Nginx/Vercel buffering
-      },
-    });
+      return NextResponse.json({
+        success: true,
+        reply: sanitized,
+        topics: detectedTopics,
+        widget,
+        relatedWisdom: relatedWisdomPayload,
+        cached: false,
+      });
+    } catch (err: any) {
+      console.error("[Chat] Error generating response:", err);
+      return NextResponse.json(
+        { error: err?.message || "Failed to generate response" },
+        { status: 500 }
+      );
+    }
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to process chat query" }, { status: 500 });
   }
