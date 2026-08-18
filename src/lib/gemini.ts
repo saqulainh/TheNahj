@@ -12,18 +12,19 @@
 // Cached working model for generateContent / streamGenerateContent (reset on cold start)
 let cachedGenerateContentModel: string | null = null;
 
-// Preferred model ordering (optimized for speed — top 3 are raced in parallel on cold start)
+// Preferred model ordering (optimized for speed — top 3 are raced in parallel on cold start).
+// Benchmarked 2026-08-18 with a working AQ. key: `gemini-3.5-flash-lite` ≈ 1.1s/full response,
+// `gemini-flash-lite-latest` ≈ 0.8s, `gemini-3.1-flash-lite-preview` ≈ 1.3s.
+// Legacy names (1.5/2.0/2.5-flash, 3.0-flash) return 404 and were dropped.
 const PREFERRED_GENERATE_MODELS = [
-  "gemini-1.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-2.5-flash",
-  "gemini-2.0-flash-lite",
-  "gemini-2.0-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-flash-lite-latest",
+  "gemini-3.1-flash-lite-preview",
+  "gemini-3.1-flash-lite",
+  "gemini-flash-latest",
+  "gemini-3.5-flash",
   "gemini-3.6-flash",
-  "gemini-3.0-flash",
   "gemini-2.5-pro",
-  "gemini-2.0-pro",
-  "gemini-1.5-pro",
 ];
 
 // Top N models to race in parallel on cold start
