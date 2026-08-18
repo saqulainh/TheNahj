@@ -181,6 +181,7 @@ async function tryStreamContent(
 
   try {
     armIdle();
+    const fetchStart = Date.now();
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
       {
@@ -198,10 +199,20 @@ async function tryStreamContent(
         }),
       }
     );
-    if (!res.ok || !res.body) return null;
+    const headersMs = Date.now() - fetchStart;
+    if (!res.ok || !res.body) {
+      if (res.status === 429) {
+        console.warn(`[Gemini] ⚠️ RATE LIMITED (429) by ${model} after ${headersMs}ms`);
+      } else if (res.status >= 500) {
+        console.warn(`[Gemini] ${model} returned ${res.status} after ${headersMs}ms`);
+      }
+      return null;
+    }
+    console.log(`[Gemini] ${model} → headers in ${headersMs}ms`);
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
+    let firstTextAt: number | null = null;
 
     return new ReadableStream({
       async start(streamController) {
@@ -226,7 +237,13 @@ async function tryStreamContent(
                 try {
                   const data = JSON.parse(line.slice(6));
                   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                  if (text) streamController.enqueue(text);
+                  if (text) {
+                    if (firstTextAt === null) {
+                      firstTextAt = Date.now();
+                      console.log(`[Gemini] ${model} → FIRST TEXT in ${firstTextAt - fetchStart}ms`);
+                    }
+                    streamController.enqueue(text);
+                  }
                 } catch {
                   // skip malformed SSE lines
                 }

@@ -19,10 +19,13 @@ export async function searchRAGContext(query: string, matchCount = 5, preloadedW
   if (!cleanQuery) return [];
 
   // Generate embedding vector for user query
+  const embedStart = Date.now();
   const queryVector = await generateEmbedding(cleanQuery);
+  const embedMs = Date.now() - embedStart;
 
   // 1. Try Supabase pgvector RPC search if configured
   if (isSupabaseConfigured && supabase && queryVector) {
+    const supabaseStart = Date.now();
     try {
       const { data, error } = await supabase.rpc("match_wisdom_embeddings", {
         query_embedding: queryVector,
@@ -31,6 +34,7 @@ export async function searchRAGContext(query: string, matchCount = 5, preloadedW
       });
 
       if (!error && Array.isArray(data) && data.length > 0) {
+        console.log(`[RAG] ⏱ embedding=${embedMs}ms, supabase-pgvector=${Date.now() - supabaseStart}ms, results=${data.length}`);
         return data.map((item: any) => ({
           content: item.content,
           source: item.metadata?.source || "Nahjul Balagha",
@@ -38,9 +42,12 @@ export async function searchRAGContext(query: string, matchCount = 5, preloadedW
           score: item.similarity || 0.85,
         }));
       }
+      console.log(`[RAG] ⏱ embedding=${embedMs}ms, supabase-pgvector=${Date.now() - supabaseStart}ms (no results/error: ${error?.message || "empty"})`);
     } catch (err) {
-      console.warn("[RAG Retrieval] Supabase RPC search error, using hybrid fallback:", err);
+      console.warn(`[RAG] ⏱ embedding=${embedMs}ms, supabase-pgvector=${Date.now() - supabaseStart}ms — Supabase RPC error, using hybrid fallback:`, err);
     }
+  } else {
+    console.log(`[RAG] ⏱ embedding=${embedMs}ms (supabase not configured / no vector)`);
   }
 
   // 2. Hybrid Local Semantic Search Fallback

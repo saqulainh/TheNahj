@@ -100,10 +100,33 @@ export async function getCategories(): Promise<Category[]> {
   return merged;
 }
 
+const WISDOM_CACHE_TTL_MS = 5 * 60 * 1000;
+
+let wisdomCache: { data: Wisdom[]; at: number } | null = null;
+let wisdomCachePromise: Promise<Wisdom[]> | null = null;
+
 /**
  * Fetch all published short-form wisdom cards (Imam Ali Says, Nahjul Balagha, Audio Reflections).
+ * Results are memoized across requests with a TTL so a chat request does not
+ * re-fetch the whole database on every message.
  */
 export const getAllWisdom = cache(async (): Promise<Wisdom[]> => {
+  if (wisdomCache && Date.now() - wisdomCache.at < WISDOM_CACHE_TTL_MS) {
+    return wisdomCache.data;
+  }
+  if (wisdomCachePromise) return wisdomCachePromise;
+
+  wisdomCachePromise = (async () => {
+    const data = await fetchAllWisdom();
+    wisdomCache = { data, at: Date.now() };
+    wisdomCachePromise = null;
+    return data;
+  })();
+
+  return wisdomCachePromise;
+});
+
+async function fetchAllWisdom(): Promise<Wisdom[]> {
   const dbCategories = await getCategories();
 
   if (isSupabaseConfigured && supabase) {
@@ -215,7 +238,7 @@ export const getAllWisdom = cache(async (): Promise<Wisdom[]> => {
   }
 
   return getLocalWisdom();
-});
+}
 
 export async function getWisdomBySlug(slug: string): Promise<Wisdom | null> {
   const all = await getAllWisdom();

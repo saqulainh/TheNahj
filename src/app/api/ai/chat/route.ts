@@ -225,6 +225,7 @@ const FALLBACK_RESPONSES: Record<string, string> = {
 
 // ─── Main Route Handler ────────────────────────────────────────────────────────
 export async function POST(request: Request) {
+  const REQUEST_START = Date.now();
   const ip = getRequestClientIp(request);
   const rl = await consumeRateLimit({ key: `ai:chat:${ip}`, limit: 15, windowMs: 60000 });
 
@@ -273,13 +274,17 @@ export async function POST(request: Request) {
     // the request before the Gemini stream even starts.
     let allWisdom: Awaited<ReturnType<typeof getAllWisdom>> = [];
     let ragResults: Awaited<ReturnType<typeof searchRAGContext>> = [];
+    const retrievalStart = Date.now();
     try {
       allWisdom = await withTimeout(getAllWisdom(), RETRIEVAL_TIMEOUT_MS, "getAllWisdom");
+      const wisdomMs = Date.now() - retrievalStart;
+      const ragStart = Date.now();
       ragResults = await withTimeout(
         searchRAGContext(userMessage, 5, allWisdom),
         RETRIEVAL_TIMEOUT_MS,
         "searchRAGContext"
       );
+      console.log(`[Chat] ⏱ retrieval: getAllWisdom=${wisdomMs}ms, searchRAG=${Date.now() - ragStart}ms, total=${Date.now() - retrievalStart}ms (topics=${detectedTopics.join(",")})`);
     } catch (retrievalErr) {
       // Retrieval is best-effort — on timeout, fall back to the static corpus
       // so the chat still answers instead of hanging forever.
@@ -351,6 +356,11 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
     const fullPrompt = `${systemPrompt}\n\nUser: ${userMessage}`;
     const apiKey = process.env.GEMINI_API_KEY;
 
+    // `~4 chars ≈ 1 token` for English — rough prompt-size estimate.
+    const estPromptTokens = Math.ceil(fullPrompt.length / 4);
+    const estCorpusTokens = Math.ceil(NAHJUL_BALAGHA_CORPUS.length / 4);
+    console.log(`[Chat] 📦 prompt chars=${fullPrompt.length}, estTokens≈${estPromptTokens} (corpus alone≈${estCorpusTokens}t, context snippets≈${Math.ceil(contextSnippets.join("").length / 4)}t)`);
+
     // ── No API key — use static fallback ───────────────────────────────────
     if (!apiKey) {
       const primaryTopic = detectedTopics[0] || "general";
@@ -367,6 +377,7 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
     }
     // ── Standard Generation with Streaming ──────────────────────────────────
     try {
+      const genStart = Date.now();
       console.log("[Chat] Requesting streaming generation");
       const stream = await withTimeout(
         streamGeminiWithFailover(fullPrompt, apiKey, {
@@ -376,6 +387,8 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
         GENERATION_TIMEOUT_MS,
         "streamGeminiWithFailover"
       );
+      const streamEstablishedMs = Date.now() - genStart;
+      console.log(`[Chat] ⏱ stream established (first Gemini response headers) in ${streamEstablishedMs}ms [total since request: ${Date.now() - REQUEST_START}ms]`);
 
       // Create SSE response stream
       const encoder = new TextEncoder();
@@ -383,6 +396,7 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
       // (retrieval + generation + streaming) exceeds this, we emit an error
       // event and close so the client can show Retry instead of hanging forever.
       const deadline = Date.now() + GENERATION_TIMEOUT_MS;
+      let firstTokenAt: number | null = null;
       const sseStream = new ReadableStream({
         async start(controller) {
           const reader = stream.getReader();
@@ -403,6 +417,10 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
               ]);
               const { done, value } = readResult as { done: boolean; value?: string };
               if (done) break;
+              if (firstTokenAt === null) {
+                firstTokenAt = Date.now();
+                console.log(`[Chat] ⏱ TIME-TO-FIRST-TOKEN: ${firstTokenAt - REQUEST_START}ms (since request start)`);
+              }
               if (value) {
                 fullText += value;
                 // Send each chunk as SSE event
@@ -427,6 +445,10 @@ IMPORTANT: You must provide genuine, sourced wisdom. Never make up quotes.`;
             const sanitized = sanitizeAIResponse(fullText);
             const lowerMsg = (userMessage + " " + sanitized).toLowerCase();
             const widget = buildWidget(lowerMsg);
+
+            console.log(
+              `[Chat] ⏱ TOTAL end-to-end: ${Date.now() - REQUEST_START}ms (TTFT=${firstTokenAt ? firstTokenAt - REQUEST_START : "N/A"}ms, generation+stream=${firstTokenAt ? Date.now() - firstTokenAt : "N/A"}ms, chars=${fullText.length})`
+            );
 
             // Store in cache for future identical queries
             setCachedResponse(userMessage, {
