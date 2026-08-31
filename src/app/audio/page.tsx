@@ -1,6 +1,8 @@
 import { AudioPlayer, type AudioTrack } from "@/components/audio/AudioPlayer";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
+export const revalidate = 0; // Always fetch fresh data — no caching
+
 export const metadata = {
   title: "Audio Library & Reflections — Duas, Ziyarat, Nohay & Imam Ali (AS) Wisdom",
   description: "Listen to Ziyarat-e-Ashura, Dua-e-Kumail, Nade Ali, Nohay, and narrated reflections from Imam Ali (AS).",
@@ -42,8 +44,13 @@ export default async function AudioPage() {
         </p>
       </div>
 
-      <AudioPlayer tracks={tracks} />
+      {tracks.length === 0 ? (
+        <div className="rounded-2xl border border-border/20 bg-surface/40 p-12 text-center">
+          <p className="text-muted text-sm">No audio tracks added yet. Add tracks from the Admin Panel → Audio Library.</p>
+        </div>
+      ) : (
+        <AudioPlayer tracks={tracks} />
+      )}
     </section>
   );
 }
-

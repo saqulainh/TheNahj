@@ -17,11 +17,8 @@ const focusQuotes = [
   "Protect your heart fiercely — it is your guardian.",
 ];
 
-const PRESET_AMBIENT_SOUNDS = [
-  { id: "rain", label: "Rain", emoji: "🌧️", src: "/sounds/rain.mp3" },
-  { id: "solitude", label: "Solitude", emoji: "🏔️", src: "/sounds/solitude.mp3" },
-  { id: "mosque", label: "Mosque Ambience", emoji: "🕌", src: "/sounds/mosque.mp3" },
-];
+// No hardcoded preset sounds — all sounds come from DB (audio_tracks with is_focus_ambient=true or category=Focus)
+const EMPTY_SOUNDS: { id: string; label: string; emoji: string; src: string }[] = [];
 
 export function PomodoroTimer() {
   const [seconds, setSeconds] = useState(FOCUS_SECONDS);
@@ -41,7 +38,7 @@ export function PomodoroTimer() {
   const [zenMode, setZenMode] = useState(false);
   const [soundId, setSoundId] = useState("silent");
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
-  const [allSounds, setAllSounds] = useState(PRESET_AMBIENT_SOUNDS);
+  const [allSounds, setAllSounds] = useState(EMPTY_SOUNDS);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Fetch admin audio tracks marked for Focus Timer
@@ -51,7 +48,7 @@ export function PomodoroTimer() {
       .then((data: any[]) => {
         if (Array.isArray(data) && data.length > 0) {
           const focusTracks = data
-            .filter((t) => t.is_focus_ambient || t.category === "Focus" || t.category === "Audio Reflections")
+            .filter((t) => t.is_focus_ambient || t.category === "Focus")
             .map((t) => ({
               id: `db_${t.id}`,
               label: t.title,
@@ -61,7 +58,7 @@ export function PomodoroTimer() {
             .filter((t) => t.src);
 
           if (focusTracks.length > 0) {
-            setAllSounds([...PRESET_AMBIENT_SOUNDS, ...focusTracks]);
+            setAllSounds(focusTracks);
           }
         }
       })
@@ -276,22 +273,26 @@ export function PomodoroTimer() {
               Ambient Sound
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 max-w-xl mx-auto">
-              {allSounds.map((s: any) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => toggleSound(s.id)}
-                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs transition-all ${
-                    soundId === s.id
-                      ? "bg-gold/15 text-gold-light font-semibold border border-gold/30"
-                      : "bg-surface text-muted hover:bg-surface-elevated hover:text-foreground border border-border/20"
-                  }`}
-                >
-                  <span>{s.emoji}</span>
-                  <span>{s.label}</span>
-                  {soundId === s.id && <Square size={12} className="ml-1 text-gold" />}
-                </button>
-              ))}
+              {allSounds.length === 0 ? (
+                <p className="text-[10px] text-muted/50 italic">No ambient sounds configured yet. Add tracks via Admin → Audio Library and toggle &quot;Add to Focus&quot;.</p>
+              ) : (
+                allSounds.map((s: any) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => toggleSound(s.id)}
+                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs transition-all ${
+                      soundId === s.id
+                        ? "bg-gold/15 text-gold-light font-semibold border border-gold/30"
+                        : "bg-surface text-muted hover:bg-surface-elevated hover:text-foreground border border-border/20"
+                    }`}
+                  >
+                    <span>{s.emoji}</span>
+                    <span>{s.label}</span>
+                    {soundId === s.id && <Square size={12} className="ml-1 text-gold" />}
+                  </button>
+                ))
+              )}
               <button
                 type="button"
                 onClick={() => toggleSound("silent")}
