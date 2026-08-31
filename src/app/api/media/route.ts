@@ -197,9 +197,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "No file uploaded" }, { status: 400 });
     }
 
-    if (!allowed.includes(file.type)) {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const isAudioExt = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'].includes(ext || "");
+    if (!allowed.includes(file.type) && !file.type.startsWith("audio/") && !isAudioExt) {
       return NextResponse.json(
-        { success: false, error: "Unsupported file type" },
+        { success: false, error: `Unsupported file type: ${file.type || 'unknown'} (ext: ${ext})` },
         { status: 415 }
       );
     }
@@ -218,13 +220,14 @@ export async function POST(request: Request) {
 
     if (isSupabaseConfigured && supabase) {
       const storagePath = `uploads/${safeName}`;
-      const fileBlob = new Blob([new Uint8Array(buffer)], { type: file.type });
+      const actualType = file.type || (isAudioExt ? 'audio/mpeg' : 'application/octet-stream');
+      const fileBlob = new Blob([new Uint8Array(buffer)], { type: actualType });
       
       // Upload raw file to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from(MEDIA_BUCKET)
         .upload(storagePath, fileBlob, {
-          contentType: file.type,
+          contentType: actualType,
           upsert: false,
         });
 

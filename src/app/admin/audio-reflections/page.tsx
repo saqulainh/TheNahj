@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Music, Plus, UploadCloud, Trash2, Loader2, Image as ImageIcon } from "lucide-react";
+import { toast } from "sonner";
 import Image from "next/image";
 
 interface AudioTrackRecord {
@@ -56,9 +57,13 @@ export default function AudioReflectionsPage() {
       const json = await res.json();
       if (res.ok && json.item?.url) {
         setAudioUrl(json.item.url);
+        toast.success("Audio uploaded successfully!");
+      } else {
+        toast.error(json.error || "Failed to upload audio.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error(err.message || "An unexpected error occurred during upload.");
     } finally {
       setIsUploadingAudio(false);
     }
