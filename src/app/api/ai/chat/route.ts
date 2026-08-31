@@ -302,7 +302,7 @@ export async function POST(request: Request) {
 
     const contextSnippets = [
       ...ragResults.map((r) => `• [RAG Citation — ${r.source}]: "${r.content}"${r.slug ? ` (Link: /wisdom/${r.slug})` : ""}`),
-      ...relevantWisdom.map((w) => `• [Wisdom Card — ${w.source}]: "${w.english_translation}" (Read more: /wisdom/${w.slug})`),
+      ...relevantWisdom.map((w) => `• [Wisdom Card — ${w.source}]: Arabic: "${w.arabic_text || 'N/A'}" | Urdu: "${w.urdu_translation || 'N/A'}" | English: "${w.english_translation}" (Read more: /wisdom/${w.slug})`),
     ];
 
     const relatedWisdomPayload = relevantWisdom.slice(0, 3).map((w) => ({
@@ -331,8 +331,9 @@ RESPONSE RULES
 5. Use warm Islamic greetings: Begin responses appropriately (e.g., "Peace be upon you, dear friend").
 6. Reference Quran when relevant: Imam Ali's wisdom is deeply rooted in the Quran.
 7. Contemporary Figures: If asked about modern scholars, Maraja, or leaders (e.g., Rahbar Ayatollah Khamenei, Ayatollah Sistani), respectfully acknowledge their role as contemporary upholders of the Ahlulbayt's teachings and connect their leadership/guidance directly to the principles of Wilayah and Imam Ali's (AS) wisdom (like Letter 53). Do not give vague answers; acknowledge them by name if mentioned.
-8. General Queries: If the user asks about general topics (science, tech, daily advice, history, or random questions), answer them naturally, intelligently, and directly as a helpful AI assistant. You do not need to force a Nahjul Balagha quote if it feels unnatural, though you should maintain your respectful and wise tone.
-9. Detected topics for this question: ${detectedTopics.join(", ")}
+8. Multilingual Quotes & Duas (CRITICAL): When quoting an Ayah, Hadith, saying of Imam Ali, or a Dua (like Dua-e-Noor, Kumayl, etc.) whether from your own knowledge or the database, YOU MUST ALWAYS provide it in three languages in this exact order: 1) Original Arabic text, 2) Urdu translation, 3) English translation. This makes your advice deeply spiritual and authentic.
+9. General Queries: If the user asks about general topics (science, tech, daily advice, history, or random questions), answer them naturally, intelligently, and directly as a helpful AI assistant. You do not need to force a Nahjul Balagha quote if it feels unnatural, though you should maintain your respectful and wise tone.
+10. Detected topics for this question: ${detectedTopics.join(", ")}
 
 FORMATTING RULES — CRITICAL — YOU MUST FOLLOW THESE:
 - NEVER use Markdown formatting of any kind in your response.
