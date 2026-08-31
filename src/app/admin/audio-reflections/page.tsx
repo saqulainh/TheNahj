@@ -54,12 +54,15 @@ export default function AudioReflectionsPage() {
       fd.append("file", file);
       fd.append("title", file.name);
       const res = await fetch("/api/media", { method: "POST", body: fd });
-      const json = await res.json();
-      if (res.ok && json.item?.url) {
+      const rawText = await res.text();
+      let json: any = null;
+      try { json = JSON.parse(rawText); } catch { /* not JSON */ }
+      if (res.ok && json?.item?.url) {
         setAudioUrl(json.item.url);
         toast.success("Audio uploaded successfully!");
       } else {
-        toast.error(json.error || "Failed to upload audio.");
+        const errorMsg = json?.error || (rawText.startsWith('<') ? `Server error (HTTP ${res.status}) — check Vercel logs` : rawText) || "Failed to upload audio.";
+        toast.error(errorMsg);
       }
     } catch (err: any) {
       console.error(err);
@@ -77,12 +80,19 @@ export default function AudioReflectionsPage() {
       fd.append("file", file);
       fd.append("title", file.name);
       const res = await fetch("/api/media", { method: "POST", body: fd });
-      const json = await res.json();
-      if (res.ok && json.item?.url) {
+      const rawText = await res.text();
+      let json: any = null;
+      try { json = JSON.parse(rawText); } catch { /* not JSON */ }
+      if (res.ok && json?.item?.url) {
         setCoverUrl(json.item.url);
+        toast.success("Cover image uploaded!");
+      } else {
+        const errorMsg = json?.error || (rawText.startsWith('<') ? `Server error (HTTP ${res.status})` : rawText) || "Failed to upload cover.";
+        toast.error(errorMsg);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error(err.message || "An unexpected error occurred during upload.");
     } finally {
       setIsUploadingCover(false);
     }

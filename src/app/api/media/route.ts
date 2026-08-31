@@ -7,6 +7,9 @@ import { verifyAdminToken } from "@/lib/auth";
 import sharp from "sharp";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 
+// Increase Next.js body parser limit for large audio/media uploads (App Router format)
+export const maxDuration = 60;
+
 const uploadsDir = path.join(process.cwd(), "public", "uploads");
 const mediaDbPath = path.join(process.cwd(), "src", "data", "media-library.json");
 
