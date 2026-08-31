@@ -17,8 +17,12 @@ export interface RAGRetrievalPayload {
   queryIntent: "specific_citation" | "general_inquiry";
 }
 
-// Baseline confidence thresholds (empirically tunable based on embedding model distribution)
-const GENERAL_SIMILARITY_THRESHOLD = 0.45;
+// Empirical confidence thresholds derived from gemini-embedding-001 distribution:
+// - Exact matches: 0.80 - 0.90+
+// - Topical semantic matches: 0.65 - 0.75
+// - Fake specific citations: 0.50 - 0.55 max
+// - Out-of-domain / noise: < 0.45
+const GENERAL_SIMILARITY_THRESHOLD = 0.55;
 const STRICT_REFERENCE_THRESHOLD = 0.65;
 
 // Regex to detect explicit requests for numbered sermons, letters, sayings, or chapters

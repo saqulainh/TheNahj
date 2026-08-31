@@ -14,18 +14,30 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
   const cleanText = text.replace(/\n+/g, " ").trim();
   if (!cleanText) return null;
 
-  if (process.env.GEMINI_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error("[RAG Embedding CRITICAL] GEMINI_API_KEY is not configured in environment.");
+    return null;
+  }
+
+  const candidateModels = [
+    "models/gemini-embedding-001",
+    "models/gemini-embedding-2"
+  ];
+
+  for (const model of candidateModels) {
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${process.env.GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/${model}:embedContent?key=${apiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "models/text-embedding-004",
+            model: model,
             content: {
               parts: [{ text: cleanText }],
             },
+            outputDimensionality: 768,
           }),
         }
       );
@@ -33,17 +45,20 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
       if (response.ok) {
         const data = await response.json();
         const values = data?.embedding?.values;
-        if (Array.isArray(values) && values.length > 0) {
+        if (Array.isArray(values) && values.length === 768) {
           return values;
         }
+      } else {
+        const errBody = await response.text();
+        console.error(`[RAG Embedding ERROR] Model ${model} returned ${response.status}:`, errBody);
       }
     } catch (err) {
-      console.warn("[RAG Embedding] Gemini API error, falling back:", err);
+      console.error(`[RAG Embedding NETWORK ERROR] Failed fetching from ${model}:`, err);
     }
   }
 
-  // Fallback: Generate a normalized deterministic pseudo-embedding vector (768-dim) based on word frequency
-  return generateLocalPseudoEmbedding(cleanText);
+  console.error("[RAG Embedding FATAL] All Gemini embedding model attempts failed. Vector search unavailable for this turn.");
+  return null;
 }
 
 /**
