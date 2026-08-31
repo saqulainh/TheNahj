@@ -26,7 +26,7 @@ interface MediaItem {
 }
 
 const MEDIA_BUCKET = (process.env.SUPABASE_MEDIA_BUCKET || "media").trim().replace(/\/+$/, "");
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 const IMAGE_WIDTHS = [480, 960, 1600];
 
 async function ensureStorage() {
@@ -120,7 +120,7 @@ function sanitizeTitle(rawTitle: string, fallback: string): string {
   return value.slice(0, 180) || fallback;
 }
 
-const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "audio/mpeg", "audio/mp4"];
+const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "audio/mpeg", "audio/mp4", "audio/mp3", "audio/wav", "audio/ogg", "audio/x-m4a", "audio/aac", "audio/flac"];
 
 function buildVariantName(baseFileName: string, width: number): string {
   const ext = path.extname(baseFileName);
@@ -206,7 +206,7 @@ export async function POST(request: Request) {
 
     if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json(
-        { success: false, error: "File exceeds 10MB upload limit" },
+        { success: false, error: "File exceeds 50MB upload limit" },
         { status: 413 }
       );
     }

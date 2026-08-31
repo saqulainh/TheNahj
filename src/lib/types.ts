@@ -29,6 +29,7 @@ export interface Wisdom {
   created_at: string;
   featured?: boolean;
   trending?: boolean;
+  original_category?: string;
   background_type?: "cinematic" | "abstract" | "architectural" | "minimal";
   background_url?: string;
   background_image?: string;

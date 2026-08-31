@@ -98,7 +98,7 @@ export default async function YouthPage() {
 
       <h2 className="mt-16 mb-8 text-xl font-medium">Featured wisdom</h2>
       <section className="grid gap-6 md:grid-cols-2">
-        {wisdom.slice(2, 4).map((w, i) => (
+        {wisdom.filter(w => w.original_category === "Youth Corner" || w.category?.name === "Youth Corner" || w.corner_topics?.includes("youth")).slice(0, 2).map((w, i) => (
           <WisdomCard key={w.id} wisdom={w} index={i} />
         ))}
       </section>

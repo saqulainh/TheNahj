@@ -178,6 +178,7 @@ async function fetchAllWisdom(): Promise<Wisdom[]> {
             related_slugs: [],
             featured: row.featured || false,
             trending: row.featured || false,
+            original_category: "Wisdom Cards",
             created_at: row.published_at || row.created_at || new Date().toISOString(),
           };
         });
@@ -228,6 +229,7 @@ async function fetchAllWisdom(): Promise<Wisdom[]> {
             related_slugs: [],
             featured: row.featured || false,
             trending: row.featured || false,
+            original_category: row.category || "",
             created_at: row.published_at || row.created_at || new Date().toISOString(),
           };
         });
