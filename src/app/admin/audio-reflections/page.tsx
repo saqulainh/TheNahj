@@ -114,11 +114,14 @@ export default function AudioReflectionsPage() {
           is_focus_ambient: isFocusAmbient,
         }),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed to add track");
+      const rawText = await res.text();
+      let json: any = null;
+      try { json = JSON.parse(rawText); } catch { /* not JSON */ }
+      if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}: ${rawText.slice(0, 100)}`);
       return json;
     },
     onSuccess: () => {
+      toast.success("Track saved successfully!");
       queryClient.invalidateQueries({ queryKey: ["admin-audio-tracks"] });
       setIsAdding(false);
       setTitle("");
@@ -128,6 +131,9 @@ export default function AudioReflectionsPage() {
       setAudioUrl("");
       setCoverUrl("");
       setIsFocusAmbient(false);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to save track.");
     },
   });
 
@@ -145,6 +151,24 @@ export default function AudioReflectionsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-audio-tracks"] });
     },
+    onError: (err: any) => toast.error(err.message || "Failed to update."),
+  });
+
+  // Delete a track
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/audio?id=${id}`, { method: "DELETE" });
+      const rawText = await res.text();
+      let json: any = null;
+      try { json = JSON.parse(rawText); } catch { /* not JSON */ }
+      if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
+      return json;
+    },
+    onSuccess: () => {
+      toast.success("Track deleted.");
+      queryClient.invalidateQueries({ queryKey: ["admin-audio-tracks"] });
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to delete."),
   });
 
   return (
@@ -363,6 +387,14 @@ export default function AudioReflectionsPage() {
                     {t.category}
                   </span>
                   <span className="text-xs text-muted tabular-nums">{t.duration || "—"}</span>
+                  <button
+                    type="button"
+                    onClick={() => { if (confirm(`Delete "${t.title}"?`)) deleteMutation.mutate(t.id); }}
+                    className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-[10px] uppercase font-semibold text-red-400 hover:bg-red-500/20 transition-all"
+                    title="Delete track"
+                  >
+                    <Trash2 size={12} />
+                  </button>
                 </div>
               </div>
             ))}

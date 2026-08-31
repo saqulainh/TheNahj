@@ -92,3 +92,30 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
 }
+
+export async function DELETE(request: Request) {
+  if (!isSupabaseConfigured || !supabase) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
+
+  const cookieHeader = request.headers.get("cookie") || "";
+  const match = cookieHeader.match(/thenahj-admin=([^;]+)/);
+  const token = match ? match[1] : null;
+
+  const isValid = await verifyAdminToken(token);
+  if (!isValid) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Track ID required" }, { status: 400 });
+
+  const { error } = await supabase.from("audio_tracks").delete().eq("id", id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}

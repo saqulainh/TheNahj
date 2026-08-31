@@ -98,8 +98,11 @@ create table if not exists audio_tracks (
   title text not null,
   subtitle text,
   category text not null,
+  reciter text,
   duration text,
   audio_url text,
+  cover_image text,
+  is_focus_ambient boolean default false,
   created_at timestamptz default now()
 );
 
@@ -107,6 +110,8 @@ alter table audio_tracks enable row level security;
 
 create policy "Public read audio tracks" on audio_tracks for select using (true);
 create policy "Admin write audio tracks" on audio_tracks for all using (auth.uid() is not null);
+-- Allow anon inserts for admin panel (cookie-based auth, not Supabase Auth)
+create policy "Anon write audio tracks" on audio_tracks for all to anon using (true) with check (true);
 
 -- Unified Content Engine (single source for all categories)
 create table if not exists articles_unified (
