@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Music, Plus, UploadCloud, Trash2, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 interface AudioTrackRecord {
   id: string;
@@ -17,6 +18,26 @@ interface AudioTrackRecord {
   audio_url?: string;
   is_focus_ambient?: boolean;
   created_at?: string;
+}
+
+const MEDIA_BUCKET = (process.env.NEXT_PUBLIC_SUPABASE_MEDIA_BUCKET || "media").trim();
+
+/** Upload a file directly to Supabase Storage from the browser (bypasses Vercel 4.5MB limit) */
+async function uploadDirectToSupabase(file: File): Promise<string> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error("Supabase is not configured.");
+  }
+  const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+  const safeName = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  
+  const { error } = await supabase.storage
+    .from(MEDIA_BUCKET)
+    .upload(safeName, file, { contentType: file.type || "audio/mpeg", upsert: false });
+
+  if (error) throw new Error(error.message);
+
+  const { data } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(safeName);
+  return data.publicUrl;
 }
 
 export default function AudioReflectionsPage() {
@@ -46,53 +67,31 @@ export default function AudioReflectionsPage() {
     },
   });
 
-  // Handle uploading audio MP3 file to /api/media
+  // Handle uploading audio file directly to Supabase Storage (no Vercel size limit)
   const handleAudioUpload = async (file: File) => {
     setIsUploadingAudio(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("title", file.name);
-      const res = await fetch("/api/media", { method: "POST", body: fd });
-      const rawText = await res.text();
-      let json: any = null;
-      try { json = JSON.parse(rawText); } catch { /* not JSON */ }
-      if (res.ok && json?.item?.url) {
-        setAudioUrl(json.item.url);
-        toast.success("Audio uploaded successfully!");
-      } else {
-        const errorMsg = json?.error || (rawText.startsWith('<') ? `Server error (HTTP ${res.status}) — check Vercel logs` : rawText) || "Failed to upload audio.";
-        toast.error(errorMsg);
-      }
+      const url = await uploadDirectToSupabase(file);
+      setAudioUrl(url);
+      toast.success("Audio uploaded successfully!");
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "An unexpected error occurred during upload.");
+      toast.error(err.message || "Failed to upload audio.");
     } finally {
       setIsUploadingAudio(false);
     }
   };
 
-  // Handle uploading cover thumbnail image to /api/media
+  // Handle uploading cover image directly to Supabase Storage
   const handleCoverUpload = async (file: File) => {
     setIsUploadingCover(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("title", file.name);
-      const res = await fetch("/api/media", { method: "POST", body: fd });
-      const rawText = await res.text();
-      let json: any = null;
-      try { json = JSON.parse(rawText); } catch { /* not JSON */ }
-      if (res.ok && json?.item?.url) {
-        setCoverUrl(json.item.url);
-        toast.success("Cover image uploaded!");
-      } else {
-        const errorMsg = json?.error || (rawText.startsWith('<') ? `Server error (HTTP ${res.status})` : rawText) || "Failed to upload cover.";
-        toast.error(errorMsg);
-      }
+      const url = await uploadDirectToSupabase(file);
+      setCoverUrl(url);
+      toast.success("Cover image uploaded!");
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "An unexpected error occurred during upload.");
+      toast.error(err.message || "Failed to upload cover image.");
     } finally {
       setIsUploadingCover(false);
     }
