@@ -68,12 +68,12 @@ export default function AboutPage() {
             <cite className="mt-8 block not-italic">
               <span className="text-[10px] uppercase tracking-[0.25em] text-muted/60 block mb-2">Developed & Maintained by</span>
               <a
-                href="http://www.instagram.com/s_a_q_u_l_a_i_n__h?igsh=dGtvNmNodHJqNml3"
+                href="https://www.instagram.com/s_a_q_l_a_i_n__h?igsh=dGtvNmNodHJqNml3"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block text-sm font-semibold tracking-wider text-gold-light hover:text-gold transition-colors duration-300 underline underline-offset-4 decoration-gold/30 hover:decoration-gold"
               >
-                s_a_q_u_l_a_i_n__h
+                s_a_q_l_a_i_n__h
               </a>
             </cite>
           </blockquote>
