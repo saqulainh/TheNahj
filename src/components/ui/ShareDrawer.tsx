@@ -231,7 +231,7 @@ export function ShareDrawer({ isOpen, onClose, shareData }: ShareDrawerProps) {
                     <Share2 size={24} />
                   </div>
                   <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground text-center">
-                    More
+                    Share more apps
                   </span>
                 </button>
               )}

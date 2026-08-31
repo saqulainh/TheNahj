@@ -96,6 +96,9 @@ export async function searchRAGContextWithConfidence(
   }
 
   // 3. Apply Confidence Score Thresholding
+  console.log(`[CALIBRATION] Query: "${cleanQuery}"`);
+  rawResults.forEach((r, i) => console.log(`   -> Match ${i+1}: score=${r.score.toFixed(3)}, source=${r.source}`));
+  
   const threshold = isSpecificReferenceQuery ? STRICT_REFERENCE_THRESHOLD : GENERAL_SIMILARITY_THRESHOLD;
   const filteredResults = rawResults.filter((r) => r.score >= threshold);
 

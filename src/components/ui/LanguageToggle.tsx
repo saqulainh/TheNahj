@@ -58,8 +58,7 @@ export function LanguageToggle() {
                   language === lang.code ? "text-gold font-medium" : "text-foreground"
                 }`}
               >
-                <span className="text-xs text-muted">{lang.label}</span>
-                <span className={`${lang.dir === "rtl" ? "font-arabic" : ""} text-right`} dir={lang.dir}>
+                <span className={`w-full ${lang.dir === "rtl" ? "font-arabic" : ""} text-center`} dir={lang.dir}>
                   {lang.nativeLabel}
                 </span>
               </button>

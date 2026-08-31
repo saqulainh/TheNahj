@@ -78,11 +78,27 @@ export function AudioPlayer({ tracks }: AudioPlayerProps) {
   const handleShare = async (t: AudioTrack) => {
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({
+        const shareObj: any = {
           title: t.title,
           text: `🎵 ${t.title}${t.subtitle ? `\n📖 ${t.subtitle}` : ""}${t.reciter ? `\n🎤 ${t.reciter}` : ""}`,
           url: `https://thenahj.live/audio?id=${t.id}`,
-        });
+        };
+
+        if (t.cover_image && typeof navigator.canShare === 'function') {
+          try {
+            const response = await fetch(t.cover_image);
+            const blob = await response.blob();
+            const ext = blob.type.split('/')[1] || 'jpg';
+            const file = new File([blob], `cover.${ext}`, { type: blob.type });
+            if (navigator.canShare({ files: [file] })) {
+              shareObj.files = [file];
+            }
+          } catch (e) {
+            console.warn("Could not fetch image for native share", e);
+          }
+        }
+
+        await navigator.share(shareObj);
       } catch (err: any) {
         if (err?.name !== "AbortError") {
           setSharingTrack(t);
