@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Music, Share2, X, Copy, Check } from "lucide-react";
 import Image from "next/image";
 import { useAudioStore } from "@/lib/stores/audioStore";
+import { toast } from "sonner";
+import { ShareDrawer } from "@/components/ui/ShareDrawer";
 
 export interface AudioTrack {
   id: string;
@@ -23,10 +26,30 @@ interface AudioPlayerProps {
 
 export function AudioPlayer({ tracks }: AudioPlayerProps) {
   const { playTrack, currentTrack, isPlaying, play, pause } = useAudioStore();
+  const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   
   const [shareTrack, setShareTrack] = useState<AudioTrack | null>(null);
+  const [sharingTrack, setSharingTrack] = useState<AudioTrack | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // ── Deep Linking: Auto-play track from URL ──
+  useEffect(() => {
+    const idFromUrl = searchParams?.get("id");
+    if (idFromUrl && tracks.length > 0) {
+      const trackToPlay = tracks.find((t) => t.id === idFromUrl);
+      if (trackToPlay && currentTrack?.id !== trackToPlay.id) {
+        playTrack({
+          id: trackToPlay.id,
+          title: trackToPlay.title,
+          subtitle: trackToPlay.subtitle,
+          src: trackToPlay.src || "",
+          reciter: trackToPlay.reciter,
+        });
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, tracks]);
 
   const categories = ["All", ...Array.from(new Set(tracks.map((t) => t.category).filter(Boolean)))];
 
@@ -51,12 +74,18 @@ export function AudioPlayer({ tracks }: AudioPlayerProps) {
     }
   };
 
+  // Opens the custom share drawer with WhatsApp, Instagram etc options
+  const handleShare = (t: AudioTrack) => {
+    setSharingTrack(t);
+  };
+
   // ── Share Card Copy ──
   const handleCopyShareText = (t: AudioTrack) => {
     const text = `🕌 ${t.title}\n${t.subtitle ? `📖 ${t.subtitle}\n` : ""}${t.reciter ? `🎙️ ${t.reciter}\n` : ""}\n🔗 Listen on TheNahj: https://thenahj.live/audio`;
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      toast.success("Copied to clipboard");
     });
   };
 
@@ -150,7 +179,7 @@ export function AudioPlayer({ tracks }: AudioPlayerProps) {
               {/* Share button per track */}
               <button
                 type="button"
-                onClick={() => setShareTrack(t)}
+                onClick={() => handleShare(t)}
                 className={`flex items-center justify-center rounded-r-2xl px-3 transition-all ${
                   isSelected
                     ? "border border-l-0 border-gold/40 bg-gold/10 text-gold hover:bg-gold/20"
@@ -164,6 +193,20 @@ export function AudioPlayer({ tracks }: AudioPlayerProps) {
           );
         })}
       </div>
+
+      {sharingTrack && (
+        <ShareDrawer
+          isOpen={!!sharingTrack}
+          onClose={() => setSharingTrack(null)}
+          shareData={{
+            title: sharingTrack.title,
+            text: `🎵 ${sharingTrack.title}${sharingTrack.subtitle ? `\n📖 ${sharingTrack.subtitle}` : ""}${sharingTrack.reciter ? `\n🎤 ${sharingTrack.reciter}` : ""}`,
+            url: `https://thenahj.live/audio?id=${sharingTrack.id}`,
+            audioSrc: sharingTrack.src,
+            coverImage: sharingTrack.cover_image
+          }}
+        />
+      )}
 
       {/* ── Share Dua Card Modal ── */}
       <AnimatePresence>

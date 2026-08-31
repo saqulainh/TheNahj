@@ -1,5 +1,6 @@
 import { AudioPlayer, type AudioTrack } from "@/components/audio/AudioPlayer";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { Suspense } from "react";
 
 export const revalidate = 0; // Always fetch fresh data — no caching
 
@@ -49,7 +50,9 @@ export default async function AudioPage() {
           <p className="text-muted text-sm">No audio tracks added yet. Add tracks from the Admin Panel → Audio Library.</p>
         </div>
       ) : (
-        <AudioPlayer tracks={tracks} />
+        <Suspense fallback={<div className="p-12 text-center text-muted">Loading tracks...</div>}>
+          <AudioPlayer tracks={tracks} />
+        </Suspense>
       )}
     </section>
   );
