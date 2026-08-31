@@ -38,9 +38,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       "Islamic Motivation",
       "Youth Guidance Islam"
     ],
-    alternates: {
-      canonical: `${canonicalBase}/wisdom/${article.slug}`,
-    },
     openGraph: {
       title,
       description,

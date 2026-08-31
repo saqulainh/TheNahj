@@ -198,7 +198,13 @@ function generateBlocksFromStructured(data: any): ContentBlock[] {
 
 async function fetchUnifiedArticleBySlug(slug: string): Promise<UnifiedArticle | null> {
   if (isSupabaseConfigured && supabase) {
-    const { data } = await supabase.from("articles_unified").select("*").eq("slug", slug).maybeSingle();
+    const { data, error } = await supabase.from("articles_unified").select("*").eq("slug", slug).maybeSingle();
+    
+    if (error) {
+      console.error("Supabase error in fetchUnifiedArticleBySlug:", error);
+      throw new Error("Database connection failed");
+    }
+
     if (data) {
       let blocks = data.content_blocks ?? [];
       if (!blocks || blocks.length === 0) {
@@ -240,7 +246,7 @@ export async function getUnifiedArticleBySlug(slug: string): Promise<UnifiedArti
     async () => fetchUnifiedArticleBySlug(slug),
     [`article:${slug}`],
     {
-      revalidate: 1, // Set to 1 second to make publishing instant
+      revalidate: 300, // 5 min ISR cache window; invalidated immediately on publish/edit via revalidateTag
       tags: ["articles-unified", `article:${slug}`],
     }
   )();
@@ -388,7 +394,7 @@ export async function getRelatedUnifiedArticles(slug: string, category: string, 
     },
     [`related:${slug}:${category}:${normalizedTags.join("|")}`],
     {
-      revalidate: 1, // Set to 1 second to make publishing instant
+      revalidate: 300, // 5 min ISR cache window; invalidated on publish via revalidateTag
       tags: ["articles-unified", `article-related:${slug}`],
     }
   )();

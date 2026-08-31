@@ -31,9 +31,6 @@ export async function generateMetadata({ params }: PageProps) {
     title,
     description,
     keywords: article.tags,
-    alternates: {
-      canonical: `${canonicalBase}/articles/${article.slug}`,
-    },
     openGraph: {
       title,
       description,
@@ -46,6 +43,10 @@ export async function generateMetadata({ params }: PageProps) {
       title,
       description,
       images: [image],
+    },
+    robots: {
+      index: true,
+      follow: true,
     },
   } satisfies Metadata;
 }

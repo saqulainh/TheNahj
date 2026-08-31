@@ -84,7 +84,11 @@ export async function getCategories(): Promise<Category[]> {
   let dbCategories: Category[] = [];
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase.from("categories").select("*").order("name");
-    if (!error && data?.length) {
+    if (error) {
+      console.error("Supabase error in getCategories:", error);
+      throw new Error("Database connection failed");
+    }
+    if (data?.length) {
       dbCategories = data as Category[];
     }
   }

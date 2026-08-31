@@ -38,6 +38,10 @@ export async function generateMetadata({ params }: PageProps) {
       url: `https://thenahj.live/topics/${slug}`,
       type: "website",
     },
+    robots: {
+      index: true,
+      follow: true,
+    },
   };
 }
 

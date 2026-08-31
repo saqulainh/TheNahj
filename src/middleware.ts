@@ -8,6 +8,13 @@ export async function middleware(request: NextRequest) {
   const isAuthed = await verifyAdminToken(token);
   const origin = request.headers.get("origin");
   const host = request.headers.get("host");
+
+  if (host === "www.thenahj.live") {
+    const newUrl = new URL(request.url);
+    newUrl.host = "thenahj.live";
+    return NextResponse.redirect(newUrl, 301);
+  }
+
   const isUnsafeMethod = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method);
 
   if (isUnsafeMethod && pathname.startsWith("/api/")) {

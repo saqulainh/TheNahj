@@ -37,7 +37,7 @@ export function Footer({ socialLinks, links = footerLinks }: FooterProps) {
           <div>
             <div className="relative h-12 w-36 mb-4">
               <Image 
-                src="/TheNahj Logo.jpeg" 
+                src="/thenahj-logo.jpeg" 
                 alt={SITE_NAME} 
                 fill 
                 className="object-contain rounded-xl overflow-hidden" 

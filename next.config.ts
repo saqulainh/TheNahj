@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  trailingSlash: false,
   async headers() {
     return [
       {

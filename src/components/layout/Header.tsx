@@ -84,7 +84,7 @@ export function Header({
           {language === "en" ? (
             <div className="relative h-8 w-28 md:h-9 md:w-32 transition-transform duration-300 group-hover:scale-105">
               <Image 
-                src="/TheNahj Logo.jpeg" 
+                src="/thenahj-logo.jpeg" 
                 alt={siteName} 
                 fill 
                 className="object-contain rounded-xl overflow-hidden"

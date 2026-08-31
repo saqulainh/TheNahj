@@ -43,8 +43,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export async function generateMetadata(): Promise<Metadata> {
   const cms = await getCMSConfig();
-  // Hardcoded to strictly fix P0 canonicals bug across the site
-  const baseUrl = "https://www.thenahj.live";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
 
   return {
     metadataBase: new URL(baseUrl),
@@ -54,6 +53,14 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: cms.brand.description,
     manifest: "/manifest.json",
+    icons: {
+      icon: [
+        { url: '/thenahj-logo.jpeg' }
+      ],
+      apple: [
+        { url: '/thenahj-logo.jpeg' }
+      ]
+    },
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
@@ -79,6 +86,14 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: cms.brand.siteName,
       locale: "en_US",
       type: "website",
+      images: [
+        {
+          url: "/thenahj-logo.jpeg",
+          width: 512,
+          height: 512,
+          alt: cms.brand.siteName,
+        }
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -111,12 +126,12 @@ export default async function RootLayout({
     "@graph": [
       {
         "@type": "Organization",
-        "@id": "https://www.thenahj.live/#organization",
+        "@id": "https://thenahj.live/#organization",
         "name": cms.brand.siteName,
-        "url": "https://www.thenahj.live/",
+        "url": "https://thenahj.live/",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://www.thenahj.live/TheNahj%20Logo.jpeg",
+          "url": "https://thenahj.live/thenahj-logo.jpeg",
           "width": 512,
           "height": 512
         },
@@ -133,17 +148,17 @@ export default async function RootLayout({
       },
       {
         "@type": "WebSite",
-        "@id": "https://www.thenahj.live/#website",
-        "url": "https://www.thenahj.live/",
+        "@id": "https://thenahj.live/#website",
+        "url": "https://thenahj.live/",
         "name": cms.brand.siteName,
         "description": cms.brand.description,
-        "publisher": { "@id": "https://www.thenahj.live/#organization" },
+        "publisher": { "@id": "https://thenahj.live/#organization" },
         "inLanguage": "en-US",
         "potentialAction": {
           "@type": "SearchAction",
           "target": {
             "@type": "EntryPoint",
-            "urlTemplate": "https://www.thenahj.live/situation-search?q={search_term_string}"
+            "urlTemplate": "https://thenahj.live/situation-search?q={search_term_string}"
           },
           "query-input": "required name=search_term_string"
         }
