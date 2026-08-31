@@ -276,15 +276,13 @@ export async function POST(request: Request) {
     let ragResults: Awaited<ReturnType<typeof searchRAGContext>> = [];
     const retrievalStart = Date.now();
     try {
-      allWisdom = await withTimeout(getAllWisdom(), RETRIEVAL_TIMEOUT_MS, "getAllWisdom");
-      const wisdomMs = Date.now() - retrievalStart;
-      const ragStart = Date.now();
-      ragResults = await withTimeout(
-        searchRAGContext(userMessage, 5, allWisdom),
-        RETRIEVAL_TIMEOUT_MS,
-        "searchRAGContext"
-      );
-      console.log(`[Chat] ⏱ retrieval: getAllWisdom=${wisdomMs}ms, searchRAG=${Date.now() - ragStart}ms, total=${Date.now() - retrievalStart}ms (topics=${detectedTopics.join(",")})`);
+      const results = await Promise.all([
+        withTimeout(getAllWisdom(), RETRIEVAL_TIMEOUT_MS, "getAllWisdom"),
+        withTimeout(searchRAGContext(userMessage, 5), RETRIEVAL_TIMEOUT_MS, "searchRAGContext")
+      ]);
+      allWisdom = results[0];
+      ragResults = results[1];
+      console.log(`[Chat] ⏱ retrieval: total=${Date.now() - retrievalStart}ms (topics=${detectedTopics.join(",")})`);
     } catch (retrievalErr) {
       // Retrieval is best-effort — on timeout, fall back to the static corpus
       // so the chat still answers instead of hanging forever.

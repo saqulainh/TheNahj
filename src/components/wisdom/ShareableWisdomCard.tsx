@@ -36,7 +36,6 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
   const [showEnglish, setShowEnglish] = useState(!!wisdom.english_translation);
   const [showUrdu, setShowUrdu] = useState(false);
   const [showWatermark, setShowWatermark] = useState(true);
-  const [showQR, setShowQR] = useState(true);
   const [fontSize, setFontSize] = useState(100);
 
   const cardRef = useRef<HTMLDivElement>(null);
@@ -179,11 +178,11 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            initial={{ scale: 0.90, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+            exit={{ scale: 0.90, opacity: 0, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg space-y-6 my-auto pt-10 pb-10"
+            className="w-full max-w-lg space-y-6 my-auto origin-top"
           >
             {/* Header controls */}
             <div className="flex items-center justify-between">
@@ -241,19 +240,19 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
                   {wisdom.arabic_text && (
                     <label className="flex items-center gap-1 cursor-pointer hover:text-white">
                       <input type="checkbox" checked={showArabic} onChange={(e) => setShowArabic(e.target.checked)} className="accent-gold rounded" />
-                      Ar
+                      Arabic
                     </label>
                   )}
                   {wisdom.english_translation && (
                     <label className="flex items-center gap-1 cursor-pointer hover:text-white">
                       <input type="checkbox" checked={showEnglish} onChange={(e) => setShowEnglish(e.target.checked)} className="accent-gold rounded" />
-                      En
+                      English
                     </label>
                   )}
                   {wisdom.urdu_translation && (
                     <label className="flex items-center gap-1 cursor-pointer hover:text-white">
                       <input type="checkbox" checked={showUrdu} onChange={(e) => setShowUrdu(e.target.checked)} className="accent-gold rounded" />
-                      Ur
+                      Urdu
                     </label>
                   )}
                 </div>
@@ -262,10 +261,6 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
                   <label className="flex items-center gap-1 cursor-pointer hover:text-white">
                     <input type="checkbox" checked={showWatermark} onChange={(e) => setShowWatermark(e.target.checked)} className="accent-gold rounded" />
                     Watermark
-                  </label>
-                  <label className="flex items-center gap-1 cursor-pointer hover:text-white">
-                    <input type="checkbox" checked={showQR} onChange={(e) => setShowQR(e.target.checked)} className="accent-gold rounded" />
-                    QR Code
                   </label>
                 </div>
               </div>
@@ -283,7 +278,7 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
             </div>
 
             {/* The Shareable Card (Preview) */}
-            <div className="flex justify-center overflow-x-auto py-2">
+            <div className="flex justify-center overflow-x-auto py-2 scale-[0.85] sm:scale-100 origin-top">
               <div 
                 ref={cardRef}
                 className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${theme.bg} p-8 shadow-2xl border border-white/10 flex flex-col ${aspect.class}`}
@@ -339,26 +334,13 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
                   </p>
                 </div>
 
-                {/* Footer Logo/Link & QR */}
-                {(showWatermark || showQR) && (
+                {/* Footer Logo/Link */}
+                {showWatermark && (
                   <div className={`mt-6 pt-4 border-t w-full flex justify-between items-end ${theme.id === 'minimal' ? 'border-black/10 text-stone-500' : 'border-white/10 text-white/40'} text-[9px] tracking-wider font-medium`}>
-                    {showWatermark ? (
-                      <div className="flex flex-col gap-0.5 text-left">
-                        <span className="text-xs font-bold text-gold">TheNahj.live</span>
-                        <span>Imam Ali (AS) Wisdom</span>
-                      </div>
-                    ) : <div />}
-                    
-                    {showQR && (
-                      <div className="p-1 bg-white rounded-md shadow-sm">
-                        <img 
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=0&data=${encodedUrl}`} 
-                          alt="QR Code" 
-                          className="w-9 h-9 object-contain"
-                          crossOrigin="anonymous"
-                        />
-                      </div>
-                    )}
+                    <div className="flex flex-col gap-0.5 text-left">
+                      <span className="text-xs font-bold text-gold">TheNahj.live</span>
+                      <span>Imam Ali (AS) Wisdom</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -409,7 +391,7 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
                 onClick={handleNativeShare}
                 className="col-span-4 md:col-span-2 flex flex-1 items-center justify-center gap-2 rounded-xl bg-gold px-4 py-3 text-xs font-bold text-black transition-colors hover:bg-gold-light"
               >
-                <Share2 size={16} /> Native Share
+                <Share2 size={16} /> Share (More Apps)
               </button>
             </div>
           </motion.div>

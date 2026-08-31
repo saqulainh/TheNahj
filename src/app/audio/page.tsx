@@ -4,10 +4,50 @@ import { Suspense } from "react";
 
 export const revalidate = 0; // Always fetch fresh data — no caching
 
-export const metadata = {
-  title: "Audio Library & Reflections — Duas, Ziyarat, Nohay & Imam Ali (AS) Wisdom",
-  description: "Listen to Ziyarat-e-Ashura, Dua-e-Kumail, Nade Ali, Nohay, and narrated reflections from Imam Ali (AS).",
-};
+import { Metadata } from "next";
+
+export async function generateMetadata(
+  props: { searchParams: Promise<{ id?: string }> }
+): Promise<Metadata> {
+  const searchParams = await props.searchParams;
+  const id = searchParams?.id;
+  
+  const defaultMeta = {
+    title: "Audio Library & Reflections — Duas, Ziyarat, Nohay & Imam Ali (AS) Wisdom",
+    description: "Listen to Ziyarat-e-Ashura, Dua-e-Kumail, Nade Ali, Nohay, and narrated reflections from Imam Ali (AS).",
+  };
+
+  if (!id || !isSupabaseConfigured || !supabase) {
+    return defaultMeta;
+  }
+
+  const { data, error } = await supabase
+    .from("audio_tracks")
+    .select("title, subtitle, cover_image, reciter")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) {
+    return defaultMeta;
+  }
+
+  const imageUrl = data.cover_image;
+  return {
+    title: `${data.title} ${data.reciter ? `— by ${data.reciter}` : ''} | TheNahj Audio`,
+    description: data.subtitle || defaultMeta.description,
+    openGraph: {
+      title: data.title,
+      description: data.subtitle || defaultMeta.description,
+      images: imageUrl ? [{ url: imageUrl, width: 800, height: 800, alt: data.title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: data.title,
+      description: data.subtitle || defaultMeta.description,
+      images: imageUrl ? [imageUrl] : undefined,
+    }
+  };
+}
 
 export default async function AudioPage() {
   let tracks: AudioTrack[] = [];

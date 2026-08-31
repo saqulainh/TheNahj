@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { speakMultilingualText, stopTTS } from "@/lib/tts";
 import { Sparkles, X, Send, Bot, User, Loader2, ArrowRight, Mic, MicOff, Volume2, VolumeX, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { BreathingWidget } from "@/components/chat/widgets/BreathingWidget";
@@ -143,21 +144,17 @@ export function AiGuidanceChatbot() {
   const [speakingId, setSpeakingId] = useState<string | null>(null);
 
   const speakText = (text: string, msgId: string) => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-
     if (speakingId === msgId) {
+      stopTTS();
       setSpeakingId(null);
       return;
     }
 
-    const cleanText = text.replace(/[*#_`]/g, "").replace(/\[.*?\]\(.*?\)/g, "");
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.onend = () => setSpeakingId(null);
     setSpeakingId(msgId);
-    window.speechSynthesis.speak(utterance);
+    speakMultilingualText(text, {
+      onEnd: () => setSpeakingId(null),
+      onError: () => setSpeakingId(null),
+    });
   };
 
   const scrollToBottom = () => {

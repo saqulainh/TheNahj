@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Mic, Square, Loader2, Volume2, Sparkles, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { speakMultilingualText } from "@/lib/tts";
 
 export default function VoiceAssistantPage() {
   const [isListening, setIsListening] = useState(false);
@@ -135,55 +136,11 @@ export default function VoiceAssistantPage() {
   };
 
   const speakResponse = (text: string) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    
-    window.speechSynthesis.cancel();
-    
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    const utterances: SpeechSynthesisUtterance[] = [];
-    const voices = window.speechSynthesis.getVoices();
-
-    const arVoice = voices.find(v => v.lang.startsWith("ar"));
-    const urVoice = voices.find(v => v.lang.startsWith("ur"));
-    const enVoice = voices.find((v) => v.lang.startsWith("en") && (v.name.includes("Natural") || v.name.includes("Google"))) || voices.find((v) => v.lang.startsWith("en"));
-
-    lines.forEach((line) => {
-      const isArabicScript = /[\u0600-\u06FF]/.test(line);
-      const utterance = new SpeechSynthesisUtterance(line);
-      
-      if (isArabicScript) {
-        const isUrdu = line.includes('ہے') || line.includes('یں') || line.includes('کیا') || line.includes('کی') || line.includes('کے');
-        if (isUrdu && urVoice) {
-          utterance.voice = urVoice;
-          utterance.lang = "ur-PK";
-        } else if (arVoice) {
-          utterance.voice = arVoice;
-          utterance.lang = "ar-SA";
-        } else if (urVoice) {
-           utterance.voice = urVoice; 
-           utterance.lang = "ur-PK";
-        }
-        utterance.rate = 0.85;
-      } else {
-        if (enVoice) utterance.voice = enVoice;
-        utterance.lang = "en-US";
-        utterance.rate = 0.95;
-      }
-      utterances.push(utterance);
+    speakMultilingualText(text, {
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
     });
-
-    if (utterances.length === 0) return;
-
-    utterances[0].onstart = () => setIsSpeaking(true);
-    
-    utterances.forEach((u, index) => {
-      u.onerror = () => setIsSpeaking(false);
-      if (index === utterances.length - 1) {
-        u.onend = () => setIsSpeaking(false);
-      }
-    });
-
-    utterances.forEach(u => window.speechSynthesis.speak(u));
   };
 
 

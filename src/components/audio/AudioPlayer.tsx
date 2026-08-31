@@ -74,9 +74,23 @@ export function AudioPlayer({ tracks }: AudioPlayerProps) {
     }
   };
 
-  // Opens the custom share drawer with WhatsApp, Instagram etc options
-  const handleShare = (t: AudioTrack) => {
-    setSharingTrack(t);
+  // Directly open native share if supported, fallback to custom drawer
+  const handleShare = async (t: AudioTrack) => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: t.title,
+          text: `🎵 ${t.title}${t.subtitle ? `\n📖 ${t.subtitle}` : ""}${t.reciter ? `\n🎤 ${t.reciter}` : ""}`,
+          url: `https://thenahj.live/audio?id=${t.id}`,
+        });
+      } catch (err: any) {
+        if (err?.name !== "AbortError") {
+          setSharingTrack(t);
+        }
+      }
+    } else {
+      setSharingTrack(t);
+    }
   };
 
   // ── Share Card Copy ──

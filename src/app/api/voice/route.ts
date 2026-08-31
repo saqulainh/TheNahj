@@ -20,8 +20,12 @@ export async function POST(request: Request) {
     let allWisdom: Awaited<ReturnType<typeof getAllWisdom>> = [];
     let ragResults: Awaited<ReturnType<typeof searchRAGContext>> = [];
     try {
-      allWisdom = await getAllWisdom();
-      ragResults = await searchRAGContext(message, 3, allWisdom);
+      const results = await Promise.all([
+        getAllWisdom(),
+        searchRAGContext(message, 3)
+      ]);
+      allWisdom = results[0];
+      ragResults = results[1];
     } catch (e) {
       console.error("[Voice API] RAG retrieval failed:", e);
     }
