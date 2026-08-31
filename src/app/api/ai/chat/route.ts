@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
 import { getAllWisdom } from "@/lib/wisdom";
-import { searchRAGContext } from "@/lib/rag/retrieval";
+import { searchRAGContext, searchRAGContextWithConfidence, type RAGSearchResult } from "@/lib/rag/retrieval";
 import { streamGeminiWithFailover } from "@/lib/gemini";
 import { sanitizeAIResponse } from "@/lib/sanitizeAIResponse";
 import { getCachedResponse, setCachedResponse } from "@/lib/rag/cache";
@@ -273,22 +273,32 @@ export async function POST(request: Request) {
     // Wrapped in a hard timeout so a slow/hung Supabase response cannot stall
     // the request before the Gemini stream even starts.
     let allWisdom: Awaited<ReturnType<typeof getAllWisdom>> = [];
-    let ragResults: Awaited<ReturnType<typeof searchRAGContext>> = [];
+    let ragPayload: Awaited<ReturnType<typeof searchRAGContextWithConfidence>> = {
+      results: [],
+      isSpecificReferenceQuery: false,
+      hasVerifiedMatch: false,
+      queryIntent: "general_inquiry",
+    };
     const retrievalStart = Date.now();
     try {
       const results = await Promise.all([
         withTimeout(getAllWisdom(), RETRIEVAL_TIMEOUT_MS, "getAllWisdom"),
-        withTimeout(searchRAGContext(userMessage, 5), RETRIEVAL_TIMEOUT_MS, "searchRAGContext")
+        withTimeout(searchRAGContextWithConfidence(userMessage, 5), RETRIEVAL_TIMEOUT_MS, "searchRAGContextWithConfidence")
       ]);
       allWisdom = results[0];
-      ragResults = results[1];
-      console.log(`[Chat] ⏱ retrieval: total=${Date.now() - retrievalStart}ms (topics=${detectedTopics.join(",")})`);
+      ragPayload = results[1];
+      console.log(`[Chat] ⏱ retrieval: total=${Date.now() - retrievalStart}ms (topics=${detectedTopics.join(",")}, specificRef=${ragPayload.isSpecificReferenceQuery}, verified=${ragPayload.hasVerifiedMatch})`);
     } catch (retrievalErr) {
       // Retrieval is best-effort — on timeout, fall back to the static corpus
       // so the chat still answers instead of hanging forever.
       console.warn("[Chat] Retrieval failed/timed out, continuing without RAG:", retrievalErr);
       allWisdom = [];
-      ragResults = [];
+      ragPayload = {
+        results: [],
+        isSpecificReferenceQuery: false,
+        hasVerifiedMatch: false,
+        queryIntent: "general_inquiry",
+      };
     }
 
     const relevantWisdom = allWisdom
@@ -298,10 +308,18 @@ export async function POST(request: Request) {
       })
       .slice(0, 3);
 
-    const contextSnippets = [
-      ...ragResults.map((r) => `• [RAG Citation — ${r.source}]: "${r.content}"${r.slug ? ` (Link: /wisdom/${r.slug})` : ""}`),
-      ...relevantWisdom.map((w) => `• [Wisdom Card — ${w.source}]: Arabic: "${w.arabic_text || 'N/A'}" | Urdu: "${w.urdu_translation || 'N/A'}" | English: "${w.english_translation}" (Read more: /wisdom/${w.slug})`),
-    ];
+    const contextSnippets: string[] = [];
+
+    if (ragPayload.isSpecificReferenceQuery && !ragPayload.hasVerifiedMatch) {
+      contextSnippets.push(
+        `• [SYSTEM ALERT — SPECIFIC REFERENCE NOT FOUND]: The user asked for a specific sermon/letter/hadith reference that is NOT found in our verified database. YOU MUST NOT FABRICATE OR GUESS. Explicitly inform the user that this specific reference is not found in our verified collection.`
+      );
+    } else {
+      contextSnippets.push(
+        ...ragPayload.results.map((r) => `• [RAG Citation — ${r.source}]: "${r.content}"${r.slug ? ` (Link: /wisdom/${r.slug})` : ""}`),
+        ...relevantWisdom.map((w) => `• [Wisdom Card — ${w.source}]: Arabic: "${w.arabic_text || 'N/A'}" | Urdu: "${w.urdu_translation || 'N/A'}" | English: "${w.english_translation}" (Read more: /wisdom/${w.slug})`)
+      );
+    }
 
     const relatedWisdomPayload = relevantWisdom.slice(0, 3).map((w) => ({
       title: w.source,
@@ -318,7 +336,12 @@ CORE PRINCIPLES — DIRECT, RELEVANT & CONVERSATIONAL:
    - Always answer what the user asked directly without generic filler preambles, artificial greetings on every turn, or beating around the bush.
    - Vary your response structure to fit the user's specific intent. Do NOT force an identical robotic template onto every query.
 
-2. Intent-Specific Guidelines:
+2. ZERO-HALLUCINATION & CITATION INTEGRITY (STRICT THEOLOGICAL RULE):
+   - NEVER invent, fabricate, or guess sermon numbers, letter numbers, hadith numbers, or quotes attributed to Imam Ali (AS) or Ahlulbayt.
+   - If the user asks for a specific sermon, letter, or quote number that is not present in the verified context or does not exist (e.g. "Khutba 999"), explicitly inform the user that this specific reference is not found in our verified collection. NEVER invent a quote to satisfy the request.
+   - When citing, quote verbatim from the verified database context provided below.
+
+3. Intent-Specific Guidelines:
    - Personalities, Scholars & Leaders (e.g. Ayatollah Khamenei, Ayatollah Sistani, Shahid Mutahhari, Allama Iqbal, historical figures):
      Provide an accurate, detailed, and direct overview of who they are, their role, scholarship, key works, philosophy, and contributions. Do NOT divert into unrelated sermons (like forcing Letter 53) or force action steps unless the user asked for reading recommendations.
    - Life Challenges & Emotional Guidance (e.g. "depression ko kmm kaise kre", anxiety, overthinking, focus, relationships):
@@ -328,18 +351,18 @@ CORE PRINCIPLES — DIRECT, RELEVANT & CONVERSATIONAL:
    - General Knowledge & Everyday Inquiries:
      Answer clearly, intelligently, and helpfully. Do not force an Islamic or Nahjul Balagha quote where it does not naturally belong.
 
-3. Language Matching:
+4. Language Matching:
    - If the user writes in Roman Urdu/Hindi (e.g. "depression ko kmm kaise kre", "unke bare me batao"), respond naturally in the same language or clear bilingual Urdu/English.
    - If the user writes in English, Urdu script, or Arabic, respond accordingly.
 
-4. FORMATTING RULES (STRICT):
+5. FORMATTING RULES (STRICT):
    - NEVER use Markdown formatting of any kind (no **, no ##, no backticks, no --- dividers, no markdown bullet stars).
    - Write in flowing, natural prose with clean line breaks.
    - Standard numbered lists (1. 2. 3.) are acceptable when providing steps.
    - Arabic and Urdu scripts should appear inline cleanly in their authentic script.
 
 MATCHING CONTEXT FROM DATABASE:
-${contextSnippets.length > 0 ? contextSnippets.join("\n") : "No specific local database entries matched. Use your vast, authentic knowledge base."}
+${contextSnippets.length > 0 ? contextSnippets.join("\n") : "No specific local database entries matched. Use your vast, authentic general knowledge without fabricating specific references."}
 
 ${conversationHistory ? `CONVERSATION HISTORY:\n${conversationHistory}` : ""}`;
 
