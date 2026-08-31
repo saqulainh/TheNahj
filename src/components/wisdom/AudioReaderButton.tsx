@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Volume2, VolumeX, Loader2 } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 
 interface AudioReaderProps {
   text: string;
+  arabicText?: string;
+  urduText?: string;
   source?: string;
 }
 
-export function AudioReaderButton({ text, source }: AudioReaderProps) {
+export function AudioReaderButton({ text, arabicText, urduText, source }: AudioReaderProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [supported, setSupported] = useState(false);
 
@@ -26,21 +28,56 @@ export function AudioReaderButton({ text, source }: AudioReaderProps) {
       setIsPlaying(false);
     } else {
       window.speechSynthesis.cancel(); // cancel any previous utterance
-      const fullText = `${text}. ${source ? `Source: ${source}` : ""}`;
-      const utterance = new SpeechSynthesisUtterance(fullText);
-      utterance.rate = 0.9; // Slightly slower, calm speed
-      utterance.pitch = 1.0;
-
-      // Try to find a natural English voice
-      const voices = window.speechSynthesis.getVoices();
-      const naturalVoice = voices.find((v) => v.lang.startsWith("en") && v.name.includes("Natural"));
-      if (naturalVoice) utterance.voice = naturalVoice;
-
-      utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = () => setIsPlaying(false);
-
       setIsPlaying(true);
-      window.speechSynthesis.speak(utterance);
+
+      const voices = window.speechSynthesis.getVoices();
+      const utterances: SpeechSynthesisUtterance[] = [];
+
+      // 1. Arabic
+      if (arabicText) {
+        const arU = new SpeechSynthesisUtterance(arabicText);
+        arU.lang = "ar-SA";
+        arU.rate = 0.85; // slightly slower for arabic reading
+        // try to find an arabic voice
+        const arVoice = voices.find(v => v.lang.startsWith("ar"));
+        if (arVoice) arU.voice = arVoice;
+        utterances.push(arU);
+      }
+
+      // 2. Urdu
+      if (urduText) {
+        const urU = new SpeechSynthesisUtterance(urduText);
+        urU.lang = "ur-PK";
+        urU.rate = 0.9;
+        const urVoice = voices.find(v => v.lang.startsWith("ur"));
+        if (urVoice) urU.voice = urVoice;
+        utterances.push(urU);
+      }
+
+      // 3. English + Source
+      const fullEngText = `${text}. ${source ? `Source: ${source}` : ""}`;
+      const enU = new SpeechSynthesisUtterance(fullEngText);
+      enU.lang = "en-US";
+      enU.rate = 0.9;
+      const enVoice = voices.find((v) => v.lang.startsWith("en") && v.name.includes("Natural")) 
+                   || voices.find((v) => v.lang.startsWith("en"));
+      if (enVoice) enU.voice = enVoice;
+      utterances.push(enU);
+
+      // Handle events
+      utterances.forEach((u, index) => {
+        u.onerror = () => {
+          window.speechSynthesis.cancel();
+          setIsPlaying(false);
+        };
+        // Only stop playing when the very last utterance finishes
+        if (index === utterances.length - 1) {
+          u.onend = () => setIsPlaying(false);
+        }
+      });
+
+      // Speak all in sequence
+      utterances.forEach(u => window.speechSynthesis.speak(u));
     }
   };
 

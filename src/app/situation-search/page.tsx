@@ -119,6 +119,7 @@ export default function SituationSearchPage() {
               </p>
               <AudioReaderButton 
                 text={result.recommendedWisdom?.englishTranslation} 
+                arabicText={result.recommendedWisdom?.arabicText}
                 source={result.recommendedWisdom?.source} 
               />
             </div>

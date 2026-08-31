@@ -162,7 +162,12 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
 
         {/* Audio Voice Narration Engine */}
         <div className="mt-3 flex justify-center pointer-events-auto relative z-30">
-          <AudioReaderButton text={wisdom.english_translation} source={wisdom.source} />
+          <AudioReaderButton 
+            text={wisdom.english_translation} 
+            arabicText={wisdom.arabic_text}
+            urduText={wisdom.urdu_translation}
+            source={wisdom.source} 
+          />
         </div>
       </div>
 
