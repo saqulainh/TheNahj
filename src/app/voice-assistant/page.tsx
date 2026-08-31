@@ -66,6 +66,16 @@ export default function VoiceAssistantPage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        // Forces voices to load into the browser cache
+        window.speechSynthesis.getVoices();
+      };
+      window.speechSynthesis.getVoices();
+    }
+  }, []);
+
   const toggleListening = async () => {
     setError(null);
     if (isListening) {
@@ -128,20 +138,54 @@ export default function VoiceAssistantPage() {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
     
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const utterances: SpeechSynthesisUtterance[] = [];
     const voices = window.speechSynthesis.getVoices();
-    const naturalVoice = voices.find((v) => v.lang.startsWith("en") && (v.name.includes("Natural") || v.name.includes("Google")));
-    if (naturalVoice) utterance.voice = naturalVoice;
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    const arVoice = voices.find(v => v.lang.startsWith("ar"));
+    const urVoice = voices.find(v => v.lang.startsWith("ur"));
+    const enVoice = voices.find((v) => v.lang.startsWith("en") && (v.name.includes("Natural") || v.name.includes("Google"))) || voices.find((v) => v.lang.startsWith("en"));
 
-    window.speechSynthesis.speak(utterance);
+    lines.forEach((line) => {
+      const isArabicScript = /[\u0600-\u06FF]/.test(line);
+      const utterance = new SpeechSynthesisUtterance(line);
+      
+      if (isArabicScript) {
+        const isUrdu = line.includes('ہے') || line.includes('یں') || line.includes('کیا') || line.includes('کی') || line.includes('کے');
+        if (isUrdu && urVoice) {
+          utterance.voice = urVoice;
+          utterance.lang = "ur-PK";
+        } else if (arVoice) {
+          utterance.voice = arVoice;
+          utterance.lang = "ar-SA";
+        } else if (urVoice) {
+           utterance.voice = urVoice; 
+           utterance.lang = "ur-PK";
+        }
+        utterance.rate = 0.85;
+      } else {
+        if (enVoice) utterance.voice = enVoice;
+        utterance.lang = "en-US";
+        utterance.rate = 0.95;
+      }
+      utterances.push(utterance);
+    });
+
+    if (utterances.length === 0) return;
+
+    utterances[0].onstart = () => setIsSpeaking(true);
+    
+    utterances.forEach((u, index) => {
+      u.onerror = () => setIsSpeaking(false);
+      if (index === utterances.length - 1) {
+        u.onend = () => setIsSpeaking(false);
+      }
+    });
+
+    utterances.forEach(u => window.speechSynthesis.speak(u));
   };
+
 
   return (
     <div className="min-h-[calc(100vh-8rem)] flex flex-col items-center justify-center p-6 bg-background relative overflow-hidden">
