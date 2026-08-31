@@ -150,13 +150,13 @@ export function Header({
         </div>
 
         {/* Mobile Menu Toggle & Actions */}
-        <div className="flex items-center gap-2 sm:gap-3 md:hidden">
+        <div className="flex items-center gap-1.5 sm:gap-2 md:hidden">
           <Link
             href="/profile"
-            className="flex h-10 w-10 min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-xl border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
+            className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
             title="My Profile"
           >
-            <User size={18} />
+            <User size={16} />
           </Link>
           <div className="flex items-center shrink-0">
             <LanguageToggle />
@@ -166,9 +166,10 @@ export function Header({
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="ml-1 flex h-10 w-10 min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-full border border-border/25 bg-surface/80 p-2 text-muted hover:text-foreground"
+            className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg border border-border/30 bg-surface-alt/80 text-muted hover:text-foreground transition-all active:scale-95"
+            aria-label="Toggle navigation menu"
           >
-            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
       </div>
