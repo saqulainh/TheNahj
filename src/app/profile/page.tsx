@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { useStreak } from "@/lib/streaks";
+import { useStreak } from "@/lib/streak";
 import { useBookmarks } from "@/lib/bookmarks";
 import { Flame, Bookmark, Award, LogOut, User, Sparkles, ArrowRight, ShieldCheck, Heart } from "lucide-react";
 import Link from "next/link";
@@ -157,7 +157,7 @@ export default function ProfilePage() {
             <span>Daily Noor Streak</span>
           </div>
           <p className="text-4xl font-extrabold text-foreground">{streak.currentStreak} <span className="text-sm font-normal text-muted">Days</span></p>
-          <p className="text-[10px] text-muted">Best Streak: {streak.bestStreak} Days | Total Read: {streak.totalCardsRead} Cards</p>
+          <p className="text-[10px] text-muted">Best Streak: {streak.longestStreak} Days | Total Read: {streak.totalDays} Cards</p>
         </div>
 
         {/* Saved Bookmarks Count */}
@@ -176,7 +176,7 @@ export default function ProfilePage() {
             <Award size={18} />
             <span>Badges Unlocked</span>
           </div>
-          <p className="text-4xl font-extrabold text-foreground">{streak.badges.length} <span className="text-sm font-normal text-muted">Badges</span></p>
+          <p className="text-4xl font-extrabold text-foreground">{streak.badges.filter(b => b.earned).length} <span className="text-sm font-normal text-muted">Badges</span></p>
           <p className="text-[10px] text-muted">Spiritual Milestones Achieved</p>
         </div>
       </div>
@@ -198,7 +198,7 @@ export default function ProfilePage() {
             activeTab === "badges" ? "border-b-2 border-gold text-gold" : "text-muted hover:text-foreground"
           }`}
         >
-          <Award size={14} /> My Badges ({streak.badges.length})
+          <Award size={14} /> My Badges ({streak.badges.filter(b => b.earned).length})
         </button>
       </div>
 
@@ -244,13 +244,13 @@ export default function ProfilePage() {
 
       {activeTab === "badges" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {streak.badges.map((badge, idx) => (
+          {streak.badges.filter(b => b.earned).map((badge, idx) => (
             <div key={idx} className="rounded-2xl border border-gold/30 bg-gold/5 p-4 flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold border border-gold/30">
                 <Award size={20} />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-foreground">{badge}</h4>
+                <h4 className="text-xs font-bold text-foreground">{badge.name}</h4>
                 <p className="text-[10px] text-muted">Unlocked milestone</p>
               </div>
             </div>
