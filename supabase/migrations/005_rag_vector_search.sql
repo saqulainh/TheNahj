@@ -29,7 +29,8 @@ to anon using (true);
 create or replace function match_wisdom_embeddings(
   query_embedding vector(768),
   match_threshold float default 0.4,
-  match_count int default 5
+  match_count int default 5,
+  filter_metadata jsonb default null
 )
 returns table (
   id uuid,
@@ -46,6 +47,7 @@ as $$
     1 - (wisdom_embeddings.embedding <=> query_embedding) as similarity
   from wisdom_embeddings
   where 1 - (wisdom_embeddings.embedding <=> query_embedding) > match_threshold
+    and (filter_metadata is null or wisdom_embeddings.metadata @> filter_metadata)
   order by wisdom_embeddings.embedding <=> query_embedding
   limit match_count;
 $$;

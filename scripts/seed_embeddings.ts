@@ -27,10 +27,16 @@ async function seed() {
       continue;
     }
 
+    const [citationType, ...rest] = w.source.split(" ");
+    const citationNumber = rest.join(" ");
+
     const { error } = await supabase.from("wisdom_embeddings").upsert({
       id: "a0000000-0000-0000-0000-" + String(i + 1).padStart(12, '0'),
       content: `[${w.source}]: "${w.english_translation}"\nUrdu: "${w.urdu_translation || ""}"`,
       metadata: {
+        corpus_id: "nahjul-balagha", // Injected corpus_id for multi-source support
+        citation_type: citationType,
+        citation_number: citationNumber,
         source: w.source,
         slug: w.slug,
         category: w.category?.name,

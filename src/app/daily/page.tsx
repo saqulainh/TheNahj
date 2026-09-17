@@ -1,5 +1,6 @@
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 import { getDailyWisdom } from "@/lib/wisdom";
+import { DailyCheckin } from "@/components/daily/DailyCheckin";
 
 export const metadata = {
   title: "Daily Wisdom — Imam Ali (AS) Quote of the Day",
@@ -26,8 +27,11 @@ export default async function DailyPage() {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 md:px-6 md:py-16">
-      <h1 className="text-center text-3xl font-medium text-foreground">Daily Wisdom</h1>
+      <h1 className="text-center text-3xl font-medium text-foreground">Daily Curriculum</h1>
       <p className="mt-4 text-center text-muted">One reflection for today. Return tomorrow.</p>
+      
+      <DailyCheckin />
+
       <section className="mt-12">
         <WisdomCard wisdom={daily} />
       </section>

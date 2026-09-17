@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { fetchGeminiWithFailover } from "@/lib/gemini";
-import { getAllWisdom } from "@/lib/wisdom";
 import { searchRAGContextWithConfidence } from "@/lib/rag/retrieval";
 
 export async function POST(request: Request) {
@@ -16,8 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "API Key not configured" }, { status: 500 });
     }
 
-    // 1. Fetch Wisdom and perform RAG search with confidence thresholding
-    let allWisdom: Awaited<ReturnType<typeof getAllWisdom>> = [];
+    // 1. Perform RAG search with confidence thresholding
     let ragPayload: Awaited<ReturnType<typeof searchRAGContextWithConfidence>> = {
       results: [],
       isSpecificReferenceQuery: false,
@@ -25,23 +23,10 @@ export async function POST(request: Request) {
       queryIntent: "general_inquiry",
     };
     try {
-      const results = await Promise.all([
-        getAllWisdom(),
-        searchRAGContextWithConfidence(message, 3)
-      ]);
-      allWisdom = results[0];
-      ragPayload = results[1];
+      ragPayload = await searchRAGContextWithConfidence(message, 3);
     } catch (e) {
       console.error("[Voice API] RAG retrieval failed:", e);
     }
-
-    const searchTerms = message.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
-    const relevantWisdom = allWisdom
-      .filter((w) => {
-        const text = `${w.english_translation} ${w.source} ${(w.corner_topics || []).join(" ")}`.toLowerCase();
-        return searchTerms.some((term: string) => text.includes(term));
-      })
-      .slice(0, 2);
 
     const contextSnippets: string[] = [];
     if (ragPayload.isSpecificReferenceQuery && !ragPayload.hasVerifiedMatch) {
@@ -50,8 +35,7 @@ export async function POST(request: Request) {
       );
     } else {
       contextSnippets.push(
-        ...ragPayload.results.map((r) => `[RAG Citation - ${r.source}]: "${r.content}"`),
-        ...relevantWisdom.map((w) => `[Wisdom Card - ${w.source}]: Arabic: "${w.arabic_text || 'N/A'}" | Urdu: "${w.urdu_translation || 'N/A'}" | English: "${w.english_translation}"`)
+        ...ragPayload.results.map((r) => `[RAG Citation - ${r.source}]: "${r.content}"`)
       );
     }
 

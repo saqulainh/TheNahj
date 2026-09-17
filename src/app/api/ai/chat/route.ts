@@ -1,10 +1,11 @@
+export const runtime = "edge";
 import { NextResponse } from "next/server";
 import { consumeRateLimit, getRequestClientIp } from "@/lib/rate-limit";
-import { getAllWisdom } from "@/lib/wisdom";
-import { searchRAGContext, searchRAGContextWithConfidence, type RAGSearchResult } from "@/lib/rag/retrieval";
+import { searchRAGContextWithConfidence, type RAGSearchResult } from "@/lib/rag/retrieval";
 import { streamGeminiWithFailover } from "@/lib/gemini";
 import { sanitizeAIResponse } from "@/lib/sanitizeAIResponse";
 import { getCachedResponse, setCachedResponse } from "@/lib/rag/cache";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 // ⏱ Time budgets for each pipeline stage. These guarantee that a hung
 // retrieval / embedding / generation step can NEVER hold a request open
@@ -216,18 +217,18 @@ function buildWidget(lowerMsg: string): any {
 
 // ─── Fallback response (no API key) ───────────────────────────────────────────
 const FALLBACK_RESPONSES: Record<string, string> = {
-  anxiety: `Peace be upon you, dear friend. I understand the weight of anxiety you carry.\n\nImam Ali (AS) reminds us in Nahjul Balagha: "Do not let your heart be troubled by that which is destined and cannot be averted." He also taught: "Contentment is the capital that never diminishes."\n\nThe Quran itself assures us: "Verily, in the remembrance of Allah do hearts find rest" (13:28).\n\nSteps for today:\n1. Take 5 slow breaths and recite "La hawla wa la quwwata illa billah"\n2. Write down 3 things within your control and focus only on those\n3. Before sleep, reflect on one blessing you received today`,
-  focus: `Peace be upon you! Imam Ali (AS) said: "Opportunity passes away like a cloud, so make use of good opportunities." (Saying 21)\n\nHe also taught us: "Lost wealth can be replaced by effort, but lost time can never be recovered."\n\nSteps for today:\n1. Put your phone in another room for 45 minutes while studying\n2. Set one clear intention for what you want to accomplish\n3. Remember: "The value of every person is in what he does well" (Saying 81)`,
-  patience: `Peace be upon you. Imam Ali (AS) said in Nahjul Balagha: "Patience is of two kinds: patience over what pains you, and patience against what you covet." (Sermon 87)\n\nHe also taught: "The one who has patience will never be deprived of success, even though it may take a long time."\n\nSteps for today:\n1. When frustration arises, pause and say "Inna lillahi wa inna ilayhi rajioon"\n2. Journal one lesson this hardship is teaching you\n3. Remember that stars shine brightest in the darkest nights`,
-  time: `Peace be upon you! Imam Ali (AS) taught profound wisdom about time management:\n\n"Opportunity passes away like a cloud, so make use of good opportunities." (Saying 21)\n\n"Lost wealth can be replaced by effort, but lost time can never be recovered."\n\n"The value of every person is in what he does well." (Saying 81)\n\nSteps for today:\n1. Prioritize your most important task first thing in the morning\n2. Block distractions for focused work periods of 45 minutes\n3. Before sleeping, plan tomorrow's 3 most important tasks`,
-  general: `Peace be upon you, dear friend!\n\nImam Ali (AS) taught us in his famous Letter 31 to his son Imam Hasan (AS): "Make yourself the judge between yourself and others. Wish for others what you wish for yourself."\n\nHe also said: "Your remedy is within you, but you do not sense it." (Saying 108)\n\nSteps for today:\n1. Take a moment of quiet reflection — even 2 minutes of stillness\n2. Identify one small good deed you can do before the day ends\n3. Read one saying of Imam Ali and let it guide your actions today`,
+  anxiety: `Peace be upon you, dear friend. I understand the weight of anxiety you carry.\n\nIslamic wisdom teaches us: "Do not let your heart be troubled by that which is destined and cannot be averted."\n\nThe Quran assures us: "Verily, in the remembrance of Allah do hearts find rest" (13:28).\n\nSteps for today:\n1. Take 5 slow breaths and recite "La hawla wa la quwwata illa billah"\n2. Write down 3 things within your control and focus only on those\n3. Before sleep, reflect on one blessing you received today`,
+  focus: `Peace be upon you! We are taught: "Opportunity passes away like a cloud, so make use of good opportunities."\n\nAlso: "Lost wealth can be replaced by effort, but lost time can never be recovered."\n\nSteps for today:\n1. Put your phone in another room for 45 minutes while studying\n2. Set one clear intention for what you want to accomplish\n3. Remember to focus your energy on what you do well.`,
+  patience: `Peace be upon you. Authentic wisdom teaches: "Patience is of two kinds: patience over what pains you, and patience against what you covet."\n\nAlso: "The one who has patience will never be deprived of success, even though it may take a long time."\n\nSteps for today:\n1. When frustration arises, pause and say "Inna lillahi wa inna ilayhi rajioon"\n2. Journal one lesson this hardship is teaching you\n3. Remember that stars shine brightest in the darkest nights`,
+  time: `Peace be upon you! Profound wisdom about time management reminds us:\n\n"Opportunity passes away like a cloud, so make use of good opportunities."\n\n"Lost wealth can be replaced by effort, but lost time can never be recovered."\n\nSteps for today:\n1. Prioritize your most important task first thing in the morning\n2. Block distractions for focused work periods of 45 minutes\n3. Before sleeping, plan tomorrow's 3 most important tasks`,
+  general: `Peace be upon you, dear friend!\n\nIslamic teachings remind us to: "Make yourself the judge between yourself and others. Wish for others what you wish for yourself."\n\nAlso: "Your remedy is within you, but you do not sense it."\n\nSteps for today:\n1. Take a moment of quiet reflection — even 2 minutes of stillness\n2. Identify one small good deed you can do before the day ends\n3. Seek out beneficial knowledge and let it guide your actions today`,
 };
 
 // ─── Main Route Handler ────────────────────────────────────────────────────────
 export async function POST(request: Request) {
   const REQUEST_START = Date.now();
   const ip = getRequestClientIp(request);
-  const rl = await consumeRateLimit({ key: `ai:chat:${ip}`, limit: 15, windowMs: 60000 });
+  const rl = await consumeRateLimit({ key: \`ai:chat:\${ip}\`, limit: 15, windowMs: 60000 });
 
   if (!rl.allowed) {
     return NextResponse.json(
@@ -261,99 +262,92 @@ export async function POST(request: Request) {
       });
     }
 
-    // ── Parallel retrieval: RAG + wisdom search run concurrently ───────────
-    const conversationHistory = (messages || history || [])
-      .slice(-6)
-      .map((m: any) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
-      .join("\n");
+    const encoder = new TextEncoder();
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    const searchTerms = userMessage.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+    // Immediately start the stream so the client gets a connection.
+    const sseStream = new ReadableStream({
+      async start(controller) {
+        try {
+          // Send retrieving status immediately
+          controller.enqueue(
+            encoder.encode(\`event: \${STATUS.RETRIEVING}\ndata: \${JSON.stringify({ status: "retrieving" })}\n\n\`)
+          );
 
-    // Fetch all wisdom once and reuse for both RAG and topic filtering.
-    // Wrapped in a hard timeout so a slow/hung Supabase response cannot stall
-    // the request before the Gemini stream even starts.
-    let allWisdom: Awaited<ReturnType<typeof getAllWisdom>> = [];
-    let ragPayload: Awaited<ReturnType<typeof searchRAGContextWithConfidence>> = {
-      results: [],
-      isSpecificReferenceQuery: false,
-      hasVerifiedMatch: false,
-      queryIntent: "general_inquiry",
-    };
-    const retrievalStart = Date.now();
-    try {
-      const results = await Promise.all([
-        withTimeout(getAllWisdom(), RETRIEVAL_TIMEOUT_MS, "getAllWisdom"),
-        withTimeout(searchRAGContextWithConfidence(userMessage, 5), RETRIEVAL_TIMEOUT_MS, "searchRAGContextWithConfidence")
-      ]);
-      allWisdom = results[0];
-      ragPayload = results[1];
-      console.log(`[Chat] ⏱ retrieval: total=${Date.now() - retrievalStart}ms (topics=${detectedTopics.join(",")}, specificRef=${ragPayload.isSpecificReferenceQuery}, verified=${ragPayload.hasVerifiedMatch})`);
-    } catch (retrievalErr) {
-      // Retrieval is best-effort — on timeout, fall back to the static corpus
-      // so the chat still answers instead of hanging forever.
-      console.warn("[Chat] Retrieval failed/timed out, continuing without RAG:", retrievalErr);
-      allWisdom = [];
-      ragPayload = {
-        results: [],
-        isSpecificReferenceQuery: false,
-        hasVerifiedMatch: false,
-        queryIntent: "general_inquiry",
-      };
-    }
+          const conversationHistory = (messages || history || [])
+            .slice(-6)
+            .map((m: any) => \`\${m.role === "user" ? "User" : "Assistant"}: \${m.content}\`)
+            .join("\\n");
 
-    const relevantWisdom = allWisdom
-      .filter((w) => {
-        const text = `${w.english_translation} ${w.source} ${(w.corner_topics || []).join(" ")}`.toLowerCase();
-        return searchTerms.some((term: string) => text.includes(term)) || detectedTopics.some((t) => text.includes(t));
-      })
-      .slice(0, 3);
+          let ragPayload: Awaited<ReturnType<typeof searchRAGContextWithConfidence>> = {
+            results: [],
+            isSpecificReferenceQuery: false,
+            hasVerifiedMatch: false,
+            queryIntent: "general_inquiry",
+          };
+          const retrievalStart = Date.now();
+          
+          try {
+            ragPayload = await withTimeout(
+              searchRAGContextWithConfidence(userMessage, 5), 
+              RETRIEVAL_TIMEOUT_MS, 
+              "searchRAGContextWithConfidence"
+            );
+            console.log(\`[Chat] ⏱ retrieval: total=\${Date.now() - retrievalStart}ms (topics=\${detectedTopics.join(",")}, specificRef=\${ragPayload.isSpecificReferenceQuery}, verified=\${ragPayload.hasVerifiedMatch})\`);
+          } catch (retrievalErr) {
+            console.warn("[Chat] Retrieval failed/timed out, continuing without RAG:", retrievalErr);
+          }
 
-    const contextSnippets: string[] = [];
+          const contextSnippets: string[] = [];
 
-    if (ragPayload.isSpecificReferenceQuery && !ragPayload.hasVerifiedMatch) {
-      contextSnippets.push(
-        `• [SYSTEM ALERT — SPECIFIC REFERENCE NOT FOUND]: The user asked for a specific sermon/letter/hadith reference that is NOT found in our verified database. YOU MUST NOT FABRICATE OR GUESS. Explicitly inform the user that this specific reference is not found in our verified collection.`
-      );
-    } else {
-      contextSnippets.push(
-        ...ragPayload.results.map((r) => `• [RAG Citation — ${r.source}]: "${r.content}"${r.slug ? ` (Link: /wisdom/${r.slug})` : ""}`),
-        ...relevantWisdom.map((w) => `• [Wisdom Card — ${w.source}]: Arabic: "${w.arabic_text || 'N/A'}" | Urdu: "${w.urdu_translation || 'N/A'}" | English: "${w.english_translation}" (Read more: /wisdom/${w.slug})`)
-      );
-    }
+          if (ragPayload.isSpecificReferenceQuery && !ragPayload.hasVerifiedMatch) {
+            contextSnippets.push(
+              \`• [SYSTEM ALERT — SPECIFIC REFERENCE NOT FOUND]: The user asked for a specific reference (Sermon/Letter/Ayah/Hadith) that is NOT found in our verified database. YOU MUST NOT FABRICATE OR GUESS. Explicitly inform the user that this specific reference is not found in our verified collection.\`
+            );
+          } else {
+            contextSnippets.push(
+              ...ragPayload.results.map((r) => \`• [RAG Citation — \${r.source}]: "\${r.content}"\${r.slug ? \` (Link: /wisdom/\${r.slug})\` : ""}\`)
+            );
+          }
 
-    const relatedWisdomPayload = relevantWisdom.slice(0, 3).map((w) => ({
-      title: w.source,
-      slug: w.slug,
-      quote: w.english_translation,
-      category: w.category?.name,
-    }));
+          const relatedWisdomPayload = ragPayload.results.slice(0, 3).map((w) => ({
+            title: w.source,
+            slug: w.slug || "",
+            quote: w.content.substring(0, 100) + "...",
+            category: detectedTopics[0] || "General",
+          }));
 
-    // ── Build system prompt ─────────────────────────────────────────────────
-    const systemPrompt = `You are "TheNahj AI Guidance Assistant", a deeply knowledgeable, authentic, and empathetic AI assistant representing TheNahj.
+          // Send composing status
+          controller.enqueue(
+            encoder.encode(\`event: \${STATUS.COMPOSING}\ndata: \${JSON.stringify({ status: "composing" })}\n\n\`)
+          );
+
+          // ── Build system prompt ─────────────────────────────────────────────────
+          const systemPrompt = \`You are an AI Guidance Assistant, a deeply knowledgeable, authentic, and empathetic AI assistant.
 
 CORE PRINCIPLES — DIRECT, RELEVANT & CONVERSATIONAL:
-1. Direct Answers First (Seedha aur to-the-point jawab):
+1. Direct Answers First:
    - Always answer what the user asked directly without generic filler preambles, artificial greetings on every turn, or beating around the bush.
    - Vary your response structure to fit the user's specific intent. Do NOT force an identical robotic template onto every query.
 
 2. ZERO-HALLUCINATION & CITATION INTEGRITY (STRICT THEOLOGICAL RULE):
-   - NEVER invent, fabricate, or guess sermon numbers, letter numbers, hadith numbers, or quotes attributed to Imam Ali (AS) or Ahlulbayt.
-   - If the user asks for a specific sermon, letter, or quote number that is not present in the verified context or does not exist (e.g. "Khutba 999"), explicitly inform the user that this specific reference is not found in our verified collection. NEVER invent a quote to satisfy the request.
-   - When explicitly refusing a specific reference, DO NOT add external meta-facts about the Nahjul Balagha collection (e.g. total number of sermons) unless it is explicitly present in the verified context.
-   - When citing, quote verbatim from the verified database context provided below. You MUST explicitly state the exact source and number (e.g. "Nahjul Balagha, Saying 82") in your response.
+   - NEVER invent, fabricate, or guess numbers, references, or quotes attributed to the Quran, or verified sources.
+   - If the user asks for a specific reference that is not present in the verified context or does not exist, explicitly inform the user that this specific reference is not found in our verified collection. NEVER invent a quote to satisfy the request.
+   - When explicitly refusing a specific reference, DO NOT add external meta-facts about the collection unless it is explicitly present in the verified context.
+   - When citing, quote verbatim from the verified database context provided below. You MUST explicitly state the exact source and number in your response.
 
 3. Intent-Specific Guidelines:
-   - Personalities, Scholars & Leaders (e.g. Ayatollah Khamenei, Ayatollah Sistani, Shahid Mutahhari, Allama Iqbal, historical figures):
-     Provide an accurate, detailed, and direct overview of who they are, their role, scholarship, key works, philosophy, and contributions. Do NOT divert into unrelated sermons (like forcing Letter 53) or force action steps unless the user asked for reading recommendations.
-   - Life Challenges & Emotional Guidance (e.g. "depression ko kmm kaise kre", anxiety, overthinking, focus, relationships):
-     Provide compassionate, insightful, and practical advice grounded in Islamic wisdom and Imam Ali's (AS) teachings on the soul and mind. Provide 2-3 realistic, gentle action steps.
+   - Personalities, Scholars & Leaders:
+     Provide an accurate, detailed, and direct overview of who they are, their role, scholarship, key works, philosophy, and contributions. Do NOT divert into unrelated sources or force action steps unless the user asked for reading recommendations.
+   - Life Challenges & Emotional Guidance:
+     Provide compassionate, insightful, and practical advice grounded in wisdom and teachings on the soul and mind. Provide 2-3 realistic, gentle action steps.
    - Religion, Hadith & Duas:
-     When quoting an Ayah, Hadith, or Dua, provide the authentic source/citation along with authentic Arabic text, Urdu translation, and English translation. Only include quotes when they genuinely enrich the answer — do not force random verses into unrelated questions.
+     When quoting an Ayah, Hadith, or Dua, provide the authentic source/citation along with authentic text/translations. Only include quotes when they genuinely enrich the answer — do not force random verses into unrelated questions.
    - General Knowledge & Everyday Inquiries:
-     Answer clearly, intelligently, and helpfully. Do not force an Islamic or Nahjul Balagha quote where it does not naturally belong.
+     Answer clearly, intelligently, and helpfully. Do not force a quote where it does not naturally belong.
 
 4. Language Matching:
-   - If the user writes in Roman Urdu/Hindi (e.g. "depression ko kmm kaise kre", "unke bare me batao"), respond naturally in the same language or clear bilingual Urdu/English.
+   - If the user writes in Roman Urdu/Hindi, respond naturally in the same language or clear bilingual Urdu/English.
    - If the user writes in English, Urdu script, or Arabic, respond accordingly.
 
 5. FORMATTING RULES (STRICT):
@@ -363,145 +357,134 @@ CORE PRINCIPLES — DIRECT, RELEVANT & CONVERSATIONAL:
    - Arabic and Urdu scripts should appear inline cleanly in their authentic script.
 
 MATCHING CONTEXT FROM DATABASE:
-${contextSnippets.length > 0 ? contextSnippets.join("\n") : "No specific local database entries matched. Use your vast, authentic general knowledge without fabricating specific references."}
+\${contextSnippets.length > 0 ? contextSnippets.join("\\n") : "No specific local database entries matched. Use your vast, authentic general knowledge without fabricating specific references."}
 
-${conversationHistory ? `CONVERSATION HISTORY:\n${conversationHistory}` : ""}`;
+\${conversationHistory ? \`CONVERSATION HISTORY:\\n\${conversationHistory}\` : ""}\`;
 
-    const fullPrompt = `${systemPrompt}\n\nUser: ${userMessage}`;
-    const apiKey = process.env.GEMINI_API_KEY;
+          const fullPrompt = \`\${systemPrompt}\\n\\nUser: \${userMessage}\`;
+          const estPromptTokens = Math.ceil(fullPrompt.length / 4);
+          console.log(\`[Chat] 📦 prompt chars=\${fullPrompt.length}, estTokens≈\${estPromptTokens}\`);
 
-    // `~4 chars ≈ 1 token` for English — rough prompt-size estimate.
-    const estPromptTokens = Math.ceil(fullPrompt.length / 4);
-    const estCorpusTokens = Math.ceil(NAHJUL_BALAGHA_CORPUS.length / 4);
-    console.log(`[Chat] 📦 prompt chars=${fullPrompt.length}, estTokens≈${estPromptTokens} (corpus alone≈${estCorpusTokens}t, context snippets≈${Math.ceil(contextSnippets.join("").length / 4)}t)`);
-
-    // ── No API key — use static fallback ───────────────────────────────────
-    if (!apiKey) {
-      const primaryTopic = detectedTopics[0] || "general";
-      let fallbackReply = FALLBACK_RESPONSES[primaryTopic] || FALLBACK_RESPONSES.general;
-      if (relevantWisdom.length > 0) {
-        fallbackReply += `\n\nFrom our collection, Imam Ali (AS) also said: "${relevantWisdom[0].english_translation}" (${relevantWisdom[0].source})`;
-      }
-      return NextResponse.json({
-        success: true,
-        reply: fallbackReply,
-        topics: detectedTopics,
-        relatedWisdom: relatedWisdomPayload,
-      });
-    }
-    // ── Standard Generation with Streaming ──────────────────────────────────
-    try {
-      const genStart = Date.now();
-      console.log("[Chat] Requesting streaming generation");
-      const stream = await withTimeout(
-        streamGeminiWithFailover(fullPrompt, apiKey, {
-          temperature: 0.7,
-          maxOutputTokens: 1500,
-        }),
-        GENERATION_TIMEOUT_MS,
-        "streamGeminiWithFailover"
-      );
-      const streamEstablishedMs = Date.now() - genStart;
-      console.log(`[Chat] ⏱ stream established (first Gemini response headers) in ${streamEstablishedMs}ms [total since request: ${Date.now() - REQUEST_START}ms]`);
-
-      // Create SSE response stream
-      const encoder = new TextEncoder();
-      // Hard end-to-end deadline for the whole streamed reply. If the pipeline
-      // (retrieval + generation + streaming) exceeds this, we emit an error
-      // event and close so the client can show Retry instead of hanging forever.
-      const deadline = Date.now() + GENERATION_TIMEOUT_MS;
-      let firstTokenAt: number | null = null;
-      const sseStream = new ReadableStream({
-        async start(controller) {
-          const reader = stream.getReader();
-          let fullText = "";
-          try {
-            while (true) {
-              const remaining = deadline - Date.now();
-              if (remaining <= 0) {
-                throw new Error("Generation exceeded time budget");
-              }
-              // Bound each read to the remaining budget so a stalled upstream
-              // never leaves this loop waiting indefinitely.
-              const readResult = await Promise.race([
-                reader.read(),
-                new Promise<{ done: boolean; value?: string }>((_, reject) => {
-                  setTimeout(() => reject(new Error("Stream stalled")), remaining);
-                }),
-              ]);
-              const { done, value } = readResult as { done: boolean; value?: string };
-              if (done) break;
-              if (firstTokenAt === null) {
-                firstTokenAt = Date.now();
-                console.log(`[Chat] ⏱ TIME-TO-FIRST-TOKEN: ${firstTokenAt - REQUEST_START}ms (since request start)`);
-              }
-              if (value) {
-                fullText += value;
-                // Send each chunk as SSE event
-                controller.enqueue(
-                  encoder.encode(`event: chunk\ndata: ${JSON.stringify({ text: value })}\n\n`)
-                );
-              }
+          // ── No API key — use static fallback ───────────────────────────────────
+          if (!apiKey) {
+            const primaryTopic = detectedTopics[0] || "general";
+            let fallbackReply = FALLBACK_RESPONSES[primaryTopic] || FALLBACK_RESPONSES.general;
+            if (ragPayload.results.length > 0) {
+              fallbackReply += \`\\n\\nFrom our collection, we found this insight: "\${ragPayload.results[0].content}" (\${ragPayload.results[0].source})\`;
             }
-          } catch (streamErr: any) {
-            console.warn("[Chat] Stream aborted by deadline:", streamErr?.message);
-            // Tell the client the request timed out so it can offer Retry.
             controller.enqueue(
               encoder.encode(
-                `event: error\ndata: ${JSON.stringify({
-                  error: "The response took too long. Please try again.",
-                  timedOut: true,
-                })}\n\n`
-              )
-            );
-          } finally {
-            // Post-processing after stream completes
-            const sanitized = sanitizeAIResponse(fullText);
-            const lowerMsg = (userMessage + " " + sanitized).toLowerCase();
-            const widget = buildWidget(lowerMsg);
-
-            console.log(
-              `[Chat] ⏱ TOTAL end-to-end: ${Date.now() - REQUEST_START}ms (TTFT=${firstTokenAt ? firstTokenAt - REQUEST_START : "N/A"}ms, generation+stream=${firstTokenAt ? Date.now() - firstTokenAt : "N/A"}ms, chars=${fullText.length})`
-            );
-
-            // Store in cache for future identical queries
-            setCachedResponse(userMessage, {
-              reply: sanitized,
-              topics: detectedTopics,
-              relatedWisdom: relatedWisdomPayload,
-            });
-
-            // Send final done event with metadata
-            controller.enqueue(
-              encoder.encode(
-                `event: done\ndata: ${JSON.stringify({
-                  reply: sanitized,
+                \`event: \${STATUS.DONE}\\ndata: \${JSON.stringify({
+                  reply: fallbackReply,
                   topics: detectedTopics,
-                  widget,
                   relatedWisdom: relatedWisdomPayload,
                   timedOut: false,
-                })}\n\n`
+                })}\\n\\n\`
               )
             );
             controller.close();
+            return;
           }
-        },
-      });
 
-      return new Response(sseStream, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache, no-transform",
-          Connection: "keep-alive",
-        },
-      });
-    } catch (err: any) {
-      console.error("[Chat] Error generating response:", err);
-      return NextResponse.json(
-        { error: err?.message || "Failed to generate response" },
-        { status: 500 }
-      );
-    }
+          // ── Standard Generation with Streaming ──────────────────────────────────
+          const genStart = Date.now();
+          console.log("[Chat] Requesting streaming generation");
+          const stream = await withTimeout(
+            streamGeminiWithFailover(fullPrompt, apiKey, {
+              temperature: 0.7,
+              maxOutputTokens: 1500,
+            }),
+            GENERATION_TIMEOUT_MS,
+            "streamGeminiWithFailover"
+          );
+          const streamEstablishedMs = Date.now() - genStart;
+          console.log(\`[Chat] ⏱ stream established in \${streamEstablishedMs}ms\`);
+
+          const reader = stream.getReader();
+          let fullText = "";
+          const deadline = Date.now() + GENERATION_TIMEOUT_MS;
+          let firstTokenAt: number | null = null;
+          
+          while (true) {
+            const remaining = deadline - Date.now();
+            if (remaining <= 0) {
+              throw new Error("Generation exceeded time budget");
+            }
+            const readResult = await Promise.race([
+              reader.read(),
+              new Promise<{ done: boolean; value?: string }>((_, reject) => {
+                setTimeout(() => reject(new Error("Stream stalled")), remaining);
+              }),
+            ]);
+            const { done, value } = readResult as { done: boolean; value?: string };
+            if (done) break;
+            if (firstTokenAt === null) {
+              firstTokenAt = Date.now();
+            }
+            if (value) {
+              fullText += value;
+              controller.enqueue(
+                encoder.encode(\`event: chunk\\ndata: \${JSON.stringify({ text: value })}\\n\\n\`)
+              );
+            }
+          }
+
+          const sanitized = sanitizeAIResponse(fullText);
+          const lowerMsg = (userMessage + " " + sanitized).toLowerCase();
+          const widget = buildWidget(lowerMsg);
+
+          console.log(\`[Chat] ⏱ TOTAL end-to-end: \${Date.now() - REQUEST_START}ms\`);
+
+          setCachedResponse(userMessage, {
+            reply: sanitized,
+            topics: detectedTopics,
+            relatedWisdom: relatedWisdomPayload,
+          });
+
+          // Fire-and-forget: log this query for trending suggestions (does not block stream)
+          if (isSupabaseConfigured && supabase && userMessage.length < 300) {
+            const topic = detectedTopics[0] || "general";
+            supabase.rpc("upsert_chat_query", {
+              p_query: userMessage,
+              p_topic: topic,
+            }).then(() => {}).catch(() => {}); // intentionally silent
+          }
+
+          controller.enqueue(
+            encoder.encode(
+              \`event: \${STATUS.DONE}\\ndata: \${JSON.stringify({
+                reply: sanitized,
+                topics: detectedTopics,
+                widget,
+                relatedWisdom: relatedWisdomPayload,
+                timedOut: false,
+              })}\\n\\n\`
+            )
+          );
+          controller.close();
+        } catch (streamErr: any) {
+          console.warn("[Chat] Stream aborted or failed:", streamErr?.message);
+          controller.enqueue(
+            encoder.encode(
+              \`event: \${STATUS.ERROR}\\ndata: \${JSON.stringify({
+                error: streamErr?.message || "The response took too long. Please try again.",
+                timedOut: true,
+              })}\\n\\n\`
+            )
+          );
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(sseStream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+      },
+    });
+
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to process chat query" }, { status: 500 });
   }

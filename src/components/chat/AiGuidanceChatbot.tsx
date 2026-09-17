@@ -27,11 +27,70 @@ const REQUEST_TIMEOUT_MS = 30000;
 const TIMEOUT_MESSAGE =
   "The response took too long. Please check your connection and try again.";
 
-const PRESET_PROMPTS = [
-  "How to deal with exam anxiety & stress?",
-  "Overcoming laziness & building self-discipline",
-  "Imam Ali's advice on time management",
-];
+// ─── Topic keywords for personalization from localStorage history ─────────────
+const TOPIC_HINTS: Record<string, string[]> = {
+  anxiety: ["anxiety", "stress", "panic", "overwhelm", "worry"],
+  patience: ["patience", "sabr", "hardship", "difficult", "fail"],
+  knowledge: ["knowledge", "learn", "study", "exam", "education"],
+  focus: ["focus", "lazy", "procrastinat", "discipline", "distraction"],
+  purpose: ["purpose", "lost", "goal", "meaning", "direction"],
+  anger: ["anger", "angry", "mad", "ego", "pride"],
+  time: ["time", "productive", "busy", "schedule", "wasting"],
+  spiritual: ["prayer", "dua", "allah", "quran", "tawakkul", "faith"],
+};
+
+const TOPIC_QUESTION_MAP: Record<string, string[]> = {
+  anxiety: [
+    "How to calm my mind during moments of anxiety?",
+    "Which Dua should I recite for stress and anxiety?",
+    "What does Islam say about overthinking and worry?",
+  ],
+  patience: [
+    "What does Imam Ali say about patience in hardship?",
+    "How to stay patient when everything goes wrong?",
+    "What is the wisdom behind suffering in Islam?",
+  ],
+  knowledge: [
+    "What did Imam Ali teach about seeking knowledge?",
+    "How to stay focused while studying?",
+    "How to build a daily habit of reading and learning?",
+  ],
+  focus: [
+    "Overcoming laziness and building self-discipline",
+    "How to stop procrastinating — Islamic perspective?",
+    "How to remove distractions and focus deeply?",
+  ],
+  purpose: [
+    "How do I find my purpose in life?",
+    "I feel lost — what does Islamic wisdom say?",
+    "What is the Islamic view on ambition and life goals?",
+  ],
+  anger: [
+    "How to control anger according to Imam Ali?",
+    "What is the cure for arrogance and ego in Islam?",
+    "How to develop humility and good character?",
+  ],
+  time: [
+    "Imam Ali's advice on time management",
+    "How to manage time wisely as a Muslim?",
+    "How to balance dunya and deen in daily life?",
+  ],
+  spiritual: [
+    "Which Dua should I recite for strength and guidance?",
+    "How to strengthen my connection with Allah?",
+    "What does Imam Ali say about Tawakkul (trust in Allah)?",
+  ],
+  general: [
+    "What is Imam Ali's most powerful teaching?",
+    "How to deal with exam anxiety and stress?",
+    "Imam Ali's letter to Malik al-Ashtar — key lessons?",
+    "How to deal with a difficult person in Islam?",
+    "What does Nahjul Balagha say about friendship?",
+    "How to make my prayers more meaningful?",
+    "How to wake up for Fajr consistently?",
+    "What is the Islamic way to handle failure?",
+  ],
+};
 
 // Extend window for SpeechRecognition
 declare global {
@@ -49,6 +108,11 @@ export function AiGuidanceChatbot() {
   // True while any message is streaming pending → keeps input disabled.
   const hasPending = messages.some((m) => m.pending);
 
+  // ── Dynamic suggestions state ──
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestionPool, setSuggestionPool] = useState<string[]>([]);
+  const [isReturningUser, setIsReturningUser] = useState(false);
+
   // ── Intro popup state ──
   const [showIntro, setShowIntro] = useState(false);
 
@@ -57,9 +121,15 @@ export function AiGuidanceChatbot() {
   // --- Memory: Load from localStorage on mount ---
   useEffect(() => {
     const saved = localStorage.getItem("thenahj_chat_history");
+    let userIsReturning = false;
+
     if (saved) {
       try {
-        setMessages(JSON.parse(saved));
+        const parsed: Message[] = JSON.parse(saved);
+        setMessages(parsed);
+        // Detect returning user: has real conversation history (> welcome msg)
+        userIsReturning = parsed.filter((m) => m.role === "user").length > 0;
+        setIsReturningUser(userIsReturning);
       } catch (e) {}
     } else {
       setMessages([
@@ -72,11 +142,52 @@ export function AiGuidanceChatbot() {
       ]);
     }
 
+    // --- Load dynamic suggestions ---
+    const loadSuggestions = async () => {
+      // 1. Detect topics from localStorage history for personalization
+      const history = localStorage.getItem("thenahj_chat_history");
+      let detectedTopic = "general";
+      if (history) {
+        const lower = history.toLowerCase();
+        for (const [topic, hints] of Object.entries(TOPIC_HINTS)) {
+          if (hints.some((h) => lower.includes(h))) {
+            detectedTopic = topic;
+            break;
+          }
+        }
+      }
+
+      // 2. Try fetching trending from API
+      try {
+        const res = await fetch("/api/ai/suggestions");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.questions) && data.questions.length >= 3) {
+            setSuggestionPool(data.questions);
+            setSuggestions(data.questions.slice(0, 3));
+            return;
+          }
+        }
+      } catch (_) {}
+
+      // 3. Fallback: use topic-matched curated questions
+      const pool = [
+        ...(TOPIC_QUESTION_MAP[detectedTopic] || []),
+        ...TOPIC_QUESTION_MAP.general,
+      ];
+      const shuffled = [...pool].sort(() => Math.random() - 0.5);
+      setSuggestionPool(shuffled);
+      setSuggestions(shuffled.slice(0, 3));
+    };
+
+    loadSuggestions();
+
     // Show intro popup on every visit
     setTimeout(() => setShowIntro(true), 800);
 
     setIsLoaded(true);
   }, []);
+
 
   // --- Dismiss intro popup ---
   const handleDismissIntro = () => {
@@ -560,12 +671,39 @@ export function AiGuidanceChatbot() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Presets */}
-            {messages.length <= 1 && !hasPending && (
+            {/* Re-engagement banner for returning users */}
+            {isReturningUser && messages.length <= 1 && !hasPending && (
+              <div className="mx-4 mb-2 rounded-xl border border-gold/20 bg-gold/5 px-3 py-2">
+                <p className="text-[10px] text-gold font-semibold">Welcome back!</p>
+                <p className="text-[10px] text-muted mt-0.5">Continue where you left off or ask something new.</p>
+              </div>
+            )}
+
+            {/* Dynamic Suggested Questions */}
+            {messages.length <= 1 && !hasPending && suggestions.length > 0 && (
               <div className="px-4 pb-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2">Suggested:</p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    {isReturningUser ? "Based on your interests:" : "Suggested:"}
+                  </p>
+                  <button
+                    type="button"
+                    title="Refresh suggestions"
+                    onClick={() => {
+                      // Rotate to next 3 from the pool
+                      const next = suggestionPool.filter((q) => !suggestions.includes(q));
+                      const rotated = next.length >= 3
+                        ? next.slice(0, 3)
+                        : [...suggestionPool].sort(() => Math.random() - 0.5).slice(0, 3);
+                      setSuggestions(rotated);
+                    }}
+                    className="text-muted hover:text-gold transition-colors"
+                  >
+                    <RefreshCw size={10} />
+                  </button>
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {PRESET_PROMPTS.map((prompt, i) => (
+                  {suggestions.map((prompt: string, i: number) => (
                     <button
                       key={i}
                       type="button"
@@ -578,6 +716,7 @@ export function AiGuidanceChatbot() {
                 </div>
               </div>
             )}
+
 
             {/* Input Bar */}
             <form

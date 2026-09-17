@@ -73,6 +73,10 @@
         "href": "/wisdom"
       },
       {
+        "label": "Daily Wisdom",
+        "href": "/daily"
+      },
+      {
         "label": "Student Corner",
         "href": "/student"
       },

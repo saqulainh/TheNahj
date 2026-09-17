@@ -1,7 +1,5 @@
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { generateEmbedding } from "./embeddings";
-import { getAllWisdom } from "@/lib/wisdom";
-import type { Wisdom } from "@/lib/types";
 
 export interface RAGSearchResult {
   content: string;
@@ -25,29 +23,21 @@ export interface RAGRetrievalPayload {
 const GENERAL_SIMILARITY_THRESHOLD = 0.55;
 const STRICT_REFERENCE_THRESHOLD = 0.65;
 
-// Regex to detect explicit requests for numbered sermons, letters, sayings, or chapters
-const SPECIFIC_REFERENCE_REGEX = /\b(khutba|sermon|letter|maktuub|saying|hikmat|hadith|chapter|ayah|surah)\s*(?:no\.?|#|number)?\s*(\d+)\b/i;
+// Regex to detect explicit requests for numbered sermons, letters, sayings, chapters, duas
+const SPECIFIC_REFERENCE_REGEX = /\b(khutba|sermon|letter|maktuub|saying|hikmat|hadith|chapter|ayah|surah|dua|sahifa)\s*(?:no\.?|#|number)?\s*(\d+)\b/i;
 
 /**
  * High-precision RAG Search Engine with Confidence Thresholding
  * Combines vector search via Supabase pgvector with hybrid local semantic retrieval.
  */
-export async function searchRAGContext(
-  query: string, 
-  matchCount = 5, 
-  preloadedWisdom?: Wisdom[]
-): Promise<RAGSearchResult[]> {
-  const payload = await searchRAGContextWithConfidence(query, matchCount, preloadedWisdom);
-  return payload.results;
-}
+
 
 /**
  * Enhanced RAG Retrieval returning confidence metadata and verified-match validation
  */
 export async function searchRAGContextWithConfidence(
   query: string,
-  matchCount = 5,
-  preloadedWisdom?: Wisdom[]
+  matchCount = 5
 ): Promise<RAGRetrievalPayload> {
   const cleanQuery = query.trim();
   if (!cleanQuery) {
@@ -75,18 +65,34 @@ export async function searchRAGContextWithConfidence(
     const supabaseStart = Date.now();
     try {
       const rpcArgs: any = {
+        query_text: cleanQuery,
         query_embedding: queryVector,
-        match_threshold: 0.3,
         match_count: matchCount,
       };
       
       // Inject metadata pre-filter for specific citations
       if (isSpecificReferenceQuery && targetNumber && refMatch) {
-        const citationType = refMatch[1]; // e.g. "Sermon", "Letter"
-        rpcArgs.filter_source = `${citationType} ${targetNumber}`;
+        let rawType = refMatch[1].toLowerCase();
+        let corpusId = "nahjul-balagha";
+
+        if (['surah', 'ayah', 'chapter'].includes(rawType)) {
+          corpusId = "quran";
+        } else if (['dua', 'sahifa'].includes(rawType)) {
+          corpusId = "sahifa-sajjadiya";
+        } else if (['hadith'].includes(rawType)) {
+          corpusId = "hadith";
+        }
+
+        const citationType = rawType.charAt(0).toUpperCase() + rawType.slice(1);
+        
+        rpcArgs.filter_metadata = {
+          corpus_id: corpusId,
+          citation_type: citationType,
+          citation_number: targetNumber
+        };
       }
 
-      const { data, error } = await supabase.rpc("match_wisdom_embeddings", rpcArgs);
+      const { data, error } = await supabase.rpc("hybrid_search_wisdom", rpcArgs);
 
       if (!error && Array.isArray(data) && data.length > 0) {
         console.log(`[RAG] ⏱ embedding=${embedMs}ms, supabase-pgvector=${Date.now() - supabaseStart}ms, results=${data.length}`);
@@ -102,10 +108,7 @@ export async function searchRAGContextWithConfidence(
     }
   }
 
-  // 2. Hybrid Local Semantic Search Fallback / Supplement
-  if (rawResults.length === 0) {
-    rawResults = await searchLocalHybridContext(cleanQuery, matchCount, preloadedWisdom);
-  }
+  // Removed Hybrid Local Semantic Search Fallback since we are using native Postgres FTS via hybrid_search_wisdom
 
   // 3. Apply Confidence Score Thresholding
   console.log(`[CALIBRATION] Query: "${cleanQuery}"`);
@@ -114,58 +117,26 @@ export async function searchRAGContextWithConfidence(
   const threshold = isSpecificReferenceQuery ? STRICT_REFERENCE_THRESHOLD : GENERAL_SIMILARITY_THRESHOLD;
   const filteredResults = rawResults.filter((r) => r.score >= threshold);
 
-  // 4. For specific citation lookups, strictly verify the target number appears in the source or text
+  // 4. For specific citation lookups, strictly verify and filter results
+  let verifiedResults = filteredResults;
   let hasVerifiedMatch = false;
-  if (isSpecificReferenceQuery && targetNumber) {
-    hasVerifiedMatch = filteredResults.some((r) => {
-      const textToSearch = `${r.source} ${r.content}`.toLowerCase();
-      // Verify target number is actually present in the citation or content
-      return textToSearch.includes(targetNumber);
-    });
+
+  if (isSpecificReferenceQuery && targetNumber && refMatch) {
+    const citationType = refMatch[1].charAt(0).toUpperCase() + refMatch[1].slice(1).toLowerCase();
+    const exactSourceMatch = `${citationType} ${targetNumber}`.toLowerCase();
+    
+    // Actually filter out any result that isn't the exact target
+    verifiedResults = filteredResults.filter((r) => r.source.toLowerCase() === exactSourceMatch);
+    hasVerifiedMatch = verifiedResults.length > 0;
   } else {
     hasVerifiedMatch = filteredResults.length > 0;
   }
 
   return {
-    results: hasVerifiedMatch ? filteredResults : (isSpecificReferenceQuery ? [] : filteredResults),
+    results: verifiedResults,
     isSpecificReferenceQuery,
     hasVerifiedMatch,
     queryIntent: isSpecificReferenceQuery ? "specific_citation" : "general_inquiry",
   };
 }
 
-/**
- * Hybrid local semantic matcher as zero-dependency fallback
- */
-async function searchLocalHybridContext(
-  query: string, 
-  count: number, 
-  preloadedWisdom?: Wisdom[]
-): Promise<RAGSearchResult[]> {
-  const allWisdom = preloadedWisdom || await getAllWisdom();
-  const searchTerms = query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((w) => w.length > 2);
-
-  const scored = allWisdom.map((w) => {
-    const combinedText = `${w.english_translation} ${w.urdu_translation} ${w.source} ${w.category?.name || ""} ${(w.corner_topics || []).join(" ")}`.toLowerCase();
-    let score = 0;
-
-    for (const term of searchTerms) {
-      if (combinedText.includes(term)) score += 2;
-    }
-
-    return {
-      content: `[${w.source}]: "${w.english_translation}"`,
-      source: w.source,
-      slug: w.slug,
-      score: Math.min(score / 10, 0.95),
-    };
-  });
-
-  return scored
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, count);
-}
