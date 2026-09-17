@@ -20,44 +20,36 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
     return null;
   }
 
-  const candidateModels = [
-    "models/gemini-embedding-001",
-    "models/gemini-embedding-2"
-  ];
-
-  for (const model of candidateModels) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/${model}:embedContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: model,
-            content: {
-              parts: [{ text: cleanText }],
-            },
-            outputDimensionality: 768,
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const values = data?.embedding?.values;
-        if (Array.isArray(values) && values.length === 768) {
-          return values;
-        }
-      } else {
-        const errBody = await response.text();
-        console.error(`[RAG Embedding ERROR] Model ${model} returned ${response.status}:`, errBody);
+  const model = "models/text-embedding-004";
+  
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/${model}:embedContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: model,
+          content: { parts: [{ text: cleanText }] },
+          outputDimensionality: 768,
+        }),
       }
-    } catch (err) {
-      console.error(`[RAG Embedding NETWORK ERROR] Failed fetching from ${model}:`, err);
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      const values = data?.embedding?.values;
+      if (Array.isArray(values) && values.length === 768) {
+        return values;
+      }
+    } else {
+      console.error(`[RAG Embedding ERROR] Model ${model} returned ${response.status}:`, await response.text());
     }
+  } catch (err) {
+    console.error(`[RAG Embedding NETWORK ERROR] Failed fetching from ${model}:`, err);
   }
 
-  console.error("[RAG Embedding FATAL] All Gemini embedding model attempts failed. Vector search unavailable for this turn.");
+  console.error("[RAG Embedding FATAL] Gemini embedding model attempt failed. Vector search unavailable for this turn.");
   return null;
 }
 

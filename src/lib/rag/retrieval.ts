@@ -74,11 +74,19 @@ export async function searchRAGContextWithConfidence(
   if (isSupabaseConfigured && supabase && queryVector) {
     const supabaseStart = Date.now();
     try {
-      const { data, error } = await supabase.rpc("match_wisdom_embeddings", {
+      const rpcArgs: any = {
         query_embedding: queryVector,
         match_threshold: 0.3,
         match_count: matchCount,
-      });
+      };
+      
+      // Inject metadata pre-filter for specific citations
+      if (isSpecificReferenceQuery && targetNumber && refMatch) {
+        const citationType = refMatch[1]; // e.g. "Sermon", "Letter"
+        rpcArgs.filter_source = `${citationType} ${targetNumber}`;
+      }
+
+      const { data, error } = await supabase.rpc("match_wisdom_embeddings", rpcArgs);
 
       if (!error && Array.isArray(data) && data.length > 0) {
         console.log(`[RAG] ⏱ embedding=${embedMs}ms, supabase-pgvector=${Date.now() - supabaseStart}ms, results=${data.length}`);
