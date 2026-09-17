@@ -228,7 +228,7 @@ const FALLBACK_RESPONSES: Record<string, string> = {
 export async function POST(request: Request) {
   const REQUEST_START = Date.now();
   const ip = getRequestClientIp(request);
-  const rl = await consumeRateLimit({ key: \`ai:chat:\${ip}\`, limit: 15, windowMs: 60000 });
+  const rl = await consumeRateLimit({ key: `ai:chat:${ip}`, limit: 15, windowMs: 60000 });
 
   if (!rl.allowed) {
     return NextResponse.json(
@@ -271,13 +271,13 @@ export async function POST(request: Request) {
         try {
           // Send retrieving status immediately
           controller.enqueue(
-            encoder.encode(\`event: \${STATUS.RETRIEVING}\ndata: \${JSON.stringify({ status: "retrieving" })}\n\n\`)
+            encoder.encode(`event: ${STATUS.RETRIEVING}\ndata: ${JSON.stringify({ status: "retrieving" })}\n\n`)
           );
 
           const conversationHistory = (messages || history || [])
             .slice(-6)
-            .map((m: any) => \`\${m.role === "user" ? "User" : "Assistant"}: \${m.content}\`)
-            .join("\\n");
+            .map((m: any) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
+            .join("\n");
 
           let ragPayload: Awaited<ReturnType<typeof searchRAGContextWithConfidence>> = {
             results: [],
@@ -293,7 +293,7 @@ export async function POST(request: Request) {
               RETRIEVAL_TIMEOUT_MS, 
               "searchRAGContextWithConfidence"
             );
-            console.log(\`[Chat] ⏱ retrieval: total=\${Date.now() - retrievalStart}ms (topics=\${detectedTopics.join(",")}, specificRef=\${ragPayload.isSpecificReferenceQuery}, verified=\${ragPayload.hasVerifiedMatch})\`);
+            console.log(`[Chat] ⏱ retrieval: total=${Date.now() - retrievalStart}ms (topics=${detectedTopics.join(",")}, specificRef=${ragPayload.isSpecificReferenceQuery}, verified=${ragPayload.hasVerifiedMatch})`);
           } catch (retrievalErr) {
             console.warn("[Chat] Retrieval failed/timed out, continuing without RAG:", retrievalErr);
           }
@@ -302,11 +302,11 @@ export async function POST(request: Request) {
 
           if (ragPayload.isSpecificReferenceQuery && !ragPayload.hasVerifiedMatch) {
             contextSnippets.push(
-              \`• [SYSTEM ALERT — SPECIFIC REFERENCE NOT FOUND]: The user asked for a specific reference (Sermon/Letter/Ayah/Hadith) that is NOT found in our verified database. YOU MUST NOT FABRICATE OR GUESS. Explicitly inform the user that this specific reference is not found in our verified collection.\`
+              `• [SYSTEM ALERT — SPECIFIC REFERENCE NOT FOUND]: The user asked for a specific reference (Sermon/Letter/Ayah/Hadith) that is NOT found in our verified database. YOU MUST NOT FABRICATE OR GUESS. Explicitly inform the user that this specific reference is not found in our verified collection.`
             );
           } else {
             contextSnippets.push(
-              ...ragPayload.results.map((r) => \`• [RAG Citation — \${r.source}]: "\${r.content}"\${r.slug ? \` (Link: /wisdom/\${r.slug})\` : ""}\`)
+              ...ragPayload.results.map((r) => `• [RAG Citation — ${r.source}]: "${r.content}"${r.slug ? ` (Link: /wisdom/${r.slug})` : ""}`)
             );
           }
 
@@ -319,11 +319,11 @@ export async function POST(request: Request) {
 
           // Send composing status
           controller.enqueue(
-            encoder.encode(\`event: \${STATUS.COMPOSING}\ndata: \${JSON.stringify({ status: "composing" })}\n\n\`)
+            encoder.encode(`event: ${STATUS.COMPOSING}\ndata: ${JSON.stringify({ status: "composing" })}\n\n`)
           );
 
           // ── Build system prompt ─────────────────────────────────────────────────
-          const systemPrompt = \`You are an AI Guidance Assistant, a deeply knowledgeable, authentic, and empathetic AI assistant.
+          const systemPrompt = `You are an AI Guidance Assistant, a deeply knowledgeable, authentic, and empathetic AI assistant.
 
 CORE PRINCIPLES — DIRECT, RELEVANT & CONVERSATIONAL:
 1. Direct Answers First:
@@ -357,29 +357,29 @@ CORE PRINCIPLES — DIRECT, RELEVANT & CONVERSATIONAL:
    - Arabic and Urdu scripts should appear inline cleanly in their authentic script.
 
 MATCHING CONTEXT FROM DATABASE:
-\${contextSnippets.length > 0 ? contextSnippets.join("\\n") : "No specific local database entries matched. Use your vast, authentic general knowledge without fabricating specific references."}
+${contextSnippets.length > 0 ? contextSnippets.join("\n") : "No specific local database entries matched. Use your vast, authentic general knowledge without fabricating specific references."}
 
-\${conversationHistory ? \`CONVERSATION HISTORY:\\n\${conversationHistory}\` : ""}\`;
+${conversationHistory ? `CONVERSATION HISTORY:\n${conversationHistory}` : ""}`;
 
-          const fullPrompt = \`\${systemPrompt}\\n\\nUser: \${userMessage}\`;
+          const fullPrompt = `${systemPrompt}\n\nUser: ${userMessage}`;
           const estPromptTokens = Math.ceil(fullPrompt.length / 4);
-          console.log(\`[Chat] 📦 prompt chars=\${fullPrompt.length}, estTokens≈\${estPromptTokens}\`);
+          console.log(`[Chat] 📦 prompt chars=${fullPrompt.length}, estTokens≈${estPromptTokens}`);
 
           // ── No API key — use static fallback ───────────────────────────────────
           if (!apiKey) {
             const primaryTopic = detectedTopics[0] || "general";
             let fallbackReply = FALLBACK_RESPONSES[primaryTopic] || FALLBACK_RESPONSES.general;
             if (ragPayload.results.length > 0) {
-              fallbackReply += \`\\n\\nFrom our collection, we found this insight: "\${ragPayload.results[0].content}" (\${ragPayload.results[0].source})\`;
+              fallbackReply += `\n\nFrom our collection, we found this insight: "${ragPayload.results[0].content}" (${ragPayload.results[0].source})`;
             }
             controller.enqueue(
               encoder.encode(
-                \`event: \${STATUS.DONE}\\ndata: \${JSON.stringify({
+                `event: ${STATUS.DONE}\ndata: ${JSON.stringify({
                   reply: fallbackReply,
                   topics: detectedTopics,
                   relatedWisdom: relatedWisdomPayload,
                   timedOut: false,
-                })}\\n\\n\`
+                })}\n\n`
               )
             );
             controller.close();
@@ -398,7 +398,7 @@ MATCHING CONTEXT FROM DATABASE:
             "streamGeminiWithFailover"
           );
           const streamEstablishedMs = Date.now() - genStart;
-          console.log(\`[Chat] ⏱ stream established in \${streamEstablishedMs}ms\`);
+          console.log(`[Chat] ⏱ stream established in ${streamEstablishedMs}ms`);
 
           const reader = stream.getReader();
           let fullText = "";
@@ -424,7 +424,7 @@ MATCHING CONTEXT FROM DATABASE:
             if (value) {
               fullText += value;
               controller.enqueue(
-                encoder.encode(\`event: chunk\\ndata: \${JSON.stringify({ text: value })}\\n\\n\`)
+                encoder.encode(`event: chunk\ndata: ${JSON.stringify({ text: value })}\n\n`)
               );
             }
           }
@@ -433,7 +433,7 @@ MATCHING CONTEXT FROM DATABASE:
           const lowerMsg = (userMessage + " " + sanitized).toLowerCase();
           const widget = buildWidget(lowerMsg);
 
-          console.log(\`[Chat] ⏱ TOTAL end-to-end: \${Date.now() - REQUEST_START}ms\`);
+          console.log(`[Chat] ⏱ TOTAL end-to-end: ${Date.now() - REQUEST_START}ms`);
 
           setCachedResponse(userMessage, {
             reply: sanitized,
@@ -444,21 +444,23 @@ MATCHING CONTEXT FROM DATABASE:
           // Fire-and-forget: log this query for trending suggestions (does not block stream)
           if (isSupabaseConfigured && supabase && userMessage.length < 300) {
             const topic = detectedTopics[0] || "general";
-            supabase.rpc("upsert_chat_query", {
-              p_query: userMessage,
-              p_topic: topic,
-            }).then(() => {}).catch(() => {}); // intentionally silent
+            Promise.resolve(
+              supabase.rpc("upsert_chat_query", {
+                p_query: userMessage,
+                p_topic: topic,
+              })
+            ).catch(() => {}); // intentionally silent
           }
 
           controller.enqueue(
             encoder.encode(
-              \`event: \${STATUS.DONE}\\ndata: \${JSON.stringify({
+              `event: ${STATUS.DONE}\ndata: ${JSON.stringify({
                 reply: sanitized,
                 topics: detectedTopics,
                 widget,
                 relatedWisdom: relatedWisdomPayload,
                 timedOut: false,
-              })}\\n\\n\`
+              })}\n\n`
             )
           );
           controller.close();
@@ -466,10 +468,10 @@ MATCHING CONTEXT FROM DATABASE:
           console.warn("[Chat] Stream aborted or failed:", streamErr?.message);
           controller.enqueue(
             encoder.encode(
-              \`event: \${STATUS.ERROR}\\ndata: \${JSON.stringify({
+              `event: ${STATUS.ERROR}\ndata: ${JSON.stringify({
                 error: streamErr?.message || "The response took too long. Please try again.",
                 timedOut: true,
-              })}\\n\\n\`
+              })}\n\n`
             )
           );
           controller.close();
