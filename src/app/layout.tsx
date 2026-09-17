@@ -55,6 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
     manifest: "/manifest.json",
     icons: {
       icon: [
+        { url: '/favicon.ico' },
         { url: '/thenahj-logo.jpeg' }
       ],
       apple: [

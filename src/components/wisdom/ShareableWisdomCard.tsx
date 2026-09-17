@@ -290,11 +290,11 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
                 />
 
                 <div 
-                  className="relative flex flex-col items-center text-center space-y-4 my-auto w-full transition-all"
+                  className="relative flex flex-col items-center text-center my-auto w-full transition-all"
                   style={{ transform: `scale(${fontSize / 100})`, transformOrigin: 'center' }}
                 >
                   {/* Brand / Category */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mb-4">
                     <span className={`h-px w-6 ${theme.id === 'minimal' ? 'bg-black/20' : 'bg-white/20'}`} />
                     <span className={`text-[9px] font-bold uppercase tracking-[0.3em] ${theme.text}`}>
                       {wisdom.category?.name || "TheNahj"}
@@ -305,7 +305,7 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
                   {/* Arabic Text */}
                   {showArabic && wisdom.arabic_text && (
                     <h4 
-                      className={`font-arabic leading-relaxed ${
+                      className={`mb-4 font-arabic leading-relaxed ${
                         aspect.id === 'banner' ? 'text-xl' : 'text-2xl md:text-3xl'
                       } ${theme.id === 'minimal' ? 'text-black' : 'text-white'}`}
                       dir="rtl"
@@ -316,14 +316,14 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
 
                   {/* Urdu Translation */}
                   {showUrdu && wisdom.urdu_translation && (
-                    <p className={`text-sm md:text-base font-urdu leading-relaxed max-w-xs ${theme.id === 'minimal' ? 'text-stone-700' : 'text-white/90'}`} dir="rtl">
+                    <p className={`mb-4 text-sm md:text-base font-urdu leading-relaxed max-w-xs ${theme.id === 'minimal' ? 'text-stone-700' : 'text-white/90'}`} dir="rtl">
                       &quot;{wisdom.urdu_translation}&quot;
                     </p>
                   )}
 
                   {/* English Translation */}
                   {showEnglish && wisdom.english_translation && (
-                    <p className={`text-xs md:text-sm font-medium leading-relaxed max-w-xs ${theme.id === 'minimal' ? 'text-stone-600' : 'text-white/80'}`}>
+                    <p className={`mb-4 text-xs md:text-sm font-medium leading-relaxed max-w-xs ${theme.id === 'minimal' ? 'text-stone-600' : 'text-white/80'}`}>
                       &quot;{wisdom.english_translation}&quot;
                     </p>
                   )}
