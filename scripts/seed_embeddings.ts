@@ -1,9 +1,7 @@
-import { config } from "dotenv";
+// Uses Node.js native --env-file=.env
 import { createClient } from "@supabase/supabase-js";
 import { wisdomItems } from "../src/data/mock.js";
 import { generateEmbedding } from "../src/lib/rag/embeddings.js";
-
-config({ path: ".env.local" });
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",

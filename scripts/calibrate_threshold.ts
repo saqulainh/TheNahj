@@ -1,8 +1,6 @@
-import { config } from "dotenv";
+// Uses Node.js native --env-file=.env
 import { wisdomItems } from "../src/data/mock.js";
 import { generateEmbedding } from "../src/lib/rag/embeddings.js";
-
-config({ path: ".env.local" });
 
 function cosineSimilarity(vecA: number[], vecB: number[]): number {
   let dotProduct = 0;
