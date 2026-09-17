@@ -7,8 +7,8 @@
 - [x] Fallback legacy models are removed to reduce code bloat.
 
 **Verification:**
-- [ ] Build succeeds: `npm run build`
-- [ ] Manual check: Search still works in the app.
+- [x] Build succeeds: `npm run build`
+- [x] Manual check: Search still works in the app.
 
 **Dependencies:** None
 
@@ -28,8 +28,8 @@
 - [x] Update the RPC call `match_wisdom_embeddings` to accept a filter parameter.
 
 **Verification:**
-- [ ] Build succeeds: `npm run build`
-- [ ] Manual check: Searching for "Sermon 12" exactly returns Sermon 12.
+- [x] Build succeeds: `npm run build`
+- [x] Manual check: Searching for "Sermon 12" exactly returns Sermon 12.
 
 **Dependencies:** Task 1
 
