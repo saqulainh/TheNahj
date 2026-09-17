@@ -1,8 +1,8 @@
 {
   "brand": {
     "siteName": "TheNahj",
-    "tagline": "Wisdom for the distracted generation.",
-    "description": "Navigate modern life through the wisdom of Imam Ali (AS).",
+    "tagline": "Nahjul Balagha quotes and wisdom for the distracted generation.",
+    "description": "Navigate modern life through the wisdom of Imam Ali (AS). Discover profound Nahjul Balagha quotes and sayings for youth.",
     "primaryColor": "#c1a46b",
     "supportEmail": "salam@thenahj.org",
     "socialLinks": {
@@ -15,8 +15,8 @@
   },
   "homepage": {
     "hero": {
-      "headline": "Wisdom for the distracted generation.",
-      "subtext": "Navigate modern life through the wisdom of Imam Ali (AS).",
+      "headline": "Nahjul Balagha quotes for the distracted generation.",
+      "subtext": "Navigate modern life through the wisdom of Imam Ali (AS) and profound Nahjul Balagha sayings.",
       "ctaText": "Explore Wisdom",
       "ctaLink": "/wisdom",
       "bgMode": "image",

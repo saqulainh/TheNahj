@@ -75,7 +75,12 @@ export async function generateMetadata(): Promise<Metadata> {
       "Student motivation",
       "Youth guidance",
       "Digital distraction",
-      "Islamic reflections"
+      "Islamic reflections",
+      "nahjul balagha quotes",
+      "nahjul balagha ali as sayings",
+      "nahj al-balagha",
+      "nahjul balagha sayings",
+      "nahj board"
     ],
     alternates: {
       canonical: "./",
