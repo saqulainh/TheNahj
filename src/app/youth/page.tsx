@@ -4,8 +4,9 @@ import Link from "next/link";
 import { youthTopics } from "@/data/mock";
 import { getAllWisdom, getAllArticles } from "@/lib/wisdom";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
+import { buildPageMetadata, SITE_URL } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Youth Corner — Islamic Guidance on Relationships, Identity & Purpose",
   description: "Haram relationships, loneliness, overthinking, validation addiction — Islamic wisdom from Imam Ali (AS) for Muslim youth navigating modern life with dignity.",
   keywords: [
@@ -20,13 +21,8 @@ export const metadata = {
     "Imam Ali on relationships",
     "Before you text Islamic",
   ],
-  openGraph: {
-    title: "Youth Corner — Islamic Guidance on Identity, Relationships & Purpose",
-    description: "Islamic wisdom from Imam Ali (AS) for youth struggling with relationships, identity, loneliness & emotional discipline.",
-    url: "https://thenahj.live/youth",
-    type: "website",
-  },
-};
+  path: "/youth",
+});
 
 export default async function YouthPage() {
   const wisdom = await getAllWisdom();
@@ -36,19 +32,19 @@ export default async function YouthPage() {
     "@graph": [
       {
         "@type": "CollectionPage",
-        "@id": "https://www.thenahj.live/youth#webpage",
-        "url": "https://www.thenahj.live/youth",
+        "@id": `${SITE_URL}/youth#webpage`,
+        "url": `${SITE_URL}/youth`,
         "name": "Youth Corner — Islamic Guidance",
-        "isPartOf": { "@id": "https://www.thenahj.live/#website" },
-        "about": { "@id": "https://www.thenahj.live/youth#itemlist" }
+        "isPartOf": { "@id": `${SITE_URL}/#website` },
+        "about": { "@id": `${SITE_URL}/youth#itemlist` }
       },
       {
         "@type": "ItemList",
-        "@id": "https://www.thenahj.live/youth#itemlist",
+        "@id": `${SITE_URL}/youth#itemlist`,
         "itemListElement": youthTopics.map((topic, index) => ({
           "@type": "ListItem",
           "position": index + 1,
-          "url": `https://www.thenahj.live/youth/${topic.slug}`,
+          "url": `${SITE_URL}/youth/${topic.slug}`,
           "name": topic.title
         }))
       }

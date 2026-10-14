@@ -3,8 +3,9 @@ export const revalidate = 300;
 import Link from "next/link";
 import { getAllWisdom } from "@/lib/wisdom";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Nahjul Balagha Quotes & Sayings of Imam Ali (AS) | Peak of Eloquence",
   description: "Read authentic Nahjul Balagha quotes, Sermons, and Sayings of Imam Ali Ibn Abi Talib (AS) in English & Urdu with modern reflections.",
   keywords: [
@@ -19,13 +20,8 @@ export const metadata = {
     "Nahjul Balagha English",
     "Nahjul Balagha Urdu"
   ],
-  openGraph: {
-    title: "Nahjul Balagha Quotes & Sayings of Imam Ali (AS)",
-    description: "Authentic Nahjul Balagha quotes, Sermons & Sayings of Imam Ali (AS).",
-    url: "https://thenahj.live/nahjul-balagha",
-    type: "website",
-  },
-};
+  path: "/nahjul-balagha",
+});
 
 export default async function NahjulBalaghaPage() {
   const wisdom = await getAllWisdom();

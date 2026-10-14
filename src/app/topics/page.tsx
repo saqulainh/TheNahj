@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { platformTopics } from "@/data/mock";
 import { getCategories } from "@/lib/wisdom";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Topics",
-  description: "Explore wisdom by theme — discipline, spirituality, leadership, and more.",
-};
+export const metadata = buildPageMetadata({
+  title: "Islamic Wisdom Topics — Imam Ali (AS) Teachings by Theme",
+  description: "Explore Imam Ali (AS) quotes and Nahjul Balagha wisdom by theme, including discipline, spirituality, justice, leadership, patience, and purpose.",
+  path: "/topics",
+  keywords: ["Imam Ali topics", "Nahjul Balagha themes", "Islamic wisdom topics", "Islamic self discipline"],
+});
 
 export default async function TopicsPage() {
   const categories = await getCategories();

@@ -6,6 +6,7 @@ import { youthTopics } from "@/data/mock";
 import { getWisdomByCornerTopic, getArticlesByCornerTopic } from "@/lib/wisdom";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 import { topicExperienceBySlug } from "@/lib/content-experience";
+import { buildPageMetadata } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ topic: string }>;
@@ -20,9 +21,10 @@ export async function generateMetadata({ params }: PageProps) {
   const title = `${item.title} — Islamic Youth Guidance | TheNahj`;
   const description = `${item.description} Imam Ali (AS) guidance on ${item.title.toLowerCase()} for Muslim youth.`;
 
-  return {
+  return buildPageMetadata({
     title,
     description,
+    path: `/youth/${topic}`,
     keywords: [
       item.title,
       "Islamic youth advice",
@@ -30,13 +32,7 @@ export async function generateMetadata({ params }: PageProps) {
       "Imam Ali on life",
       "Shia wisdom for youth",
     ],
-    openGraph: {
-      title,
-      description,
-      url: `https://thenahj.live/youth/${topic}`,
-      type: "website",
-    },
-  };
+  });
 }
 
 export default async function YouthTopicPage({ params }: PageProps) {

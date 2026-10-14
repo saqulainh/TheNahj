@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SITE_URL } from "@/lib/seo";
 
 export default function ContactPage() {
   const [sent, setSent] = useState(false);
@@ -8,11 +9,11 @@ export default function ContactPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ContactPage",
-    "url": "https://www.thenahj.live/contact",
+    "url": `${SITE_URL}/contact`,
     "name": "Contact | TheNahj",
-    "about": { "@id": "https://www.thenahj.live/#organization" },
+    "about": { "@id": `${SITE_URL}/#organization` },
     "mainEntity": {
-      "@id": "https://www.thenahj.live/#organization",
+      "@id": `${SITE_URL}/#organization`,
       "contactPoint": {
         "@type": "ContactPoint",
         "contactType": "editorial",

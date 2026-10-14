@@ -84,6 +84,7 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
         <div className="absolute inset-0 z-0">
           <ImageRole 
             src={wisdom.featured_image || (wisdom as any).background_image} 
+            alt={`${wisdom.category?.name || "Islamic wisdom"} background`}
             role="card" 
             className="w-full h-full opacity-15 mix-blend-luminosity" 
             focalPoint={null} 

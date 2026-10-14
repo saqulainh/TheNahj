@@ -4,8 +4,9 @@ import Link from "next/link";
 import { studentTopics } from "@/data/mock";
 import { getAllWisdom, getAllArticles } from "@/lib/wisdom";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
+import { buildPageMetadata, SITE_URL } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Student Corner — Islamic Wisdom for Focus, Exams & Study Motivation",
   description: "Struggling with exam anxiety, procrastination, or social media addiction? Islamic wisdom from Imam Ali (AS) to help Muslim students build focus and discipline.",
   keywords: [
@@ -19,13 +20,8 @@ export const metadata = {
     "Nahjul Balagha student wisdom",
     "Deen and studies balance",
   ],
-  openGraph: {
-    title: "Student Corner — Islamic Wisdom for Focus & Exam Success",
-    description: "Imam Ali (AS) wisdom on focus, exams, procrastination & social media addiction for Muslim students.",
-    url: "https://thenahj.live/student",
-    type: "website",
-  },
-};
+  path: "/student",
+});
 
 export default async function StudentPage() {
   const allWisdom = await getAllWisdom();
@@ -42,19 +38,19 @@ export default async function StudentPage() {
     "@graph": [
       {
         "@type": "CollectionPage",
-        "@id": "https://www.thenahj.live/student#webpage",
-        "url": "https://www.thenahj.live/student",
+        "@id": `${SITE_URL}/student#webpage`,
+        "url": `${SITE_URL}/student`,
         "name": "Student Corner — Focus & Exams",
-        "isPartOf": { "@id": "https://www.thenahj.live/#website" },
-        "about": { "@id": "https://www.thenahj.live/student#itemlist" }
+        "isPartOf": { "@id": `${SITE_URL}/#website` },
+        "about": { "@id": `${SITE_URL}/student#itemlist` }
       },
       {
         "@type": "ItemList",
-        "@id": "https://www.thenahj.live/student#itemlist",
+        "@id": `${SITE_URL}/student#itemlist`,
         "itemListElement": studentTopics.map((topic, index) => ({
           "@type": "ListItem",
           "position": index + 1,
-          "url": `https://www.thenahj.live/student/${topic.slug}`,
+          "url": `${SITE_URL}/student/${topic.slug}`,
           "name": topic.title
         }))
       }

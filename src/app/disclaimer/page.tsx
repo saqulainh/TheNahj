@@ -4,6 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Disclaimer & Privacy Policy | TheNahj",
   description: "Our policy regarding content, copyright, and data sources at TheNahj.",
+  alternates: { canonical: "https://thenahj.live/disclaimer" },
 };
 
 export default function DisclaimerPage() {

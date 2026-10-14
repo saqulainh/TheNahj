@@ -20,7 +20,7 @@ interface ImageRoleProps {
   priority?: boolean;
 }
 
-export function ImageRole({ src, alt = "", role = "hero", className = "", focalPoint = null, getImgRef, forceNative = false, unconstrained = false, priority }: ImageRoleProps) {
+export function ImageRole({ src, alt, role = "hero", className = "", focalPoint = null, getImgRef, forceNative = false, unconstrained = false, priority }: ImageRoleProps) {
   const missing = !src;
 
   // Decide sizes and object-fit defaults per role
@@ -31,6 +31,7 @@ export function ImageRole({ src, alt = "", role = "hero", className = "", focalP
   };
 
   const opts = roleDefaults[role];
+  const imageAlt = alt || `${role === "hero" ? "Featured" : role === "sidebar" ? "Related" : "Wisdom"} image`;
   const objectPosition = focalPoint ? `${focalPoint.x}% ${focalPoint.y}%` : "center";
   const isPriority = priority !== undefined ? priority : opts.priority;
 
@@ -77,7 +78,7 @@ export function ImageRole({ src, alt = "", role = "hero", className = "", focalP
           src={fallback as string}
           srcSet={srcset}
           sizes={opts.sizes}
-          alt={alt}
+          alt={imageAlt}
           loading={isPriority ? "eager" : "lazy"}
           style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition }}
         />
@@ -89,7 +90,7 @@ export function ImageRole({ src, alt = "", role = "hero", className = "", focalP
     <div className={`relative overflow-hidden ${className}`} style={unconstrained ? undefined : { aspectRatio: opts.aspect }}>
       <Image
         src={src}
-        alt={alt}
+        alt={imageAlt}
         fill
         sizes={opts.sizes}
         style={{ objectFit: "cover", objectPosition }}

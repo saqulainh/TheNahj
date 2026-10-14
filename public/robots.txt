@@ -3,7 +3,10 @@
 User-agent: *
 Allow: /
 Disallow: /admin
-Disallow: /api/admin/
+Disallow: /api/
+Disallow: /profile
+Disallow: /saved
+Disallow: /search
 
 # Explicit Permission for AI Search Engines (GEO)
 User-agent: GPTBot

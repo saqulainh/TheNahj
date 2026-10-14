@@ -6,6 +6,7 @@ import { platformTopics } from "@/data/mock";
 import { getCategories, getWisdomByCategory } from "@/lib/wisdom";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 import { themeExperienceBySlug } from "@/lib/content-experience";
+import { buildPageMetadata } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -22,9 +23,10 @@ export async function generateMetadata({ params }: PageProps) {
     ? `${topic.description} Explore Imam Ali (AS) teachings on ${name.toLowerCase()} from Nahjul Balagha.`
     : `Explore authentic Imam Ali (AS) wisdom and Nahjul Balagha quotes about ${name.toLowerCase()}.`;
 
-  return {
+  return buildPageMetadata({
     title,
     description,
+    path: `/topics/${slug}`,
     keywords: [
       name,
       `Imam Ali on ${name.toLowerCase()}`,
@@ -32,17 +34,7 @@ export async function generateMetadata({ params }: PageProps) {
       "Shia Islamic wisdom",
       "Ahlulbayt teachings",
     ],
-    openGraph: {
-      title,
-      description,
-      url: `https://thenahj.live/topics/${slug}`,
-      type: "website",
-    },
-    robots: {
-      index: true,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function TopicPage({ params }: PageProps) {

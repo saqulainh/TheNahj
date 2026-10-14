@@ -5,6 +5,7 @@ import { Suspense } from "react";
 export const revalidate = 0; // Always fetch fresh data — no caching
 
 import { Metadata } from "next";
+import Link from "next/link";
 
 export async function generateMetadata(
   props: { searchParams: Promise<{ id?: string }> }
@@ -94,6 +95,16 @@ export default async function AudioPage() {
           <AudioPlayer tracks={tracks} />
         </Suspense>
       )}
+
+      <nav aria-label="Explore related content" className="mt-12 rounded-2xl border border-border/30 bg-surface/50 p-6">
+        <h2 className="text-lg font-medium text-gold-light">Continue exploring</h2>
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3 text-sm">
+          <Link href="/wisdom" className="text-muted hover:text-gold-light">Imam Ali wisdom</Link>
+          <Link href="/nahjul-balagha" className="text-muted hover:text-gold-light">Nahjul Balagha quotes</Link>
+          <Link href="/daily" className="text-muted hover:text-gold-light">Daily wisdom</Link>
+          <Link href="/articles" className="text-muted hover:text-gold-light">Islamic reflections</Link>
+        </div>
+      </nav>
     </section>
   );
 }

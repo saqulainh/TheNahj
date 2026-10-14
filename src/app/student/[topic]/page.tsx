@@ -6,6 +6,7 @@ import { studentTopics } from "@/data/mock";
 import { getWisdomByCornerTopic, getArticlesByCornerTopic } from "@/lib/wisdom";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 import { topicExperienceBySlug } from "@/lib/content-experience";
+import { buildPageMetadata } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ topic: string }>;
@@ -20,9 +21,10 @@ export async function generateMetadata({ params }: PageProps) {
   const title = `${item.title} — Islamic Student Wisdom | TheNahj`;
   const description = `${item.description} Imam Ali (AS) guidance on ${item.title.toLowerCase()} for Muslim students.`;
 
-  return {
+  return buildPageMetadata({
     title,
     description,
+    path: `/student/${topic}`,
     keywords: [
       item.title,
       "Imam Ali student advice",
@@ -30,17 +32,7 @@ export async function generateMetadata({ params }: PageProps) {
       "Muslim student motivation",
       "Nahjul Balagha for students",
     ],
-    openGraph: {
-      title,
-      description,
-      url: `https://thenahj.live/student/${topic}`,
-      type: "website",
-    },
-    robots: {
-      index: true,
-      follow: true,
-    },
-  };
+  });
 }
 
 export default async function StudentTopicPage({ params }: PageProps) {

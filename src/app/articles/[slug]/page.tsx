@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import nextDynamic from "next/dynamic";
 import { ImmersiveArticleSkeleton } from "@/components/articles/ImmersiveArticleSkeleton";
 import { getRelatedUnifiedArticles, getUnifiedArticleBySlug } from "@/lib/content";
+import { buildPageMetadata, SITE_URL, absoluteUrl } from "@/lib/seo";
 
 const ImmersiveArticle = nextDynamic(
   () => import("@/components/articles/ImmersiveArticle").then((mod) => mod.ImmersiveArticle),
@@ -25,29 +26,17 @@ export async function generateMetadata({ params }: PageProps) {
   const title = article.seo_title || article.title;
   const description = article.seo_description || article.excerpt;
   const image = article.hero_image || article.featured_image || "/backgrounds/serene.jpg";
-  const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
+  const canonicalBase = SITE_URL;
 
   return {
-    title,
-    description,
-    keywords: article.tags,
-    openGraph: {
+    ...buildPageMetadata({
       title,
       description,
+      path: `/articles/${article.slug}`,
+      keywords: article.tags || [],
+      image,
       type: "article",
-      url: `${canonicalBase}/articles/${article.slug}`,
-      images: [{ url: image }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [image],
-    },
-    robots: {
-      index: true,
-      follow: true,
-    },
+    }),
   } satisfies Metadata;
 }
 
@@ -58,7 +47,7 @@ export default async function ArticlePage({ params }: PageProps) {
 
   const related = await getRelatedUnifiedArticles(article.slug, article.category, article.tags || []);
 
-  const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
+  const canonicalBase = SITE_URL;
   const image = article.hero_image || article.featured_image || "/backgrounds/serene.jpg";
   const publishedTime = article.published_at || article.created_at || new Date().toISOString();
   const jsonLd = {
@@ -66,10 +55,10 @@ export default async function ArticlePage({ params }: PageProps) {
     "@type": "Article",
     headline: article.seo_title || article.title,
     description: article.seo_description || article.excerpt,
-    image: [image.startsWith("http") ? image : `${canonicalBase}${image}`],
+    image: [absoluteUrl(image)],
     datePublished: publishedTime,
     dateModified: publishedTime,
-    mainEntityOfPage: `${canonicalBase}/articles/${article.slug}`,
+    mainEntityOfPage: absoluteUrl(`/articles/${article.slug}`),
     articleSection: article.category,
     keywords: article.tags?.join(", ") || "",
     inLanguage: ["en", "ar", "ur"],

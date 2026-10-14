@@ -9,9 +9,9 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/TheNahj Logo.jpeg",
-      "sizes": "512x512",
-      "type": "image/jpeg",
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon",
       "purpose": "any maskable"
     }
   ]

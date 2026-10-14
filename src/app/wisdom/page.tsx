@@ -3,10 +3,12 @@ export const revalidate = 300;
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 import { getAllWisdom, getCategories } from "@/lib/wisdom";
 import Link from "next/link";
+import { buildPageMetadata, SITE_URL } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Imam Ali (AS) Quotes — Sayings & Wisdom from Nahjul Balagha",
-  description: "Read powerful Imam Ali (AS) quotes in Arabic, Urdu, and English. Daily wisdom cards with reflections from Nahjul Balagha for Muslim students & youth.",
+  description: "Read powerful Imam Ali (AS) quotes in Arabic, Urdu, and English. Daily wisdom cards with reflections from Nahjul Balagha for Muslim students and youth.",
+  path: "/wisdom",
   keywords: [
     "Imam Ali Quotes",
     "Imam Ali AS Sayings",
@@ -20,13 +22,7 @@ export const metadata = {
     "Imam Ali on Knowledge",
     "Imam Ali on Patience",
   ],
-  openGraph: {
-    title: "Imam Ali (AS) Quotes — Nahjul Balagha Wisdom Cards",
-    description: "Authentic quotes of Imam Ali (AS) with Arabic text, Urdu & English translations. Modern reflections for the distracted generation.",
-    url: "https://thenahj.live/wisdom",
-    type: "website",
-  },
-};
+});
 
 export default async function WisdomPage() {
   const [wisdom, categories] = await Promise.all([getAllWisdom(), getCategories()]);
@@ -36,19 +32,19 @@ export default async function WisdomPage() {
     "@graph": [
       {
         "@type": "CollectionPage",
-        "@id": "https://www.thenahj.live/wisdom#webpage",
-        "url": "https://www.thenahj.live/wisdom",
-        "name": "Imam Ali Says — Wisdom Repository",
-        "isPartOf": { "@id": "https://www.thenahj.live/#website" },
-        "about": { "@id": "https://www.thenahj.live/wisdom#itemlist" }
+        "@id": `${SITE_URL}/wisdom#webpage`,
+        "url": `${SITE_URL}/wisdom`,
+        "name": "Imam Ali (AS) Quotes — Wisdom Repository",
+        "isPartOf": { "@id": `${SITE_URL}/#website` },
+        "about": { "@id": `${SITE_URL}/wisdom#itemlist` }
       },
       {
         "@type": "ItemList",
-        "@id": "https://www.thenahj.live/wisdom#itemlist",
+        "@id": `${SITE_URL}/wisdom#itemlist`,
         "itemListElement": wisdom.map((w, index) => ({
           "@type": "ListItem",
           "position": index + 1,
-          "url": `https://www.thenahj.live/wisdom/${w.slug}`,
+          "url": `${SITE_URL}/wisdom/${w.slug}`,
           "name": (w as any).title || w.english_translation
         }))
       }

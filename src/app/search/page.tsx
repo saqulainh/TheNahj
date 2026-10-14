@@ -2,15 +2,19 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { searchDiscoveryContent } from "@/lib/discovery";
 import { SmartSearchBar } from "@/components/search/SmartSearchBar";
+import { buildPageMetadata } from "@/lib/seo";
 
 interface PageProps {
   searchParams: Promise<{ q?: string; section?: string; limit?: string }>;
 }
 
-export const metadata: Metadata = {
-  title: "Search | TheNahj",
-  description: "Search wisdom cards, articles, and related wisdom across TheNahj.",
-};
+export const metadata: Metadata = buildPageMetadata({
+  title: "Search Imam Ali Quotes and Islamic Wisdom | TheNahj",
+  description: "Search TheNahj's multilingual collection of Imam Ali quotes, Nahjul Balagha wisdom, articles, and reflections.",
+  path: "/search",
+  keywords: ["search Imam Ali quotes", "search Nahjul Balagha", "Islamic wisdom search"],
+  noindex: true,
+});
 
 function resultHref(kind: string, slug: string) {
   return kind === "article" ? `/articles/${slug}` : `/wisdom/${slug}`;

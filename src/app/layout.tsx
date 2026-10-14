@@ -9,14 +9,13 @@ import { GlobalAudioPlayer } from "@/components/audio/GlobalAudioPlayer";
 import { getCMSConfig } from "@/lib/cms";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { absoluteUrl, SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const cms = await getCMSConfig();
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
-
   return {
-    metadataBase: new URL(baseUrl),
+    metadataBase: new URL(SITE_URL),
     title: {
       default: `${cms.brand.siteName} — ${cms.brand.tagline}`,
       template: `%s | ${cms.brand.siteName}`,
@@ -25,11 +24,11 @@ export async function generateMetadata(): Promise<Metadata> {
     manifest: "/manifest.json",
     icons: {
       icon: [
-        { url: '/favicon.ico' },
-        { url: '/thenahj-logo.jpeg' }
+        { url: "/favicon.ico", type: "image/x-icon" },
       ],
+      shortcut: "/favicon.ico",
       apple: [
-        { url: '/thenahj-logo.jpeg' }
+        { url: "/favicon.ico", type: "image/x-icon" },
       ]
     },
     appleWebApp: {
@@ -53,12 +52,12 @@ export async function generateMetadata(): Promise<Metadata> {
       "nahj board"
     ],
     alternates: {
-      canonical: "./",
+      canonical: SITE_URL,
     },
     openGraph: {
       title: `${cms.brand.siteName} — ${cms.brand.tagline}`,
       description: cms.brand.description,
-      url: baseUrl,
+      url: SITE_URL,
       siteName: cms.brand.siteName,
       locale: "en_US",
       type: "website",
@@ -102,12 +101,12 @@ export default async function RootLayout({
     "@graph": [
       {
         "@type": "Organization",
-        "@id": "https://thenahj.live/#organization",
+        "@id": `${SITE_URL}/#organization`,
         "name": cms.brand.siteName,
-        "url": "https://thenahj.live/",
+        "url": `${SITE_URL}/`,
         "logo": {
           "@type": "ImageObject",
-          "url": "https://thenahj.live/thenahj-logo.jpeg",
+          "url": absoluteUrl("/thenahj-logo.jpeg"),
           "width": 512,
           "height": 512
         },
@@ -124,8 +123,8 @@ export default async function RootLayout({
       },
       {
         "@type": "WebSite",
-        "@id": "https://thenahj.live/#website",
-        "url": "https://thenahj.live/",
+        "@id": `${SITE_URL}/#website`,
+        "url": `${SITE_URL}/`,
         "name": cms.brand.siteName,
         "description": cms.brand.description,
         "publisher": { "@id": "https://thenahj.live/#organization" },

@@ -1,6 +1,8 @@
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/brand";
+import { buildPageMetadata } from "@/lib/seo";
+import Link from "next/link";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "About TheNahj — Our Mission | Wisdom of Imam Ali (AS) for Modern Youth",
   description: `Why ${SITE_NAME} exists — a digital refuge for modern youth through the wisdom of Imam Ali (AS). Building an Islamic platform for students and youth fighting social media addiction, exam anxiety, and identity crisis.`,
   keywords: [
@@ -11,13 +13,8 @@ export const metadata = {
     "Muslim youth digital refuge",
     "Ahlulbayt community",
   ],
-  openGraph: {
-    title: "About TheNahj — Wisdom of Imam Ali (AS) for Modern Youth",
-    description: `Why ${SITE_NAME} exists — a digital refuge for modern youth through Imam Ali (AS) wisdom.`,
-    url: "https://thenahj.live/about",
-    type: "website",
-  },
-};
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (
@@ -49,6 +46,18 @@ export default function AboutPage() {
           honest step at a time.
         </p>
       </section>
+
+      <nav aria-label="Explore TheNahj" className="mt-14 rounded-2xl border border-border/30 bg-surface/50 p-6">
+        <h2 className="text-lg font-medium text-gold-light">Explore TheNahj</h2>
+        <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+          <Link href="/wisdom" className="text-muted hover:text-gold-light">Read Imam Ali (AS) wisdom →</Link>
+          <Link href="/nahjul-balagha" className="text-muted hover:text-gold-light">Explore Nahjul Balagha quotes →</Link>
+          <Link href="/student" className="text-muted hover:text-gold-light">Visit Student Corner →</Link>
+          <Link href="/youth" className="text-muted hover:text-gold-light">Visit Youth Corner →</Link>
+          <Link href="/articles" className="text-muted hover:text-gold-light">Read Islamic reflections →</Link>
+          <Link href="/daily" className="text-muted hover:text-gold-light">Get daily wisdom →</Link>
+        </div>
+      </nav>
 
       {/* Dev Reflection Quote Section */}
       <div className="mt-20 border-t border-border/25 pt-12">

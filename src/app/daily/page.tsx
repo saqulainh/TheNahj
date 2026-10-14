@@ -1,8 +1,9 @@
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 import { getDailyWisdom } from "@/lib/wisdom";
 import { DailyCheckin } from "@/components/daily/DailyCheckin";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Daily Wisdom — Imam Ali (AS) Quote of the Day",
   description: "Get a fresh Imam Ali (AS) quote every day. Daily Islamic wisdom with Arabic text, Urdu & English translation — reflect, save, and share.",
   keywords: [
@@ -14,13 +15,8 @@ export const metadata = {
     "Ahlulbayt daily wisdom",
     "Muslim daily motivation",
   ],
-  openGraph: {
-    title: "Daily Wisdom — Imam Ali (AS) Quote of the Day",
-    description: "A fresh Imam Ali (AS) quote every day with modern reflections.",
-    url: "https://thenahj.live/daily",
-    type: "website",
-  },
-};
+  path: "/daily",
+});
 
 export default async function DailyPage() {
   const daily = await getDailyWisdom();

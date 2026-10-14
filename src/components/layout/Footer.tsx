@@ -6,6 +6,11 @@ import { SocialLinks } from "@/components/ui/social-links";
 const footerLinks = [
   { href: "/wisdom", label: "Imam Ali Says" },
   { href: "/nahjul-balagha", label: "Nahjul Balagha" },
+  { href: "/topics", label: "Wisdom Topics" },
+  { href: "/articles", label: "Articles" },
+  { href: "/student", label: "Student Corner" },
+  { href: "/youth", label: "Youth Corner" },
+  { href: "/daily", label: "Daily Wisdom" },
   { href: "/audio", label: "Audio Reflections" },
   { href: "/saved", label: "Saved" },
   { href: "/digital-diseases", label: "Digital Diseases" },

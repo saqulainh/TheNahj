@@ -10,6 +10,7 @@ import { getRelatedUnifiedArticles, getUnifiedArticleBySlug } from "@/lib/conten
 import type { RelatedArticlePreview } from "@/lib/content";
 import type { Metadata } from "next";
 import { AITranslatedText } from "@/components/ui/AITranslatedText";
+import { absoluteUrl, buildPageMetadata, SITE_URL, breadcrumbJsonLd } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -24,41 +25,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `${article.seo_title || article.title} — Imam Ali (AS) Wisdom`;
   const description = article.seo_description || article.excerpt;
   const image = article.hero_image || article.featured_image || "/backgrounds/serene.jpg";
-  const canonicalBase = process.env.NEXT_PUBLIC_SITE_URL || "https://thenahj.live";
+  const canonicalBase = SITE_URL;
 
   return {
-    title,
-    description,
-    keywords: [
-      ...(article.tags || []),
-      "Imam Ali Quotes",
-      "Nahjul Balagha",
-      "Shia Islamic Wisdom",
-      "Ahlulbayt Hadith",
-      "Islamic Motivation",
-      "Youth Guidance Islam"
-    ],
-    openGraph: {
+    ...buildPageMetadata({
       title,
       description,
-      type: "article",
-      url: `${canonicalBase}/wisdom/${article.slug}`,
-      siteName: "TheNahj",
-      images: [
-        {
-          url: image.startsWith("http") ? image : `${canonicalBase}${image}`,
-          width: 1200,
-          height: 630,
-          alt: title,
-        },
+      path: `/wisdom/${article.slug}`,
+      keywords: [
+        ...(article.tags || []),
+        "Imam Ali Quotes",
+        "Nahjul Balagha",
+        "Shia Islamic Wisdom",
+        "Ahlulbayt Hadith",
+        "Islamic Motivation",
+        "Youth Guidance Islam",
       ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [image.startsWith("http") ? image : `${canonicalBase}${image}`],
-    },
+      image,
+      type: "article",
+    }),
   };
 }
 
@@ -136,7 +121,7 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
     return { label: "Related", className: "border-border/20 text-muted" };
   };
 
-  const canonicalBase = "https://www.thenahj.live";
+  const canonicalBase = SITE_URL;
   const pageUrl = `${canonicalBase}/wisdom/${article.slug}`;
   const schemaImage = article.hero_image || article.featured_image || "/backgrounds/serene.jpg";
   const absoluteImage = schemaImage.startsWith("http") ? schemaImage : `${canonicalBase}${schemaImage}`;
@@ -170,12 +155,12 @@ export default async function ReflectionPage({ params, searchParams }: PageProps
     {
       "@type": "BreadcrumbList",
       "@id": `${pageUrl}#breadcrumb`,
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": canonicalBase },
-        { "@type": "ListItem", "position": 2, "name": "Wisdom Repository", "item": `${canonicalBase}/wisdom` },
-        { "@type": "ListItem", "position": 3, "name": article.category || "General", "item": `${canonicalBase}/topics/${article.category?.toLowerCase() || 'general'}` },
-        { "@type": "ListItem", "position": 4, "name": article.title }
-      ]
+      "itemListElement": breadcrumbJsonLd([
+        { name: "Home", path: "/" },
+        { name: "Wisdom Repository", path: "/wisdom" },
+        { name: article.category || "General" },
+        { name: article.title },
+      ]).itemListElement
     },
     {
       "@type": "Article",

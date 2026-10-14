@@ -1,9 +1,12 @@
 import { PomodoroTimer } from "@/components/focus/PomodoroTimer";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Deep Focus Mode",
-  description: "Pomodoro timer with wisdom quotes — minimal distractions, dark immersive UI, ambient sounds.",
-};
+export const metadata = buildPageMetadata({
+  title: "Deep Focus Mode — Pomodoro Timer with Islamic Wisdom",
+  description: "Use a distraction-free Pomodoro timer with Imam Ali (AS) wisdom quotes, ambient sounds, and focused study sessions.",
+  path: "/focus",
+  keywords: ["Islamic Pomodoro timer", "study focus timer", "Imam Ali focus quotes"],
+});
 
 export default function FocusPage() {
   return (

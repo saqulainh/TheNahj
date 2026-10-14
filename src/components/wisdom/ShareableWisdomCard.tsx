@@ -63,6 +63,7 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
   const captureCard = async () => {
     if (!cardRef.current) return null;
 
+    await document.fonts.load('16px "Noto Nastaliq Urdu"');
     await document.fonts.ready;
     const html2canvas = (await import("html2canvas")).default;
 
@@ -331,7 +332,11 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
 
                   {/* Urdu Translation */}
                   {showUrdu && wisdom.urdu_translation && (
-                    <p className={`mb-4 max-w-xs whitespace-pre-wrap break-words text-sm md:text-base font-urdu leading-relaxed ${theme.id === 'minimal' ? 'text-stone-700' : 'text-white/90'}`} dir="rtl">
+                    <p
+                      className={`mb-4 max-w-xs whitespace-pre-wrap break-words text-sm md:text-base font-urdu leading-[2.6] ${theme.id === 'minimal' ? 'text-stone-700' : 'text-white/90'}`}
+                      dir="rtl"
+                      style={{ lineHeight: 2.6 }}
+                    >
                       &quot;{wisdom.urdu_translation}&quot;
                     </p>
                   )}
