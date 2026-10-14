@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 :root {
+  --font-geist-sans: "Inter", system-ui, sans-serif;
+  --font-amiri: "Amiri", "Noto Naskh Arabic", "Traditional Arabic", serif;
+  --font-noto-nastaliq: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif;
+  --font-instrument-serif: "Instrument Serif", Georgia, serif;
+  --font-plus-jakarta-sans: "Plus Jakarta Sans", Satoshi, sans-serif;
   color-scheme: light;
   --background: 40 46% 94%;
   --surface: 40 39% 91%;

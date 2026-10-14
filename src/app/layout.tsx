@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Amiri, Inter, Noto_Nastaliq_Urdu, Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
@@ -11,35 +10,6 @@ import { getCMSConfig } from "@/lib/cms";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
-
-const inter = Inter({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const amiri = Amiri({
-  variable: "--font-amiri",
-  weight: ["400", "700"],
-  subsets: ["arabic", "latin"],
-});
-
-const notoUrdu = Noto_Nastaliq_Urdu({
-  variable: "--font-noto-nastaliq",
-  weight: ["400", "600"],
-  subsets: ["arabic"],
-});
-
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
-  weight: ["400"],
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta-sans",
-  subsets: ["latin"],
-});
 
 export async function generateMetadata(): Promise<Metadata> {
   const cms = await getCMSConfig();
@@ -175,6 +145,12 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(sitewideGraph) }}
@@ -187,7 +163,7 @@ export default async function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${amiri.variable} ${notoUrdu.variable} ${instrumentSerif.variable} ${plusJakarta.variable} font-sans antialiased bg-background text-foreground`}
+        className="font-sans antialiased bg-background text-foreground"
         suppressHydrationWarning
       >
         <Script id="thenahj-theme-init" strategy="beforeInteractive">

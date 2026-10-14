@@ -60,6 +60,21 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
     });
   };
 
+  const captureCard = async () => {
+    if (!cardRef.current) return null;
+
+    await document.fonts.ready;
+    const html2canvas = (await import("html2canvas")).default;
+
+    return html2canvas(cardRef.current, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: null,
+      letterRendering: true,
+      logging: false,
+    });
+  };
+
   const handleNativeShare = async () => {
     const text = `"${wisdom.english_translation}"\n\n— ${wisdom.source}`;
     if (typeof navigator !== "undefined" && navigator.share) {
@@ -69,8 +84,8 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
         // Generate image if possible and attach it
         if (cardRef.current && typeof navigator.canShare === "function") {
           try {
-            const html2canvas = (await import("html2canvas")).default;
-            const canvas = await html2canvas(cardRef.current, { scale: 2, useCORS: true, backgroundColor: null });
+            const canvas = await captureCard();
+            if (!canvas) return;
             const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
             if (blob) {
               const file = new File([blob], `thenahj-wisdom-${wisdom.slug}.png`, { type: "image/png" });
@@ -97,8 +112,8 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
   const handleDownload = async () => {
     if (!cardRef.current) return;
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(cardRef.current, { scale: 2, useCORS: true, backgroundColor: null });
+      const canvas = await captureCard();
+      if (!canvas) return;
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.download = `thenahj-wisdom-${wisdom.slug}.png`;
@@ -113,8 +128,8 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
   const handleCopyImage = async () => {
     if (!cardRef.current) return;
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(cardRef.current, { scale: 2, useCORS: true, backgroundColor: null });
+      const canvas = await captureCard();
+      if (!canvas) return;
       canvas.toBlob(async (blob) => {
         if (blob) {
           try {
@@ -316,14 +331,14 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
 
                   {/* Urdu Translation */}
                   {showUrdu && wisdom.urdu_translation && (
-                    <p className={`mb-4 text-sm md:text-base font-urdu leading-relaxed max-w-xs ${theme.id === 'minimal' ? 'text-stone-700' : 'text-white/90'}`} dir="rtl">
+                    <p className={`mb-4 max-w-xs whitespace-pre-wrap break-words text-sm md:text-base font-urdu leading-relaxed ${theme.id === 'minimal' ? 'text-stone-700' : 'text-white/90'}`} dir="rtl">
                       &quot;{wisdom.urdu_translation}&quot;
                     </p>
                   )}
 
                   {/* English Translation */}
                   {showEnglish && wisdom.english_translation && (
-                    <p className={`mb-4 text-xs md:text-sm font-medium leading-relaxed max-w-xs ${theme.id === 'minimal' ? 'text-stone-600' : 'text-white/80'}`}>
+                    <p className={`mb-4 max-w-xs whitespace-pre-wrap break-words text-xs md:text-sm font-medium leading-relaxed ${theme.id === 'minimal' ? 'text-stone-600' : 'text-white/80'}`}>
                       &quot;{wisdom.english_translation}&quot;
                     </p>
                   )}
