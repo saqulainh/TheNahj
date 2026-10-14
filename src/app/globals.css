@@ -811,8 +811,9 @@
 
 /* Urdu font */
 .font-urdu {
-  font-family: "Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", "Nafees Web Naskh", serif;
-  line-height: 2.2;
+  font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", "Nafees Web Naskh", serif;
+  line-height: 2.8;
+  word-spacing: 0.12em;
 }
 
 /* RTL global direction */
@@ -842,4 +843,3 @@ html[dir="ltr"] .rtl-only {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
 }
-

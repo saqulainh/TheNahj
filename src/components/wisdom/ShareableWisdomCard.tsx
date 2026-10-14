@@ -63,7 +63,11 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
   const captureCard = async () => {
     if (!cardRef.current) return null;
 
-    await document.fonts.load('16px "Noto Nastaliq Urdu"');
+    await Promise.all([
+      document.fonts.load('16px "Inter"'),
+      document.fonts.load('16px "Noto Nastaliq Urdu"'),
+      document.fonts.load('16px "Amiri"'),
+    ]);
     await document.fonts.ready;
     const html2canvas = (await import("html2canvas")).default;
 
@@ -71,7 +75,6 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
       scale: 2,
       useCORS: true,
       backgroundColor: null,
-      letterRendering: true,
       logging: false,
     });
   };
@@ -333,9 +336,10 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
                   {/* Urdu Translation */}
                   {showUrdu && wisdom.urdu_translation && (
                     <p
-                      className={`mb-4 max-w-xs whitespace-pre-wrap break-words text-sm md:text-base font-urdu leading-[2.6] ${theme.id === 'minimal' ? 'text-stone-700' : 'text-white/90'}`}
+                      className={`mb-4 max-w-xs whitespace-pre-wrap break-normal text-sm md:text-base font-urdu leading-[2.8] ${theme.id === 'minimal' ? 'text-stone-700' : 'text-white/90'}`}
                       dir="rtl"
-                      style={{ lineHeight: 2.6 }}
+                      lang="ur"
+                      style={{ lineHeight: 2.8, wordSpacing: "0.18em", overflowWrap: "normal" }}
                     >
                       &quot;{wisdom.urdu_translation}&quot;
                     </p>
@@ -343,7 +347,11 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
 
                   {/* English Translation */}
                   {showEnglish && wisdom.english_translation && (
-                    <p className={`mb-4 max-w-xs whitespace-pre-wrap break-words text-xs md:text-sm font-medium leading-relaxed ${theme.id === 'minimal' ? 'text-stone-600' : 'text-white/80'}`}>
+                    <p
+                      className={`mb-4 max-w-xs whitespace-pre-wrap break-normal text-xs md:text-sm font-medium leading-relaxed ${theme.id === 'minimal' ? 'text-stone-600' : 'text-white/80'}`}
+                      lang="en"
+                      style={{ wordSpacing: "0.16em", overflowWrap: "normal" }}
+                    >
                       &quot;{wisdom.english_translation}&quot;
                     </p>
                   )}
