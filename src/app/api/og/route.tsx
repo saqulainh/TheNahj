@@ -4,6 +4,9 @@ export const runtime = 'edge';
 
 const DEFAULT_BACKGROUND =
   'linear-gradient(135deg, #181a1f 0%, #111315 100%)';
+const ARABIC_FONT_URL =
+  'https://raw.githubusercontent.com/google/fonts/main/ofl/notosansarabic/NotoSansArabic%5Bwght%5D.ttf';
+const MAX_BACKGROUND_BYTES = 5 * 1024 * 1024;
 
 function truncateAtWord(value: string, maxLength: number) {
   const normalized = value.replace(/\s+/g, ' ').trim();
@@ -48,9 +51,64 @@ function getAllowedBackgroundUrl(value: string | null) {
   }
 }
 
+async function getBackgroundImage(value: string | null) {
+  const url = getAllowedBackgroundUrl(value);
+  if (!url) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(url, {
+      cache: 'force-cache',
+      signal: AbortSignal.timeout(2500),
+    });
+    const contentType = response.headers.get('content-type') || '';
+    const contentLength = Number(response.headers.get('content-length') || 0);
+
+    if (
+      !response.ok ||
+      !contentType.startsWith('image/') ||
+      contentLength > MAX_BACKGROUND_BYTES
+    ) {
+      return null;
+    }
+
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.length > MAX_BACKGROUND_BYTES) {
+      return null;
+    }
+
+    let binary = '';
+    for (let index = 0; index < bytes.length; index += 0x8000) {
+      binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+    }
+
+    return `data:${contentType};base64,${btoa(binary)}`;
+  } catch {
+    return null;
+  }
+}
+
+async function getArabicFont() {
+  try {
+    const response = await fetch(ARABIC_FONT_URL, {
+      cache: 'force-cache',
+      signal: AbortSignal.timeout(2500),
+    });
+    return response.ok ? response.arrayBuffer() : null;
+  } catch {
+    return null;
+  }
+}
+
+function containsArabicScript(value: string) {
+  return /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff]/u.test(value);
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const isStory = searchParams.get('type') === 'story';
 
     const safeTitle = truncateAtWord(
       searchParams.get('title') || 'Wisdom from Nahjul Balagha',
@@ -62,12 +120,26 @@ export async function GET(request: Request) {
         'Discover authentic teachings and spiritual reflections for modern life.',
       220,
     );
-    const bgUrl = getAllowedBackgroundUrl(searchParams.get('bgUrl'));
+    const [backgroundImage, arabicFont] = await Promise.all([
+      getBackgroundImage(searchParams.get('bgUrl')),
+      getArabicFont(),
+    ]);
+    const isArabic = containsArabicScript(`${safeTitle} ${safeText}`);
+    const direction = isArabic ? 'rtl' : 'ltr';
+    const fontFamily = isArabic && arabicFont ? 'Noto Sans Arabic' : undefined;
+    const titleLength = Array.from(safeTitle).length;
+    const textLength = Array.from(safeText).length;
 
     const titleFontSize =
-      safeTitle.length > 60 ? 42 : safeTitle.length > 36 ? 50 : 60;
+      (titleLength > 60 ? 42 : titleLength > 36 ? 50 : 60) *
+      (isArabic ? 0.9 : 1);
     const textFontSize =
-      safeText.length > 160 ? 24 : safeText.length > 100 ? 27 : 30;
+      (textLength > 160 ? 24 : textLength > 100 ? 27 : 30) *
+      (isArabic ? 0.9 : 1);
+    const width = isStory ? 1080 : 1200;
+    const height = isStory ? 1920 : 630;
+    const padding = isStory ? '160px 96px' : '64px 88px';
+    const maxContentWidth = isStory ? 880 : 900;
 
     return new ImageResponse(
       (
@@ -79,14 +151,16 @@ export async function GET(request: Request) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '64px 88px',
+            padding,
             backgroundColor: '#111315',
-            backgroundImage: bgUrl ? `url(${bgUrl})` : DEFAULT_BACKGROUND,
+            backgroundImage: backgroundImage
+              ? `url(${backgroundImage})`
+              : DEFAULT_BACKGROUND,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
         >
-          {bgUrl && (
+          {backgroundImage && (
             <div
               style={{
                 position: 'absolute',
@@ -118,18 +192,21 @@ export async function GET(request: Request) {
               alignItems: 'center',
               justifyContent: 'center',
               textAlign: 'center',
+              direction,
               zIndex: 10,
-              gap: '16px',
+              gap: isStory ? '28px' : '16px',
+              width: '100%',
             }}
           >
             <div
               style={{
                 color: '#C6A15B', // Gold
+                fontFamily,
                 fontSize: 24,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
                 fontWeight: 600,
-                maxWidth: '900px',
+                maxWidth: maxContentWidth,
                 overflow: 'hidden',
               }}
             >
@@ -139,11 +216,12 @@ export async function GET(request: Request) {
             <div
               style={{
                 color: '#F9F6F0',
+                fontFamily,
                 fontSize: titleFontSize,
                 fontWeight: 700,
                 lineHeight: 1.15,
-                maxWidth: '900px',
-                maxHeight: '140px',
+                maxWidth: maxContentWidth,
+                maxHeight: isStory ? '360px' : '140px',
                 overflow: 'hidden',
               }}
             >
@@ -153,10 +231,11 @@ export async function GET(request: Request) {
             <div
               style={{
                 color: '#A09D96',
+                fontFamily,
                 fontSize: textFontSize,
                 lineHeight: 1.35,
-                maxWidth: '850px',
-                maxHeight: '126px',
+                maxWidth: isStory ? '820px' : '850px',
+                maxHeight: isStory ? '520px' : '126px',
                 overflow: 'hidden',
               }}
             >
@@ -186,8 +265,11 @@ export async function GET(request: Request) {
         </div>
       ),
       {
-        width: 1200,
-        height: 630,
+        width,
+        height,
+        fonts: arabicFont
+          ? [{ name: 'Noto Sans Arabic', data: arabicFont, weight: 400 }]
+          : undefined,
         headers: {
           'Cache-Control': 'public, max-age=300, s-maxage=300',
         },
