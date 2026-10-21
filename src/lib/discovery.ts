@@ -88,6 +88,12 @@ function normalizeText(value: string) {
   return normalized.replace(/[^\p{L}\p{N}\s]+/gu, " ").replace(/\s+/g, " ").trim();
 }
 
+export function normalizeQuery(value: string) {
+  return normalizeText(value);
+}
+
+export { slugifyTaxonomy };
+
 function normalizeArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean) : [];
 }
