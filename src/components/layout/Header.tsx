@@ -155,17 +155,15 @@ export function Header({
 
   return (
     <header
-      className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
-        isHome 
-          ? 'flex justify-center pt-5 px-4 md:px-0 bg-transparent border-transparent' 
-          : `border-b backdrop-blur-md ${
-              hasScrolled 
-                ? 'bg-surface/85 border-border/20 shadow-sm' 
-                : 'bg-background/20 border-transparent'
-            }`
-      }`}
+      className="fixed left-0 right-0 top-0 z-50 flex justify-center pt-4 md:pt-5 px-3 md:px-4 bg-transparent border-transparent pointer-events-none transition-all duration-300"
     >
-      <div className={`${isHome ? 'w-full md:w-auto flex items-center justify-between rounded-[2rem] border border-border/25 bg-surface/75 px-4 md:px-6 py-2.5 md:py-3 backdrop-blur-xl shadow-[0_14px_50px_-24px_rgba(0,0,0,0.55)]' : 'mx-auto flex max-w-7xl items-center justify-between px-4 md:px-6 py-2.5 md:py-3'}`}>
+      <div
+        className={`pointer-events-auto w-full md:w-auto flex items-center justify-between rounded-[2rem] border transition-all duration-300 px-4 md:px-6 py-2 md:py-2.5 backdrop-blur-xl ${
+          hasScrolled
+            ? "border-border/35 bg-surface/90 shadow-[0_16px_50px_-20px_rgba(0,0,0,0.65)]"
+            : "border-border/25 bg-surface/80 shadow-[0_14px_50px_-24px_rgba(0,0,0,0.55)]"
+        }`}
+      >
         
         {/* Site Brand Logo with generous right margin */}
         <Link 
@@ -367,7 +365,7 @@ export function Header({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute left-3 right-3 top-full mt-2 rounded-2xl border border-border/25 bg-surface/95 p-5 backdrop-blur-xl md:hidden shadow-2xl max-h-[calc(100vh-6rem)] overflow-y-auto"
+          className="pointer-events-auto absolute left-3 right-3 top-full mt-2 rounded-2xl border border-border/25 bg-surface/95 p-5 backdrop-blur-xl md:hidden shadow-2xl max-h-[calc(100vh-6rem)] overflow-y-auto"
         >
           <div className="space-y-4">
             {/* Core Section */}
