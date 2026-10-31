@@ -180,7 +180,7 @@ export function PomodoroTimer() {
           <circle
             cx="50" cy="50" r={radius}
             fill="none"
-            stroke="#1a1a1a"
+            stroke="currentColor" className="text-border/30"
             strokeWidth="1.5"
           />
           {/* Progress arc */}
@@ -313,7 +313,7 @@ export function PomodoroTimer() {
       {/* Zen Mode indicator */}
       {zenMode && (
         <div className="mt-6 text-center text-sm text-gold/70">
-          Zen Mode Active • <span className="underline decoration-gold/50 hover:decoration-gold/200"
+          Zen Mode Active • <span className="underline decoration-gold/50 hover:decoration-gold/100 hover:text-gold transition-colors cursor-pointer"
             onClick={() => setZenMode(false)}
           >
             Exit

@@ -112,38 +112,37 @@ export function PrismaHero({
       </div>
 
       {/* 4. Bottom-Aligned Editorial Content */}
-      <div className="relative z-20 flex min-h-[100dvh] flex-col justify-end px-6 pb-20 md:px-16 md:pb-32 lg:px-24">
+      <div className="relative z-20 flex min-h-[100dvh] flex-col justify-end px-6 pb-20 md:px-16 md:pb-28 lg:px-24">
         <div className="max-w-[1200px]">
-          {/* Massive Editorial Typography */}
+          {/* Brand Kicker Badge + Editorial Headline */}
           <motion.div
-            initial={{ opacity: 0, y: 50, filter: "blur(10px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-4"
           >
-            <h1 className="font-serif italic leading-[0.85] tracking-tighter text-foreground text-[clamp(4rem,10vw,12rem)]">
-              TheNahj
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-gold/30 bg-surface/70 px-4 py-1.5 backdrop-blur-md shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-gold animate-pulse" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gold-light">
+                TheNahj • Wisdom of Imam Ali (AS)
+              </span>
+            </div>
+
+            <h1 className="font-serif tracking-tight text-foreground text-[clamp(2.5rem,5.5vw,5.5rem)] leading-[1.08] max-w-4xl">
+              {headline || "Nahjul Balagha quotes for the distracted generation."}
             </h1>
           </motion.div>
 
           {/* Subtext Area */}
-          <div className="mt-8 md:mt-12 max-w-2xl pl-1 md:pl-3">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="font-serif tracking-tight text-foreground/90 text-[clamp(1.5rem,3.5vw,3rem)] leading-tight"
-            >
-              {headline}
-            </motion.h2>
-
+          <div className="mt-6 md:mt-8 max-w-2xl pl-1 md:pl-2">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="relative mt-6 max-w-md pl-5"
+              transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="relative pl-5"
             >
               {/* Subtle accent line */}
-              <div className="absolute bottom-0 left-0 top-1 w-[1px] bg-gradient-to-b from-gold/40 to-transparent" />
+              <div className="absolute bottom-0 left-0 top-1 w-[1.5px] bg-gradient-to-b from-gold/70 to-transparent" />
               <p className="text-base leading-relaxed text-secondary md:text-lg font-light font-display">
                 {subtext}
               </p>
@@ -154,8 +153,8 @@ export function PrismaHero({
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, delay: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-12 md:mt-16 pl-1 md:pl-3"
+            transition={{ duration: 1.2, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-10 md:mt-12 pl-1 md:pl-2"
           >
             <Link
               href={ctaLink}

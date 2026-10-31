@@ -75,7 +75,7 @@ export default async function AudioPage() {
   }
 
   return (
-    <section className="mx-auto max-w-4xl px-4 py-12 md:px-6 md:py-16">
+    <section className="mx-auto max-w-4xl px-4 py-8 md:px-6 md:py-12 pb-32">
       <div className="mb-10">
         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-muted">Audio Library</p>
         <h1 className="mt-2 text-3xl font-medium text-foreground md:text-4xl">

@@ -76,26 +76,24 @@ export function Header({
       }`}
     >
       <div className={`${isHome ? 'w-full md:w-auto flex items-center justify-between rounded-[2rem] border border-border/25 bg-surface/65 px-4 md:px-6 py-3.5 md:py-4 backdrop-blur-xl shadow-[0_14px_50px_-24px_rgba(0,0,0,0.55)]' : 'mx-auto flex max-w-7xl items-center justify-between px-4 md:px-6 py-3.5 md:py-4'}`}>
-        {/* Site Name (Hidden on Desktop Home) */}
+        {/* Site Brand Logo */}
         <Link 
           href="/" 
-          className={`group flex shrink-0 items-center gap-2 whitespace-nowrap pl-2 md:pl-4 ${isHome ? 'md:hidden' : ''}`}
+          className="group flex shrink-0 items-center gap-2.5 whitespace-nowrap pl-1 md:pl-2"
         >
-          {language === "en" ? (
-            <div className="relative h-8 w-28 md:h-9 md:w-32 transition-transform duration-300 group-hover:scale-105">
-              <Image 
-                src="/thenahj-logo.jpeg" 
-                alt={siteName} 
-                fill 
-                className="object-contain rounded-xl overflow-hidden"
-                priority 
-              />
-            </div>
-          ) : (
-            <div className="flex h-8 md:h-9 items-center px-2">
-              <span className="text-xl md:text-2xl font-bold tracking-tight text-gold translate-middle">The Nahj</span>
-            </div>
-          )}
+          <div className="relative h-8 w-8 md:h-9 md:w-9 rounded-xl overflow-hidden border border-gold/30 shadow-sm transition-transform duration-300 group-hover:scale-105 shrink-0 bg-surface">
+            <Image 
+              src="/thenahj-logo.jpeg" 
+              alt={siteName} 
+              fill 
+              sizes="36px"
+              className="object-cover"
+              priority 
+            />
+          </div>
+          <span className="text-base md:text-lg font-serif font-bold tracking-tight text-foreground group-hover:text-gold transition-colors">
+            {language === "en" ? siteName : "The Nahj"}
+          </span>
         </Link>
 
         {/* Desktop Navigation */}

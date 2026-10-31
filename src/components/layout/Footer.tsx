@@ -40,13 +40,19 @@ export function Footer({ socialLinks, links = footerLinks }: FooterProps) {
       <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-20">
         <div className="flex flex-col gap-10 md:flex-row md:justify-between">
           <div>
-            <div className="relative h-12 w-36 mb-4">
-              <Image 
-                src="/thenahj-logo.jpeg" 
-                alt={SITE_NAME} 
-                fill 
-                className="object-contain rounded-xl overflow-hidden" 
-              />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative h-10 w-10 rounded-xl overflow-hidden border border-gold/30 shadow-sm shrink-0 bg-surface">
+                <Image 
+                  src="/thenahj-logo.jpeg" 
+                  alt={SITE_NAME} 
+                  fill 
+                  sizes="40px"
+                  className="object-cover" 
+                />
+              </div>
+              <span className="text-xl font-serif font-bold tracking-tight text-foreground">
+                {SITE_NAME}
+              </span>
             </div>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted/80">
               {SITE_DESCRIPTION}

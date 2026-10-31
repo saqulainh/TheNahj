@@ -554,18 +554,18 @@ export default function KnowledgeGraphPage() {
   const handleMouseUp = () => setIsDragging(false);
 
   return (
-    <div className="h-screen w-full bg-[#08090D] text-foreground flex flex-col overflow-hidden relative select-none">
+    <div className="h-[calc(100dvh-5.5rem)] md:h-[calc(100dvh-6.5rem)] w-full bg-background text-foreground flex flex-col overflow-hidden relative select-none -mt-2 md:-mt-4">
       
       {/* Dynamic Starfield Background Grid */}
       <div 
         id="bg-canvas"
-        className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-surface-alt/20 via-[#08090D] to-[#040508] opacity-90"
+        className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-surface-alt/30 via-background to-surface-alt/10 opacity-90"
       >
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px] opacity-10 pointer-events-none" />
       </div>
 
       {/* --- TOP BAR & CONTROLS CONTAINER --- */}
-      <div className="absolute top-0 left-0 right-0 z-30 bg-[#08090D]/85 border-b border-gold/20 backdrop-blur-xl p-4 md:px-6 md:py-4 shadow-2xl">
+      <div className="absolute top-0 left-0 right-0 z-30 bg-surface/85 border-b border-border/30 backdrop-blur-xl p-3.5 md:px-6 md:py-4 shadow-md">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           
           {/* Title & Back */}
@@ -582,7 +582,7 @@ export default function KnowledgeGraphPage() {
               </span>
             </div>
 
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2 font-display">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 font-display">
               Knowledge Constellation <Sparkles size={18} className="text-gold animate-pulse" />
             </h1>
             <p className="text-xs text-secondary/80 max-w-md hidden sm:block">
@@ -600,7 +600,7 @@ export default function KnowledgeGraphPage() {
                 placeholder="Search anxiety, Letter 31, focus..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 rounded-xl bg-[#13151D] border border-gold/40 text-xs text-white placeholder:text-muted/60 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/50 shadow-inner"
+                className="w-full pl-9 pr-8 py-2 rounded-xl bg-surface-elevated border border-border/40 text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/50 shadow-inner"
               />
               {searchQuery && (
                 <button 
@@ -613,7 +613,7 @@ export default function KnowledgeGraphPage() {
             </div>
 
             {/* Zoom Buttons */}
-            <div className="flex items-center gap-1 bg-[#13151D] border border-gold/30 rounded-xl p-1 shadow-md">
+            <div className="flex items-center gap-1 bg-surface-elevated border border-border/30 rounded-xl p-1 shadow-md">
               <button 
                 onClick={() => setZoom(z => Math.min(1.8, z + 0.15))} 
                 className="p-1.5 rounded-lg hover:bg-gold/20 text-gold-light transition-colors"
@@ -654,7 +654,7 @@ export default function KnowledgeGraphPage() {
               className={`px-3.5 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 border whitespace-nowrap ${
                 activeFilter === filter.id
                   ? "bg-gold text-black border-gold shadow-[0_0_15px_rgba(199,166,84,0.4)]"
-                  : "bg-[#13151D] border-border/40 text-secondary hover:text-white hover:border-gold/40"
+                  : "bg-surface-elevated border-border/30 text-muted hover:text-foreground hover:border-gold/40"
               }`}
             >
               {filter.label}
@@ -868,7 +868,7 @@ export default function KnowledgeGraphPage() {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 80, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className="absolute right-4 md:right-6 top-24 bottom-6 w-[90vw] max-w-sm rounded-3xl border border-gold/30 bg-[#0E1017]/95 p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl flex flex-col z-30 overflow-y-auto"
+            className="absolute right-4 md:right-6 top-36 md:top-32 bottom-6 w-[90vw] max-w-sm rounded-3xl border border-gold/30 bg-surface/95 p-6 shadow-2xl backdrop-blur-2xl flex flex-col z-30 overflow-y-auto"
           >
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-border/20">
@@ -885,7 +885,7 @@ export default function KnowledgeGraphPage() {
 
             {/* Node Title & Arabic */}
             <div className="my-4 space-y-2">
-              <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight font-display">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground tracking-tight font-display">
                 {selectedNode.label}
               </h2>
               {selectedNode.arabic && (

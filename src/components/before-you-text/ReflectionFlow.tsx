@@ -354,7 +354,7 @@ export function ReflectionFlow() {
                   <div className="pt-6 space-y-6">
                     {/* The Logic Explanation */}
                     <div className="rounded-xl border border-gold/10 bg-gold/5 p-4 text-sm leading-relaxed text-secondary/90 italic">
-                      {answers[step] === "yes" ? currentPrompt.yesLogic : currentPrompt.noLogic}
+                      {answers[step] === "yes" ? (currentPrompt as any).yesLogic : (currentPrompt as any).noLogic}
                     </div>
 
                     {/* Private Journal */}
