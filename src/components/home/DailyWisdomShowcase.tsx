@@ -35,7 +35,7 @@ export function DailyWisdomShowcase({ items }: DailyWisdomShowcaseProps) {
 
   return (
     <div 
-      className="relative w-full max-w-4xl mx-auto overflow-hidden rounded-3xl border border-gold/20 shadow-2xl bg-surface-alt transition-colors duration-300"
+      className="relative w-full max-w-4xl mx-auto overflow-hidden rounded-3xl border border-gold/30 bg-surface/85 backdrop-blur-xl shadow-[0_16px_50px_-20px_rgba(199,166,84,0.22)] ring-1 ring-gold/20 ring-offset-2 ring-offset-background/50 transition-all duration-300"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -65,20 +65,20 @@ export function DailyWisdomShowcase({ items }: DailyWisdomShowcaseProps) {
 
           <div className="max-w-2xl space-y-6">
             <h3 
-              className="text-3xl md:text-5xl font-arabic text-gold/90 leading-tight"
+              className="text-3xl md:text-5xl font-arabic text-gold/90 leading-[2.2] py-2"
               dir="rtl"
             >
               {currentItem.arabic_text}
             </h3>
             
             <p 
-              className="text-lg md:text-xl text-foreground/80 font-urdu leading-relaxed"
+              className="text-lg md:text-xl text-foreground/85 font-urdu leading-relaxed pt-2 pb-3"
               dir="rtl"
             >
               {currentItem.urdu_translation}
             </p>
 
-            <p className="text-sm md:text-base text-foreground/70 font-light leading-relaxed">
+            <p className="text-base md:text-xl text-foreground/85 font-serif italic leading-relaxed tracking-wide max-w-xl mx-auto">
               &quot;{currentItem.english_translation}&quot;
             </p>
 

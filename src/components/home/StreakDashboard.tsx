@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Flame, Trophy, Calendar, Star, Sparkles, Moon, BookOpen, Sun, Compass } from "lucide-react";
+import { Trophy, Calendar, Star, Sparkles, Moon, BookOpen, Sun, Compass, Award } from "lucide-react";
 import { useStreak, getHeatmapData } from "@/lib/streak";
 
 export function StreakDashboard() {
@@ -24,7 +24,22 @@ export function StreakDashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="relative rounded-3xl border border-gold/30 bg-surface/75 backdrop-blur-xl p-5 md:p-7 shadow-[0_12px_45px_-15px_rgba(199,166,84,0.18)] ring-1 ring-gold/20 ring-offset-2 ring-offset-background/50 space-y-6">
+      {/* Tazhib Header Badge */}
+      <div className="flex items-center justify-between border-b border-gold/15 pb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold/15 text-gold border border-gold/30 shadow-sm">
+            <Sparkles size={14} />
+          </span>
+          <div>
+            <h3 className="font-display text-sm md:text-base font-bold tracking-tight text-foreground">Nur Journey</h3>
+            <p className="text-[10px] uppercase tracking-widest text-gold-muted font-medium">Daily Contemplation & Growth</p>
+          </div>
+        </div>
+        <span className="rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-gold">
+          Level {Math.max(1, Math.floor(streak.currentStreak / 7) + 1)}
+        </span>
+      </div>
       {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-3">
         <motion.div
@@ -32,9 +47,9 @@ export function StreakDashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/10 to-transparent p-4 text-center"
         >
-          <Flame size={20} className="mx-auto text-gold mb-2" />
+          <Sparkles size={20} className="mx-auto text-gold mb-2 animate-pulse" />
           <p className="text-2xl font-bold text-gold tabular-nums">{streak.currentStreak}</p>
-          <p className="text-[10px] uppercase tracking-wider text-gold-muted font-medium mt-1">Current Streak</p>
+          <p className="text-[10px] uppercase tracking-widest text-gold-muted font-semibold mt-1">Nur Days</p>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -44,7 +59,7 @@ export function StreakDashboard() {
         >
           <Trophy size={20} className="mx-auto text-amber-400 mb-2" />
           <p className="text-2xl font-bold text-foreground tabular-nums">{streak.longestStreak}</p>
-          <p className="text-[10px] uppercase tracking-wider text-muted font-medium mt-1">Best Streak</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted font-semibold mt-1">Highest Station</p>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 10 }}

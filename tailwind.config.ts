@@ -25,9 +25,10 @@ const config: Config = {
         muted: "hsl(var(--muted) / <alpha-value>)",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
-        display: ["var(--font-plus-jakarta-sans)", "Satoshi", "General Sans", "sans-serif"],
-        serif: ["var(--font-instrument-serif)", "Georgia", "serif"],
+        sans: ["var(--font-plus-jakarta-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-cinzel)", "Cinzel", "Georgia", "serif"],
+        serif: ["var(--font-cormorant)", "Cormorant Garamond", "Georgia", "serif"],
+        quote: ["var(--font-cormorant)", "Cormorant Garamond", "Georgia", "serif"],
         arabic: ["var(--font-amiri)", "serif"],
         urdu: ["var(--font-noto-nastaliq)", "serif"],
       },
