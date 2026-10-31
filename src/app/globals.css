@@ -198,7 +198,7 @@
   .wisdom-classic-card {
     --main-color: hsl(var(--foreground));
     --bg-color: hsl(var(--surface-elevated));
-    @apply relative p-7 rounded-[22px] flex flex-col justify-between transition-all duration-500 ease-out h-full border border-border/10 overflow-hidden;
+    @apply relative p-7 rounded-[22px] flex flex-col justify-between transition-all duration-500 ease-out h-full border border-border/10 overflow-hidden cursor-pointer select-none;
     background: linear-gradient(135deg, hsl(var(--surface-elevated)) 0%, hsl(var(--surface)) 100%);
     box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
   }

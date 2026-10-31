@@ -89,10 +89,10 @@ export function DailyWisdomShowcase({ items }: DailyWisdomShowcaseProps) {
 
           <Link 
             href={`/wisdom/${currentItem.slug}`}
-            className="mt-6 flex items-center justify-center gap-2 text-xs tracking-wider uppercase font-semibold font-display text-gold hover:text-gold-light transition-colors duration-300 group"
+            className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-gold/40 bg-gradient-to-r from-gold/15 via-gold/10 to-gold/15 px-6 py-2.5 text-xs font-semibold uppercase tracking-wider font-display text-gold-light shadow-sm transition-all duration-300 hover:border-gold hover:bg-gold hover:text-black hover:shadow-[0_6px_25px_rgba(199,166,84,0.45)] hover:scale-[1.03] group"
           >
-            <span>Read Reflection</span>
-            <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+            <span>Read Full Reflection</span>
+            <span className="text-sm font-bold transition-transform duration-300 group-hover:translate-x-1.5">→</span>
           </Link>
         </motion.div>
       </AnimatePresence>
