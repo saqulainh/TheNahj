@@ -76,6 +76,27 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
       useCORS: true,
       backgroundColor: null,
       logging: false,
+      onclone: (clonedDoc, clonedElement) => {
+        // Transfer active web fonts into cloned iframe document context
+        if (typeof document !== 'undefined' && document.fonts && clonedDoc.fonts) {
+          document.fonts.forEach((font) => clonedDoc.fonts.add(font));
+        }
+
+        // Neutralize preview scale transforms so Range.getClientRects() is 1:1 without coordinate skew
+        clonedElement.style.transform = 'none';
+        if (clonedElement.parentElement instanceof HTMLElement) {
+          clonedElement.parentElement.style.transform = 'none';
+        }
+
+        // Force zero letterSpacing and normal wordSpacing inside quote texts to prevent html2canvas character slicing
+        const quoteTexts = clonedElement.querySelectorAll('[data-wisdom-text]');
+        quoteTexts.forEach((el) => {
+          if (el instanceof HTMLElement) {
+            el.style.letterSpacing = 'normal';
+            el.style.wordSpacing = 'normal';
+          }
+        });
+      },
     });
   };
 
@@ -310,7 +331,7 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
 
                 <div 
                   className="relative flex flex-col items-center text-center my-auto w-full transition-all"
-                  style={{ transform: `scale(${fontSize / 100})`, transformOrigin: 'center' }}
+                  style={{ fontSize: `${fontSize}%` }}
                 >
                   {/* Brand / Category */}
                   <div className="flex items-center gap-2 mb-4">
@@ -324,35 +345,39 @@ export function ShareableWisdomCard({ wisdom, isOpen, onClose }: ShareableWisdom
                   {/* Arabic Text */}
                   {showArabic && wisdom.arabic_text && (
                     <h4 
-                      className={`mb-4 font-arabic leading-relaxed ${
+                      data-wisdom-text
+                      className={`mb-4 font-arabic leading-relaxed tracking-normal ${
                         aspect.id === 'banner' ? 'text-xl' : 'text-2xl md:text-3xl'
                       } ${theme.id === 'minimal' ? 'text-black' : 'text-white'}`}
                       dir="rtl"
+                      style={{ letterSpacing: 'normal', wordSpacing: 'normal' }}
                     >
-                      {wisdom.arabic_text}
+                      {wisdom.arabic_text.trim()}
                     </h4>
                   )}
 
                   {/* Urdu Translation */}
                   {showUrdu && wisdom.urdu_translation && (
                     <p
-                      className={`mb-4 max-w-xs whitespace-pre-wrap break-normal text-sm md:text-base font-urdu leading-[2.8] ${theme.id === 'minimal' ? 'text-stone-700' : 'text-white/90'}`}
+                      data-wisdom-text
+                      className={`mb-4 max-w-xs whitespace-normal break-normal text-sm md:text-base font-urdu leading-[2.6] tracking-normal ${theme.id === 'minimal' ? 'text-stone-700' : 'text-white/90'}`}
                       dir="rtl"
                       lang="ur"
-                      style={{ lineHeight: 2.8, wordSpacing: "0.18em", overflowWrap: "normal" }}
+                      style={{ letterSpacing: 'normal', wordSpacing: 'normal' }}
                     >
-                      &quot;{wisdom.urdu_translation}&quot;
+                      &quot;{wisdom.urdu_translation.trim()}&quot;
                     </p>
                   )}
 
                   {/* English Translation */}
                   {showEnglish && wisdom.english_translation && (
                     <p
-                      className={`mb-4 max-w-xs whitespace-pre-wrap break-normal text-xs md:text-sm font-medium leading-relaxed ${theme.id === 'minimal' ? 'text-stone-600' : 'text-white/80'}`}
+                      data-wisdom-text
+                      className={`mb-4 max-w-xs whitespace-normal break-normal text-xs md:text-sm font-medium leading-relaxed tracking-normal ${theme.id === 'minimal' ? 'text-stone-600' : 'text-white/80'}`}
                       lang="en"
-                      style={{ wordSpacing: "0.16em", overflowWrap: "normal" }}
+                      style={{ letterSpacing: 'normal', wordSpacing: 'normal' }}
                     >
-                      &quot;{wisdom.english_translation}&quot;
+                      &quot;{wisdom.english_translation.trim()}&quot;
                     </p>
                   )}
 
