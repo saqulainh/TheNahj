@@ -168,7 +168,7 @@ export function Header({
         {/* Site Brand Logo with generous right margin */}
         <Link 
           href="/" 
-          className="group flex shrink-0 items-center gap-2.5 whitespace-nowrap pl-1 md:pl-2 mr-4 md:mr-6 lg:mr-8"
+          className="group flex shrink-0 items-center gap-2 whitespace-nowrap pl-1 md:pl-2 mr-0 md:mr-6 lg:mr-8"
         >
           <div className="relative h-8 w-8 md:h-9 md:w-9 rounded-xl overflow-hidden border border-gold/30 shadow-sm transition-transform duration-300 group-hover:scale-105 shrink-0 bg-surface">
             <Image 
@@ -180,7 +180,7 @@ export function Header({
               priority 
             />
           </div>
-          <span className="text-base md:text-lg font-serif font-bold tracking-tight text-foreground group-hover:text-gold transition-colors">
+          <span className="text-sm sm:text-base md:text-lg font-serif font-bold tracking-tight text-foreground group-hover:text-gold transition-colors">
             {language === "en" ? siteName : "The Nahj"}
           </span>
         </Link>
@@ -339,12 +339,12 @@ export function Header({
           </Link>
           <Link
             href="/profile"
-            className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
+            className="hidden sm:flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
             title="My Profile"
           >
             <User size={15} />
           </Link>
-          <div className="flex items-center shrink-0">
+          <div className="hidden sm:flex items-center shrink-0">
             <LanguageToggle />
           </div>
           <div className="flex items-center shrink-0">
@@ -365,8 +365,21 @@ export function Header({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="pointer-events-auto absolute left-3 right-3 top-full mt-2 rounded-2xl border border-border/25 bg-surface/95 p-5 backdrop-blur-xl md:hidden shadow-2xl max-h-[calc(100vh-6rem)] overflow-y-auto"
+          className="pointer-events-auto absolute left-3 right-3 top-full mt-2 rounded-2xl border border-border/25 bg-surface/95 p-4 sm:p-5 backdrop-blur-xl md:hidden shadow-2xl max-h-[calc(100vh-6rem)] overflow-y-auto"
         >
+          {/* Quick User Utility Row inside Drawer */}
+          <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-border/20">
+            <Link
+              href="/profile"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-xs font-semibold text-foreground hover:text-gold transition-colors py-1.5 px-3 rounded-xl bg-surface-alt/70 border border-border/25"
+            >
+              <User size={14} className="text-gold" />
+              <span>My Profile & Saved</span>
+            </Link>
+            <LanguageToggle />
+          </div>
+
           <div className="space-y-4">
             {/* Core Section */}
             <div>

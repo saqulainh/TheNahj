@@ -112,7 +112,7 @@ export function PrismaHero({
       </div>
 
       {/* 4. Bottom-Aligned Editorial Content */}
-      <div className="relative z-20 flex min-h-[100dvh] flex-col justify-end px-6 pb-20 md:px-16 md:pb-28 lg:px-24">
+      <div className="relative z-20 flex min-h-[100dvh] flex-col justify-end px-4 sm:px-6 pb-16 md:px-16 md:pb-28 lg:px-24">
         <div className="max-w-[1200px]">
           {/* Brand Kicker Badge + Editorial Headline */}
           <motion.div
@@ -121,14 +121,14 @@ export function PrismaHero({
             transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="space-y-4"
           >
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-gold/30 bg-surface/70 px-4 py-1.5 backdrop-blur-md shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-gold animate-pulse" />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gold-light">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-surface/70 px-3.5 py-1.5 backdrop-blur-md shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-gold animate-pulse shrink-0" />
+              <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] sm:tracking-[0.25em] text-gold-light truncate">
                 TheNahj • Wisdom of Imam Ali (AS)
               </span>
             </div>
 
-            <h1 className="font-serif tracking-tight text-foreground text-[clamp(2.5rem,5.5vw,5.5rem)] leading-[1.08] max-w-4xl">
+            <h1 className="font-serif tracking-tight text-foreground text-[clamp(1.85rem,6vw,5.5rem)] leading-[1.1] sm:leading-[1.08] max-w-4xl">
               {headline || "Nahjul Balagha quotes for the distracted generation."}
             </h1>
           </motion.div>

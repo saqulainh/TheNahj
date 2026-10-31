@@ -1,4 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 import Script from "next/script";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
