@@ -68,8 +68,14 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.6, delay: index * 0.1 }}
-      className="wisdom-classic-card group"
+      className="wisdom-classic-card group relative rounded-3xl border border-gold/25 ring-1 ring-gold/15 ring-offset-1 ring-offset-background/40 transition-all duration-500 hover:shadow-[0_16px_50px_-15px_rgba(199,166,84,0.22)] hover:border-gold/45"
     >
+      {/* Tazhib Corner Embellishments */}
+      <div className="absolute top-2.5 left-2.5 text-[9px] text-gold/30 pointer-events-none select-none wisdom-classic-tazhib-star">✦</div>
+      <div className="absolute top-2.5 right-2.5 text-[9px] text-gold/30 pointer-events-none select-none wisdom-classic-tazhib-star">✦</div>
+      <div className="absolute bottom-2.5 left-2.5 text-[9px] text-gold/30 pointer-events-none select-none wisdom-classic-tazhib-star">✦</div>
+      <div className="absolute bottom-2.5 right-2.5 text-[9px] text-gold/30 pointer-events-none select-none wisdom-classic-tazhib-star">✦</div>
+
       {/* ─── absolute clickable overlay for card ─── */}
       {href && (
         <Link
@@ -157,7 +163,7 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
         </p>
 
         {/* English Translation */}
-        <p className="wisdom-classic-translation text-center text-[13.5px] leading-relaxed text-secondary/80 font-normal">
+        <p className="wisdom-classic-translation text-center text-[15px] md:text-[16px] leading-relaxed text-secondary/90 font-serif italic">
           {wisdom.english_translation}
         </p>
 

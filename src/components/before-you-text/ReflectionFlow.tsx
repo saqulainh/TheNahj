@@ -145,12 +145,17 @@ export function ReflectionFlow() {
           Before You Text Them
         </h2>
 
-        <div className="mt-8 rounded-2xl border border-border/20 bg-surface/30 p-6 italic text-secondary/80">
-          "{quoteData.quote}"
-          <span className="block mt-4 text-[10px] font-bold uppercase not-italic tracking-wider text-gold-muted">
+        <motion.div 
+          initial={{ opacity: 0, filter: "blur(10px)", y: 15 }}
+          animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-8 rounded-2xl border border-gold/25 bg-surface/60 p-6 italic text-secondary/90 font-serif text-base md:text-lg leading-relaxed shadow-sm"
+        >
+          &quot;{quoteData.quote}&quot;
+          <span className="block mt-4 text-[10px] font-bold uppercase not-italic tracking-widest text-gold font-display">
             — {quoteData.source}
           </span>
-        </div>
+        </motion.div>
 
         <p className="mt-8 text-sm leading-relaxed text-muted/70 font-light">
           Take a deep breath. Answer five honest questions for your own soul before you hit send.
@@ -353,9 +358,14 @@ export function ReflectionFlow() {
                 >
                   <div className="pt-6 space-y-6">
                     {/* The Logic Explanation */}
-                    <div className="rounded-xl border border-gold/10 bg-gold/5 p-4 text-sm leading-relaxed text-secondary/90 italic">
+                    <motion.div 
+                      initial={{ opacity: 0, filter: "blur(8px)", y: 8 }}
+                      animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+                      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                      className="rounded-xl border border-gold/20 bg-gold/5 p-4 text-sm leading-relaxed text-secondary/95 italic font-serif"
+                    >
                       {answers[step] === "yes" ? (currentPrompt as any).yesLogic : (currentPrompt as any).noLogic}
-                    </div>
+                    </motion.div>
 
                     {/* Private Journal */}
                     <div className="space-y-3">

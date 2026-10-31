@@ -830,3 +830,32 @@ html[dir="ltr"] .rtl-only {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
 }
+
+/* ─── Celestial Theme View Transition ─── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 9999;
+}
+.dark::view-transition-old(root) {
+  z-index: 9999;
+}
+.dark::view-transition-new(root) {
+  z-index: 1;
+}
+
+/* ─── Tazhib Gold Border Beam Keyframe ─── */
+@keyframes border-beam {
+  100% {
+    offset-distance: 100%;
+  }
+}
+.animate-border-beam {
+  animation: border-beam 4s linear infinite;
+}

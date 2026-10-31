@@ -4,7 +4,7 @@ import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 // ─── Large rotating pool of curated questions ─────────────────────────────────
 // 30+ questions across all major topics. Shuffled on every request.
-export const QUESTION_POOL = [
+const QUESTION_POOL = [
   // Anxiety & Stress
   "How to deal with exam anxiety and stress?",
   "I feel overwhelmed — what does Islamic wisdom say?",
