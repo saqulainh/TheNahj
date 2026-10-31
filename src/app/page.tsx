@@ -1,6 +1,5 @@
 export const revalidate = 300;
 
-import Link from "next/link";
 import { PrismaHero } from "@/components/ui/prisma-hero";
 import { CornerPreview } from "@/components/home/CornerPreview";
 import { StruggleSelector } from "@/components/home/StruggleSelector";
@@ -8,19 +7,23 @@ import { NewsletterCTA } from "@/components/home/NewsletterCTA";
 import { StreakDashboard } from "@/components/home/StreakDashboard";
 import { WisdomCard } from "@/components/wisdom/WisdomCard";
 import { DailyWisdomShowcase } from "@/components/home/DailyWisdomShowcase";
-import { Button } from "@/components/ui/Button";
 import { studentTopics, youthTopics } from "@/data/mock";
 import { getCMSConfig } from "@/lib/cms";
 import { getDailyWisdom, getFeaturedWisdom, getTrendingWisdom, getAllArticles } from "@/lib/wisdom";
 import { PersonalizedHome } from "@/components/home/PersonalizedHome";
+import { AudioPreview } from "@/components/home/AudioPreview";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import { getAudioTracks } from "@/lib/audio-catalog";
+import { ArticleCard } from "@/components/articles/ArticleCard";
 
 export default async function HomePage() {
-  const [daily, featured, trending, articles, cms] = await Promise.all([
+  const [daily, featured, trending, articles, cms, audioTracks] = await Promise.all([
     getDailyWisdom(),
     getFeaturedWisdom(),
     getTrendingWisdom(),
     getAllArticles(),
     getCMSConfig(),
+    getAudioTracks(),
   ]);
 
   // Prepare items for Daily Wisdom Showcase (1 daily + a few top trending/featured)
@@ -87,13 +90,9 @@ export default async function HomePage() {
               overlayBrightness={cms.homepage.hero.overlayBrightness}
               overlayBlur={cms.homepage.hero.overlayBlur}
             />
-            {isEnabled("streak-dashboard") && (
-              <div className="relative -mt-10 mb-12 sm:-mt-16 sm:mb-20 z-20 flex justify-center w-full px-4">
-                <StreakDashboard />
-              </div>
-            )}
           </>
         }
+        journey={isEnabled("streak-dashboard") ? <StreakDashboard variant="teaser" /> : null}
         showcase={
           isEnabled("daily-showcase") && uniqueShowcaseItems.length > 0 ? (
             <DailyWisdomShowcase items={uniqueShowcaseItems} />
@@ -121,22 +120,9 @@ export default async function HomePage() {
         }
         diseases={
           isEnabled("trending") ? (
-            <section className="relative py-12 md:py-20">
+            <section className="relative py-12 md:py-16" aria-labelledby="trending-wisdom-title">
               <div className="mx-auto max-w-6xl px-4 md:px-6">
-                <div className="mb-12 flex items-end justify-between">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.35em] text-gold-muted">
-                      This Week
-                    </p>
-                    <h2 className="mt-3 text-xl font-light tracking-tight text-foreground md:text-3xl font-display">
-                      Trending Wisdom
-                    </h2>
-                    <p className="mt-3 max-w-md text-sm text-muted/60">
-                      What youth are reflecting on this week.
-                    </p>
-                  </div>
-                  <Button href="/wisdom" variant="ghost">View all →</Button>
-                </div>
+                <SectionHeading id="trending-wisdom-title" eyebrow="This week" title="Trending wisdom" description="Timeless words for the questions people are carrying today." href="/wisdom" action="View all" />
                 <div className="grid gap-5 md:grid-cols-2">
                   {trending.slice(0, 4).map((w, i) => (
                     <WisdomCard key={w.id} wisdom={w} index={i} />
@@ -151,75 +137,28 @@ export default async function HomePage() {
             <StruggleSelector />
           ) : <div />
         }
-        newsletter={
-          isEnabled("newsletter") ? (
-            <>
-              <div className="mx-auto max-w-xs py-4 md:py-8"><div className="divider-gold" /></div>
-              <NewsletterCTA />
-            </>
-          ) : <div />
-        }
       />
       
       {/* ─── Latest Articles ─── */}
       {isEnabled("articles") && (
-        <section className="relative py-12 md:py-20">
+        <section className="relative py-12 md:py-16" aria-labelledby="latest-articles-title">
           <div className="mx-auto max-w-6xl px-4 md:px-6">
-            <div className="mb-12 flex items-end justify-between">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.35em] text-gold-muted">
-                  Read
-                </p>
-                <h2 className="mt-3 text-xl font-light tracking-tight text-foreground md:text-3xl font-display">
-                  Latest Articles
-                </h2>
-              </div>
-              <Button href="/articles" variant="ghost">All articles →</Button>
-            </div>
+            <SectionHeading id="latest-articles-title" eyebrow="Read" title="Latest articles" description="Reflections and practical guidance for the moments that matter." href="/articles" action="All articles" />
             <div className="grid gap-4 md:grid-cols-3">
-              {articles.slice(0, 3).map((article) => (
-                <Link
-                  key={article.id}
-                  href={`/articles/${article.slug}`}
-                  className="card-cinematic group relative overflow-hidden rounded-2xl p-6"
-                >
-                  <span className="text-[10px] uppercase tracking-[0.25em] text-gold">
-                    {article.type}
-                  </span>
-                  <h3 className="mt-3 font-medium text-foreground transition-colors duration-300 group-hover:text-gold">
-                    {article.title}
-                  </h3>
-                  <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-secondary/70">
-                    {article.excerpt}
-                  </p>
-                </Link>
-              ))}
+              {articles.slice(0, 3).map((article) => <ArticleCard key={article.id} article={article} />)}
             </div>
           </div>
         </section>
       )}
 
       {/* ─── Audio Preview ─── */}
-      {isEnabled("audio") && (
-        <section className="relative py-16 md:py-20">
-          <div className="mx-auto max-w-3xl px-4 md:px-6">
-            <div className="card-cinematic noise-overlay relative overflow-hidden rounded-3xl p-10 text-center md:p-16">
-              <p className="text-[10px] uppercase tracking-[0.35em] text-gold">Listen</p>
-              <h2 className="mt-4 text-xl font-light text-foreground md:text-2xl font-display">
-                Audio Reflections
-              </h2>
-              <p className="mx-auto mt-4 max-w-sm text-sm text-secondary">
-                Wisdom narration, night reminders, and focus sessions — when reading feels like too much.
-              </p>
-              <Link
-                href="/audio"
-                className="mt-8 inline-flex items-center gap-2 rounded-full border border-border/40 px-6 py-2.5 text-sm text-secondary transition-all duration-300 hover:border-gold/30 hover:text-gold"
-              >
-                Browse Audio Library
-              </Link>
-            </div>
-          </div>
-        </section>
+      {isEnabled("audio") && <AudioPreview tracks={audioTracks} />}
+
+      {isEnabled("newsletter") && (
+        <>
+          <div className="mx-auto max-w-xs py-3 md:py-5"><div className="divider-gold" /></div>
+          <NewsletterCTA />
+        </>
       )}
     </>
   );

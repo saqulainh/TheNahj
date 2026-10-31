@@ -1,11 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
+import Script from "next/script";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
-
-
+import { ArrowRight, BookOpen, Headphones } from "lucide-react";
+import { KarbalaConnectPromo } from "@/components/home/KarbalaConnectPromo";
 
 interface PrismaHeroProps {
   headline?: string;
@@ -22,154 +20,65 @@ interface PrismaHeroProps {
 }
 
 export function PrismaHero({
-  headline = "TheNahj",
-  subtext = "Wisdom for the distracted generation.",
+  subtext = "Navigate modern life through the wisdom of Imam Ali (AS) and profound Nahjul Balagha sayings.",
   ctaText = "Explore Wisdom",
   ctaLink = "/wisdom",
-  bgMode = "video",
-  bgImage = "/hero-bg.jpg",
-  mobileBgImage = "/hero-bg.jpg",
-  bgVideo = "https://cdn.pixabay.com/video/2019/02/25/21626-319524075_large.mp4",
-  focalPoint = "center",
-  overlayBrightness = 60,
-  overlayBlur = 0,
 }: PrismaHeroProps) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const activeImage = isMobile && mobileBgImage ? mobileBgImage : bgImage;
-
   return (
-    <section className="relative min-h-[100dvh] w-full overflow-hidden bg-background selection:bg-gold/30 selection:text-foreground">
-      {/* 1. Cinematic Background Layer */}
-      <motion.div
-        initial={{ scale: 1.05 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 15, ease: "easeOut" }}
-        className="absolute inset-0 z-0"
-      >
-        {bgMode === "video" ? (
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster={activeImage}
-            className="h-full w-full object-cover opacity-40 mix-blend-luminosity filter contrast-125"
-            style={{ objectPosition: focalPoint || "center" }}
-          >
-            <source src={bgVideo} type="video/mp4" />
-          </video>
-        ) : (
-          <div 
-            className="h-full w-full opacity-60 mix-blend-luminosity filter contrast-110"
-            style={{ 
-              backgroundImage: `url('${activeImage}')`,
-              backgroundSize: "cover",
-              backgroundPosition: focalPoint || "center",
-              backgroundRepeat: "no-repeat"
-            }}
-          />
-        )}
-      </motion.div>
+    <section className="thenahj-hero-section relative w-full px-3 py-3 sm:px-5 md:px-7">
+      <div className="orbit mx-auto w-full max-w-[1480px]" aria-labelledby="thenahj-hero-title">
+        <div className="orbit__content">
+          <span className="thenahj-hero-kicker">
+            <span className="thenahj-hero-kicker-dot" aria-hidden="true" />
+            THE NAHJUL BALAGHA
+          </span>
 
-      {/* 2. Advanced Overlay System */}
-      <div className="pointer-events-none absolute inset-0 z-10">
-        {/* Dynamic Dark Gradient Overlay */}
-        <div 
-          className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/20" 
-          style={{ opacity: overlayBrightness / 100 }}
-        />
-        
-        {/* Dynamic Blur Overlay */}
-        {overlayBlur > 0 && (
-          <div 
-            className="absolute inset-0 backdrop-blur-sm"
-            style={{ backdropFilter: `blur(${overlayBlur}px)` }}
-          />
-        )}
+          <h2 className="hero__title" id="thenahj-hero-title">
+            <span className="hero__line">We seek the wisdom of</span>
+            <span className="hero__line">
+              <span className="hero__badge">Imam Ali (AS)</span>
+            </span>
+          </h2>
 
-        {/* Ambient Gold Shadows/Glows */}
-        <div className="absolute -left-1/4 bottom-0 h-[800px] w-[800px] rounded-full bg-gold/[0.03] blur-[150px]" />
-        <div className="absolute right-0 top-0 h-[600px] w-[600px] rounded-full bg-white/[0.01] blur-[120px]" />
+          <p className="hero__lede">{subtext}</p>
 
-        {/* Fine Grain/Noise Texture */}
-        <div
-          className="absolute inset-0 opacity-[0.25] mix-blend-overlay"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          }}
-        />
-
-        {/* Cinematic Vignette */}
-        <div className="absolute inset-0 shadow-[inset_0_0_200px_rgba(0,0,0,0.9)]" />
-      </div>
-
-      {/* 4. Bottom-Aligned Editorial Content */}
-      <div className="relative z-20 flex min-h-[100dvh] flex-col justify-end px-4 sm:px-6 pb-16 md:px-16 md:pb-28 lg:px-24">
-        <div className="max-w-[1200px]">
-          {/* Brand Kicker Badge + Editorial Headline */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-4"
-          >
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-surface/70 px-3.5 py-1.5 backdrop-blur-md shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-gold animate-pulse shrink-0" />
-              <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] sm:tracking-[0.25em] text-gold-light truncate">
-                TheNahj • Wisdom of Imam Ali (AS)
-              </span>
-            </div>
-
-            <h1 className="font-serif tracking-tight text-foreground text-[clamp(1.85rem,6vw,5.5rem)] leading-[1.1] sm:leading-[1.08] max-w-4xl">
-              {headline || "Nahjul Balagha quotes for the distracted generation."}
-            </h1>
-          </motion.div>
-
-          {/* Subtext Area */}
-          <div className="mt-6 md:mt-8 max-w-2xl pl-1 md:pl-2">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="relative pl-5"
-            >
-              {/* Subtle accent line */}
-              <div className="absolute bottom-0 left-0 top-1 w-[1.5px] bg-gradient-to-b from-gold/70 to-transparent" />
-              <p className="text-base leading-relaxed text-secondary md:text-lg font-light font-display">
-                {subtext}
-              </p>
-            </motion.div>
+          <div className="hero__cta">
+            <Link href={ctaLink} className="thenahj-hero-button thenahj-hero-button--primary">
+              <BookOpen className="h-5 w-5" aria-hidden="true" />
+              {ctaText}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            </Link>
+            <Link href="/audio" className="thenahj-hero-button thenahj-hero-button--ghost">
+              <Headphones className="h-5 w-5" aria-hidden="true" />
+              Listen to wisdom
+            </Link>
           </div>
 
-          {/* Premium CTA Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-10 md:mt-12 pl-1 md:pl-2"
-          >
-            <Link
-              href={ctaLink}
-              className="group inline-flex items-center gap-5 rounded-full bg-foreground p-2 pl-8 transition-all duration-500 hover:bg-gold hover:shadow-[0_0_40px_-10px_rgba(199,166,84,0.4)]"
-            >
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-background group-hover:text-black transition-colors">
-                {ctaText}
-              </span>
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-background text-foreground transition-all duration-500 group-hover:scale-105 group-hover:bg-black group-hover:text-gold">
-                <ArrowRight className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1" />
-              </div>
-            </Link>
-          </motion.div>
+          <KarbalaConnectPromo />
         </div>
+
+        <div className="orbit__art" data-scene aria-hidden="true">
+          <img
+            className="orbit__img"
+            src="/imam-science-hero/img/hero-scene.webp"
+            alt=""
+            width="1312"
+            height="1199"
+            fetchPriority="high"
+            decoding="async"
+          />
+          <canvas className="orbit__scene" data-scene-gl />
+          <div className="orbit__fade" />
+        </div>
+
+        <div className="orbit__beams" aria-hidden="true">
+          <i /><i /><i /><i /><i />
+        </div>
+        <canvas className="orbit__fx" data-scene-fx aria-hidden="true" />
       </div>
+
+      {/* Keep shader setup off the initial page render; the still artwork is ready first. */}
+      <Script src="/imam-science-hero/js/hero.js?v=2d6e867a" strategy="lazyOnload" />
     </section>
   );
 }

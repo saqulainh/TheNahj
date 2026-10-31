@@ -186,7 +186,7 @@ export function Header({
         </Link>
 
         {/* Desktop Navigation — Clean, Uncrowded 4 + 1 Structure */}
-        <nav className="hidden items-center md:flex gap-5 lg:gap-6">
+        <nav className="hidden items-center lg:flex gap-5 lg:gap-6">
           {primaryNav.map((link) => {
             const active = isLinkActive(link.href);
             const translated = t(link.key);
@@ -315,7 +315,7 @@ export function Header({
         </nav>
 
         {/* Right Desktop Utilities */}
-        <div className="hidden md:flex md:pl-2 items-center gap-2.5">
+        <div className="hidden lg:flex lg:pl-2 items-center gap-2.5">
           <Link
             href="/profile"
             className="flex h-9 w-9 min-h-[36px] min-w-[36px] items-center justify-center rounded-xl border border-gold/30 bg-surface-alt/70 text-gold transition-transform hover:scale-105"
@@ -329,7 +329,7 @@ export function Header({
         </div>
 
         {/* Mobile Menu Toggle & Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2 md:hidden">
+        <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden">
           <Link
             href="/situation-search"
             className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg border border-gold/30 bg-gold/10 text-gold transition-transform hover:scale-105"
@@ -365,7 +365,7 @@ export function Header({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="pointer-events-auto absolute left-3 right-3 top-full mt-2 rounded-2xl border border-border/25 bg-surface/95 p-4 sm:p-5 backdrop-blur-xl md:hidden shadow-2xl max-h-[calc(100vh-6rem)] overflow-y-auto"
+          className="pointer-events-auto absolute left-3 right-3 top-full mt-2 rounded-2xl border border-border/25 bg-surface/95 p-4 sm:p-5 backdrop-blur-xl lg:hidden shadow-2xl max-h-[calc(100vh-6rem)] overflow-y-auto"
         >
           {/* Quick User Utility Row inside Drawer */}
           <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-border/20">

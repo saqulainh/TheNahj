@@ -154,6 +154,97 @@
     animation: shimmer 3s linear infinite;
   }
 
+  /* Reference-matched TheNahj hero: the source painting is animated by its
+     original masked WebGL water pass, with its leaf-free patches and leaf atlas. */
+  .thenahj-hero-section { --o-bg: #141210; --o-ink: #fcf8f2; --o-muted: rgba(240, 230, 218, .78); --o-glass: rgba(255,255,255,.08); --o-glass-2: rgba(255,255,255,.14); --o-line: rgba(255,255,255,.16); }
+  .orbit {
+    position: relative; isolation: isolate; overflow: hidden; display: grid;
+    grid-template-columns: minmax(0, 1.34fr) minmax(0, .66fr); align-items: stretch;
+    min-height: clamp(580px, 80svh, 720px); border-radius: clamp(22px, 3vw, 34px);
+    background: radial-gradient(65% 75% at 15% 30%, #201a14 0%, transparent 70%), var(--o-bg);
+    clip-path: inset(0 round clamp(22px, 3vw, 34px)); color: var(--o-ink);
+  }
+  .orbit__art {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 62%; z-index: 0; overflow: hidden; display: flex;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 14%, rgba(0,0,0,.5) 32%, rgba(0,0,0,.88) 48%, #000 60%);
+    mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 14%, rgba(0,0,0,.5) 32%, rgba(0,0,0,.88) 48%, #000 60%);
+  }
+  .orbit__img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: right center; }
+  .orbit__scene { position: absolute; left: 0; top: 0; display: block; pointer-events: none; opacity: 0; transition: opacity 1.2s ease; }
+  .orbit__art.is-live .orbit__scene { opacity: 1; }
+  .orbit__fade {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(58% 34% at 14% 100%, var(--o-bg) 0%, rgba(20,18,16,.88) 45%, transparent 100%),
+      linear-gradient(180deg, rgba(20,18,16,.35) 0%, transparent 16%, transparent 84%, rgba(20,18,16,.55) 100%);
+  }
+  .orbit__beams { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; mix-blend-mode: screen; -webkit-mask-image: linear-gradient(90deg,#000 0%,#000 48%,transparent 76%); mask-image: linear-gradient(90deg,#000 0%,#000 48%,transparent 76%); }
+  .orbit__beams i { position: absolute; top: -12%; height: 125%; width: var(--w); left: var(--x); background: linear-gradient(90deg,transparent,rgba(255,206,136,var(--a)) 50%,transparent); transform-origin: 50% 0; transform: rotate(-24deg); -webkit-mask-image: linear-gradient(180deg,#000 0%,rgba(0,0,0,.6) 45%,transparent 82%); mask-image: linear-gradient(180deg,#000 0%,rgba(0,0,0,.6) 45%,transparent 82%); opacity: .55; animation: orbitBeam var(--d) ease-in-out var(--dl) infinite alternate; will-change: opacity, transform; }
+  .orbit__beams i:nth-child(1) { --x: 4%; --w: 90px; --a: .2; --d: 9s; --dl: -2s; }
+  .orbit__beams i:nth-child(2) { --x: 15%; --w: 150px; --a: .15; --d: 12s; --dl: -7s; }
+  .orbit__beams i:nth-child(3) { --x: 27%; --w: 70px; --a: .2; --d: 8s; --dl: -4s; }
+  .orbit__beams i:nth-child(4) { --x: 36%; --w: 120px; --a: .15; --d: 11s; --dl: -1s; }
+  .orbit__beams i:nth-child(5) { --x: 47%; --w: 80px; --a: .18; --d: 10s; --dl: -5s; }
+  @keyframes orbitBeam { 0% { opacity: .3; transform: rotate(-24deg) translateX(-10px) scaleX(.85); } 100% { opacity: 1; transform: rotate(-22.5deg) translateX(12px) scaleX(1.12); } }
+  .orbit__fx { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: 0; transition: opacity 1.4s ease; }
+  .orbit.is-live .orbit__fx { opacity: 1; }
+  .orbit__content { position: relative; z-index: 2; grid-column: 1; grid-row: 1; display: flex; flex-direction: column; justify-content: center; padding: clamp(36px,5vw,64px) clamp(16px,2.5vw,28px) clamp(36px,5vw,64px) clamp(32px,4.5vw,64px); }
+  .thenahj-hero-kicker { display: inline-flex; align-items: center; gap: 9px; width: fit-content; padding: 9px 16px; border-radius: 999px; color: var(--o-ink); background: var(--o-glass); box-shadow: inset 0 0 0 .5px var(--o-line); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); font-size: 13px; font-weight: 700; }
+  .thenahj-hero-kicker-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.2); animation: orbitPulse 2.6s ease-in-out infinite; }
+  @keyframes orbitPulse { 50% { box-shadow: 0 0 0 5px rgba(255,255,255,.08); } }
+  .orbit .hero__title { margin: 16px 0 0; max-width: none; color: var(--o-ink); font-family: var(--font-sans), Arial, sans-serif; font-size: clamp(32px,4.4vw,58px); line-height: 1.1; letter-spacing: -.015em; font-weight: 800; text-transform: uppercase; }
+  .orbit .hero__line { display: block; white-space: nowrap; }
+  .orbit .hero__badge { display: inline-flex; align-items: center; padding: 4px 14px 5px; margin-top: 8px; border-radius: 4px; background: #fff; color: #000; font-weight: 800; font-size: inherit; letter-spacing: inherit; line-height: 1; text-transform: uppercase; }
+  .orbit .hero__lede { max-width: 480px; margin: 18px 0 0; color: var(--o-muted); font-size: clamp(16px,1.5vw,21px); line-height: 1.55; }
+  .orbit .hero__cta { display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+  .thenahj-hero-button { display: inline-flex; align-items: center; justify-content: center; gap: 11px; min-height: 56px; padding: 0 24px; border-radius: 999px; text-decoration: none; font-size: 16px; font-weight: 650; transition: background-color .2s, transform .2s; }
+  .thenahj-hero-button:hover { transform: translateY(-1px); }
+  .thenahj-hero-button--primary { background: #fff; color: #000; box-shadow: 0 12px 28px -14px rgba(0,0,0,.8); }
+  .thenahj-hero-button--primary:hover { background: #e4e4e7; }
+  .thenahj-hero-button--ghost { background: var(--o-glass); color: var(--o-ink); box-shadow: inset 0 0 0 .5px var(--o-line); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .thenahj-hero-button--ghost:hover { background: var(--o-glass-2); }
+  @media (max-width: 860px) {
+    .orbit { display: flex; flex-direction: column; min-height: 0; }
+    .orbit__content { flex: none; align-items: center; padding: clamp(28px,6vw,40px) clamp(16px,5vw,28px) 0; text-align: center; }
+    .thenahj-hero-kicker { font-size: 12px; }
+    .orbit .hero__title { font-size: clamp(26px,5.2vw,42px); line-height: 1.14; }
+    .orbit .hero__line { white-space: normal; }
+    .orbit .hero__badge { padding: 4px 10px 5px; margin-top: 6px; }
+    .orbit .hero__lede { max-width: 520px; margin-top: 10px; font-size: clamp(14px,3.7vw,15.5px); line-height: 1.5; }
+    .orbit .hero__cta { justify-content: center; flex-wrap: nowrap; gap: 8px; width: 100%; max-width: 440px; margin-top: 18px; }
+    .thenahj-hero-button { flex: 1 1 100%; min-width: 0; min-height: 48px; padding: 0 13px; font-size: 14px; white-space: nowrap; }
+    .orbit__art { position: relative; inset: auto; flex: none; width: 100%; height: auto; min-height: 0; aspect-ratio: 1312 / 1199; max-height: 440px; margin-top: 6px; opacity: 1; z-index: 0; -webkit-mask-image: none; mask-image: none; }
+    .orbit__img { position: absolute; inset: 0; width: 100%; height: 100%; object-position: 70% 40%; }
+    .orbit__fade { background: linear-gradient(180deg,var(--o-bg) 0%,rgba(20,18,16,.35) 9%,transparent 20%,transparent 86%,rgba(20,18,16,.5) 100%), linear-gradient(90deg,rgba(20,18,16,.75) 0%,transparent 18%,transparent 90%,rgba(20,18,16,.3) 100%); }
+    .orbit__beams { opacity: .8; -webkit-mask-image: linear-gradient(180deg,#000 0%,#000 45%,transparent 75%); mask-image: linear-gradient(180deg,#000 0%,#000 45%,transparent 75%); }
+    .orbit.is-live .orbit__fx { opacity: 1; }
+  }
+  @media (max-width: 520px) { .orbit .hero__title { font-size: clamp(21px,6vw,30px); line-height: 1.18; } .orbit__art { max-height: 370px; } }
+  @media (prefers-reduced-motion: reduce) { .orbit__scene, .orbit__fx { display: none; } .orbit__beams i, .thenahj-hero-kicker-dot { animation: none; } }
+
+  /* Reuse the Imam & Science leaf atlas in the Karbala Connect app card. */
+  .karbala-connect-card { --kc-leaf-travel: 690px; text-align: left; }
+  .kc-leaf-layer { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
+  .kc-leaf { position: absolute; top: -100px; display: block; background-image: url('/imam-science-hero/img/hero-leaves.webp'); background-repeat: no-repeat; background-size: 837px 105px; opacity: 0; filter: drop-shadow(0 3px 5px rgba(0,0,0,.2)); animation: kcLeafFall var(--kc-duration) linear var(--kc-delay) infinite; will-change: transform, opacity; }
+  .kc-leaf--a { width: 61px; height: 39px; background-position: -2px -2px; }
+  .kc-leaf--b { width: 42px; height: 47px; background-position: -67px -2px; }
+  .kc-leaf--c { width: 53px; height: 61px; background-position: -113px -2px; }
+  .kc-leaf--f { width: 68px; height: 71px; background-position: -343px -2px; }
+  .kc-leaf--g { width: 47px; height: 28px; background-position: -415px -2px; }
+  .kc-leaf--one { left: 12%; --kc-drift: 70px; --kc-spin: 220deg; --kc-scale: .6; --kc-duration: 22s; --kc-delay: -12s; }
+  .kc-leaf--two { left: 40%; --kc-drift: -90px; --kc-spin: 280deg; --kc-scale: .48; --kc-duration: 27s; --kc-delay: -4s; }
+  .kc-leaf--three { left: 72%; --kc-drift: 50px; --kc-spin: 190deg; --kc-scale: .38; --kc-duration: 25s; --kc-delay: -18s; }
+  .kc-leaf--four { left: 86%; --kc-drift: -65px; --kc-spin: 250deg; --kc-scale: .65; --kc-duration: 30s; --kc-delay: -8s; }
+  .kc-leaf--five { left: 57%; --kc-drift: 80px; --kc-spin: 210deg; --kc-scale: .42; --kc-duration: 24s; --kc-delay: -21s; }
+  @keyframes kcLeafFall {
+    0% { opacity: 0; transform: translate3d(0,-20px,0) rotate(-25deg) scale(var(--kc-scale)); }
+    10% { opacity: .58; }
+    52% { transform: translate3d(var(--kc-drift),320px,0) rotate(110deg) scale(var(--kc-scale)); }
+    88% { opacity: .42; }
+    100% { opacity: 0; transform: translate3d(calc(var(--kc-drift) * -.2),var(--kc-leaf-travel),0) rotate(var(--kc-spin)) scale(var(--kc-scale)); }
+  }
+  @media (max-width: 640px) { .karbala-connect-card { --kc-leaf-travel: 780px; } .kc-leaf--two { left: 74%; } .kc-leaf--three { left: 48%; } }
+  @media (prefers-reduced-motion: reduce) { .kc-leaf { display: none; animation: none; } }
+
   /* ─── Prose Reflection Styles ─── */
   .prose-reflection h2 {
     @apply mt-10 mb-5 text-lg font-medium text-gold-light tracking-wide;
@@ -202,16 +293,15 @@
   .wisdom-classic-card {
     --main-color: hsl(var(--foreground));
     --bg-color: hsl(var(--surface-elevated));
-    @apply relative p-7 rounded-[22px] flex flex-col justify-between transition-all duration-500 ease-out h-full border border-border/10 overflow-hidden cursor-pointer select-none;
-    background: linear-gradient(135deg, hsl(var(--surface-elevated)) 0%, hsl(var(--surface)) 100%);
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+    @apply relative p-5 sm:p-7 rounded-[22px] flex flex-col justify-between transition-all duration-300 ease-out h-full border overflow-hidden cursor-pointer;
+    background: linear-gradient(145deg, hsl(var(--surface)) 0%, hsl(var(--surface-elevated)) 100%);
+    box-shadow: 0 12px 34px -22px rgba(46, 35, 17, .28);
   }
 
   .wisdom-classic-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
     border-color: hsla(var(--gold) / 0.3);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.18),
-                0 0 25px -2px rgba(198, 161, 91, 0.1);
+    box-shadow: 0 18px 40px -22px rgba(0, 0, 0, .22);
   }
 
   .dark .wisdom-classic-card {
@@ -287,20 +377,20 @@
   }
 
   .wisdom-classic-title {
-    @apply mt-8 font-arabic text-center text-[1.65rem] leading-[2.1] drop-shadow-sm;
+    @apply mt-5 font-arabic text-center text-[1.65rem] leading-[2];
     color: var(--main-color);
   }
 
   .wisdom-classic-subtitle {
-    @apply mt-6 font-urdu text-center text-[14.5px] leading-[1.95] text-foreground/80;
+    @apply mt-4 font-urdu text-center text-[14.5px] leading-[1.85] text-foreground/80;
   }
 
   .wisdom-classic-translation {
-    @apply mt-4 text-center text-[13.5px] leading-relaxed text-secondary/80 font-normal;
+    @apply mt-3 text-center text-[14px] leading-relaxed text-secondary/85 font-normal;
   }
 
   .wisdom-classic-indicator {
-    @apply mt-8 font-medium text-[11px] tracking-[0.2em] uppercase font-display text-center;
+    @apply mt-5 font-medium text-[10px] tracking-[0.16em] uppercase font-display text-center;
     color: var(--main-color);
     opacity: 0.85;
   }

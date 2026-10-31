@@ -1,54 +1,11 @@
 import { AudioPlayer } from "@/components/audio/AudioPlayer";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { Suspense } from "react";
-import type { AudioTrack } from "@/lib/stores/audioStore";
 import { Metadata } from "next";
 import Link from "next/link";
+import { DEFAULT_AUDIO_TRACKS, getAudioTracks } from "@/lib/audio-catalog";
 
 export const revalidate = 0; // Always fetch fresh data — no caching
-
-const DEFAULT_TRACKS: AudioTrack[] = [
-  {
-    id: "dua-e-kumail",
-    title: "Dua-e-Kumail",
-    subtitle: "Supplication of Prophet Khidr taught by Imam Ali (AS) to Kumail ibn Ziyad for forgiveness, protection & tranquility",
-    category: "Duas & Ziyarat",
-    reciter: "Abather Al-Halawaji",
-    cover_image: "/backgrounds/reflection-1.png",
-    duration: "28:15",
-    src: "https://ia800301.us.archive.org/15/items/DuaKumayl_Abathar/DuaKumayl_Abathar.mp3",
-  },
-  {
-    id: "ziyarat-ashura",
-    title: "Ziyarat-e-Ashura",
-    subtitle: "Sacred salutation to Imam Hussain (AS) and the righteous martyrs of Karbala",
-    category: "Duas & Ziyarat",
-    reciter: "Ali Fani",
-    cover_image: "/hero-bg.jpg",
-    duration: "14:20",
-    src: "https://ia800504.us.archive.org/11/items/ZiyaratAshura_AliFani/ZiyaratAshura_AliFani.mp3",
-  },
-  {
-    id: "nade-ali",
-    title: "Nade Ali (Call Upon Ali)",
-    subtitle: "The historical invocation revealed during the Battle of Khaybar, invoking divine support through Imam Ali (AS)",
-    category: "Duas & Ziyarat",
-    reciter: "Basim Karbalaei",
-    cover_image: "/thenahj-logo.jpeg",
-    duration: "04:45",
-    src: "https://ia801905.us.archive.org/30/items/NadeAli_Basim/NadeAli_Basim.mp3",
-  },
-  {
-    id: "munajat-kufa",
-    title: "Munajat of Imam Ali (AS) in Kufa",
-    subtitle: "The Whispered Prayer at the Grand Mosque of Kufa: 'Antal Maula wa Anal Abd... Who else has mercy upon the servant except the Master?'",
-    category: "Audio Reflections",
-    reciter: "Hussain Al-Akraf",
-    cover_image: "/backgrounds/reflection-1.png",
-    duration: "18:30",
-    src: "https://ia800208.us.archive.org/20/items/MunajatMasjidKufa/MunajatMasjidKufa.mp3",
-  },
-];
 
 export async function generateMetadata(
   props: { searchParams: Promise<{ id?: string }> }
@@ -92,7 +49,7 @@ export async function generateMetadata(
   }
 
   // Fallback to default tracks
-  const defaultTrack = DEFAULT_TRACKS.find(t => t.id === id);
+  const defaultTrack = DEFAULT_AUDIO_TRACKS.find(t => t.id === id);
   if (defaultTrack) {
     return {
       title: `${defaultTrack.title} — ${defaultTrack.reciter} | TheNahj Audio`,
@@ -109,33 +66,7 @@ export async function generateMetadata(
 }
 
 export default async function AudioPage() {
-  let tracks: AudioTrack[] = [];
-
-  if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from("audio_tracks")
-      .select("*")
-      .order("created_at", { ascending: true });
-
-    if (!error && data && data.length > 0) {
-      const dbTracks: AudioTrack[] = data.map((t) => ({
-        id: t.id,
-        title: t.title,
-        subtitle: t.subtitle || undefined,
-        category: t.category || "Audio Reflections",
-        reciter: t.reciter || undefined,
-        cover_image: t.cover_image || t.thumbnail || undefined,
-        duration: t.duration || "0:00",
-        src: t.audio_url || t.src || undefined,
-      }));
-      tracks = dbTracks;
-    }
-  }
-
-  // Fallback to curated default tracks if database is empty or offline
-  if (tracks.length === 0) {
-    tracks = DEFAULT_TRACKS;
-  }
+  const tracks = await getAudioTracks();
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-6 md:px-6 md:py-10 pb-32">

@@ -20,6 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/voice-assistant",
     "/focus",
     "/audio",
+    "/karbala-connect",
     "/about",
     "/contact",
     "/disclaimer",

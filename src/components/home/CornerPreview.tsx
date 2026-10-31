@@ -1,13 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
+import {
+  Activity, ArrowRight, Brain, BriefcaseBusiness, Clock3, Cloud, Compass,
+  GraduationCap, Heart, Smartphone, Sparkles, Star, Target, Users, UserRound,
+  Shield, Scale, Zap,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface Topic {
   slug: string;
   title: string;
   description: string;
+  icon?: string;
 }
 
 interface CornerPreviewProps {
@@ -15,85 +22,79 @@ interface CornerPreviewProps {
   subtitle: string;
   basePath: string;
   topics: Topic[];
-  accent?: string;
 }
+
+const topicIcons: Record<string, LucideIcon> = {
+  activity: Activity,
+  brain: Brain,
+  briefcase: BriefcaseBusiness,
+  clock: Clock3,
+  cloud: Cloud,
+  compass: Compass,
+  heart: Heart,
+  smartphone: Smartphone,
+  star: Star,
+  target: Target,
+  users: Users,
+  user: UserRound,
+  shield: Shield,
+  balance: Scale,
+  zap: Zap,
+};
 
 const containerVariants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.06 } },
+  visible: { transition: { staggerChildren: 0.07 } },
 };
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45 } },
+  hidden: { opacity: 0, y: 14 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.42 } },
 };
 
-export function CornerPreview({ title, subtitle, basePath, topics, accent }: CornerPreviewProps) {
-  return (
-    <section className="relative py-12 md:py-20">
-      <div className="mx-auto max-w-6xl px-4 md:px-6">
-        {/* Section header */}
-        <div className="mb-12 flex items-end justify-between">
-          <div>
-            <h2 className="text-2xl font-light tracking-tight text-foreground md:text-3xl">
-              {title}
-            </h2>
-            {subtitle && (
-              <p className="mt-2 text-sm text-muted/70 max-w-lg font-light leading-relaxed">
-                {subtitle}
-              </p>
-            )}
-          </div>
-          <Link
-            href={basePath}
-            className="hidden items-center gap-2 rounded-full border border-border/40 px-5 py-2 text-xs font-medium text-muted transition-all duration-300 hover:border-gold/30 hover:text-gold-light sm:flex"
-          >
-            Explore all <ArrowRight size={14} />
-          </Link>
-        </div>
+export function CornerPreview({ title, subtitle, basePath, topics }: CornerPreviewProps) {
+  const reduceMotion = useReducedMotion();
+  const isStudent = basePath === "/student";
+  const eyebrow = isStudent ? "For the classroom and beyond" : "For the questions growing up brings";
+  const accent = isStudent ? "text-[#b88c43] bg-[#b88c43]/10" : "text-[#8e655e] bg-[#8e655e]/10";
+  const headingId = `${basePath.slice(1)}-corner-title`;
 
-        {/* Topic cards */}
+  return (
+    <section className="relative py-12 md:py-16" aria-labelledby={headingId}>
+      <div className="mx-auto max-w-6xl px-4 md:px-6">
+        <SectionHeading id={headingId} eyebrow={eyebrow} title={title} description={subtitle} href={basePath} action="Explore all" />
+
         <motion.div
           variants={containerVariants}
-          initial="hidden"
+          initial={reduceMotion ? false : "hidden"}
           whileInView="visible"
           viewport={{ once: true, margin: "-40px" }}
-          className="grid gap-4 md:gap-5 md:grid-cols-2 lg:grid-cols-3"
+          className="grid gap-3 md:grid-cols-2 lg:grid-cols-3"
         >
-          {topics.slice(0, 6).map((topic, i) => (
-            <motion.div key={topic.slug} variants={cardVariants}>
-              <Link
-                href={`${basePath}/${topic.slug}`}
-                className="card-cinematic group relative block overflow-hidden rounded-2xl p-6 md:p-7"
-              >
-                {/* Number */}
-                <span className="absolute right-5 top-5 text-[10px] font-medium tabular-nums text-muted/20">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-
-                <h3 className="text-sm font-medium text-foreground transition-colors duration-300 group-hover:text-gold">
-                  {topic.title}
-                </h3>
-                <p className="mt-3 text-xs leading-relaxed text-secondary/70">
-                  {topic.description}
-                </p>
-
-                <div className="mt-5 flex items-center gap-1 text-[11px] text-gold/60 transition-all duration-300 group-hover:text-gold group-hover:gap-2">
-                  <span>Read</span>
-                  <ArrowRight size={12} />
-                </div>
-              </Link>
-            </motion.div>
-          ))}
+          {topics.slice(0, 3).map((topic, index) => {
+            const Icon = topicIcons[topic.icon || ""] || Sparkles;
+            return (
+              <motion.div key={topic.slug} variants={cardVariants}>
+                <Link
+                  href={`${basePath}/${topic.slug}`}
+                  className="group relative flex h-full min-h-[190px] flex-col overflow-hidden rounded-2xl border border-border/55 bg-surface/60 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-gold/35 hover:bg-surface hover:shadow-[0_16px_36px_-25px_rgba(80,57,23,.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold md:p-6"
+                >
+                  <div className="flex items-start justify-between">
+                    <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${accent}`}>
+                      <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+                    </span>
+                    <span className="pt-1 text-[10px] font-medium tabular-nums tracking-[.18em] text-muted/50">{String(index + 1).padStart(2, "0")}</span>
+                  </div>
+                  <h3 className="mt-5 text-base font-medium tracking-tight text-foreground transition-colors group-hover:text-gold-light">{topic.title}</h3>
+                  <p className="mt-2 max-w-[34ch] text-sm leading-6 text-secondary/75">{topic.description}</p>
+                  <span className="mt-auto flex items-center gap-1.5 pt-5 text-xs font-medium text-gold-muted transition-all group-hover:gap-2 group-hover:text-gold-light">
+                    Read topic <ArrowRight size={13} aria-hidden="true" />
+                  </span>
+                </Link>
+              </motion.div>
+            );
+          })}
         </motion.div>
-
-        {/* Mobile view all */}
-        <Link
-          href={basePath}
-          className="mt-8 flex items-center justify-center gap-2 text-sm text-gold/70 sm:hidden"
-        >
-          View all <ArrowRight size={14} />
-        </Link>
       </div>
     </section>
   );

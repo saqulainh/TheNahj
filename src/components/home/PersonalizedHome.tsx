@@ -12,19 +12,19 @@ interface Section {
 
 export function PersonalizedHome({ 
   hero, 
+  journey,
   showcase, 
   youth, 
   student, 
   diseases, 
-  newsletter, 
   corner 
 }: { 
   hero: ReactNode;
+  journey?: ReactNode;
   showcase: ReactNode;
   youth: ReactNode;
   student: ReactNode;
   diseases: ReactNode;
-  newsletter: ReactNode;
   corner: ReactNode;
 }) {
   const { topTopics } = usePersonalization();
@@ -36,7 +36,6 @@ export function PersonalizedHome({
 
   // Default Order
   const defaultSections: Section[] = [
-    { id: "showcase", keywords: ["wisdom", "daily"], content: showcase },
     { id: "youth", keywords: ["youth", "loneliness", "validation", "identity"], content: youth },
     { id: "student", keywords: ["student", "exam", "focus", "knowledge", "procrastination"], content: student },
     { id: "diseases", keywords: ["digital", "anxiety", "addiction", "social media", "doomscrolling"], content: diseases },
@@ -66,6 +65,16 @@ export function PersonalizedHome({
       <div key="hero-section">
         {hero}
       </div>
+
+      <div key="daily-wisdom-showcase" className="relative">
+        {showcase}
+      </div>
+
+      {journey && (
+        <div className="mx-auto mt-1 w-full max-w-5xl px-4 sm:mt-3">
+          {journey}
+        </div>
+      )}
       
       {orderedSections.map((section) => (
         <div key={section.id} className="animate-in fade-in duration-700 relative">
@@ -77,8 +86,7 @@ export function PersonalizedHome({
           {section.content}
         </div>
       ))}
-      
-      {newsletter}
+
     </>
   );
 }

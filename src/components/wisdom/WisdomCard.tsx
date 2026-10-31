@@ -4,12 +4,11 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Bookmark, Share2, ChevronDown, BookOpen } from "lucide-react";
-import { motion } from "framer-motion";
+import { Bookmark, Share2, ChevronDown } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { Wisdom } from "@/lib/types";
 import { getSavedSlugs, toggleSaveAsync } from "@/lib/wisdom";
-import ImageRole from "@/components/ui/ImageRole";
 import { ShareableWisdomCard } from "@/components/wisdom/ShareableWisdomCard";
 import { AddToCollectionMenu } from "@/components/wisdom/CollectionManager";
 import { AudioReaderButton } from "@/components/wisdom/AudioReaderButton";
@@ -20,6 +19,7 @@ interface WisdomCardProps {
 }
 
 export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
+  const reduceMotion = useReducedMotion();
   const [saved, setSaved] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCollectionMenuOpen, setIsCollectionMenuOpen] = useState(false);
@@ -63,18 +63,12 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-      className="wisdom-classic-card group relative cursor-pointer rounded-3xl border border-gold/25 ring-1 ring-gold/15 ring-offset-1 ring-offset-background/40 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_60px_-15px_rgba(199,166,84,0.28)] hover:border-gold/50"
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.45, delay: Math.min(index, 3) * 0.06 }}
+      className="wisdom-classic-card group relative cursor-pointer rounded-3xl border border-border/55 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_-24px_rgba(122,91,39,.32)] hover:border-gold/40"
     >
-      {/* Tazhib Corner Embellishments */}
-      <div className="absolute top-2.5 left-2.5 text-[9px] text-gold/30 pointer-events-none select-none transition-colors group-hover:text-gold group-hover:scale-125 duration-300">✦</div>
-      <div className="absolute top-2.5 right-2.5 text-[9px] text-gold/30 pointer-events-none select-none transition-colors group-hover:text-gold group-hover:scale-125 duration-300">✦</div>
-      <div className="absolute bottom-2.5 left-2.5 text-[9px] text-gold/30 pointer-events-none select-none transition-colors group-hover:text-gold group-hover:scale-125 duration-300">✦</div>
-      <div className="absolute bottom-2.5 right-2.5 text-[9px] text-gold/30 pointer-events-none select-none transition-colors group-hover:text-gold group-hover:scale-125 duration-300">✦</div>
-
       {/* ─── absolute clickable overlay for card ─── */}
       {href && (
         <Link
@@ -84,27 +78,11 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
         />
       )}
 
-      {/* Background image */}
-      {(wisdom.featured_image || (wisdom as any).background_image) && (
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <ImageRole 
-            src={wisdom.featured_image || (wisdom as any).background_image} 
-            alt={`${wisdom.category?.name || "Islamic wisdom"} background`}
-            role="card" 
-            className="w-full h-full opacity-15 mix-blend-luminosity" 
-            focalPoint={null} 
-            unconstrained={true}
-            priority={index < 4}
-          />
-        </div>
-      )}
-
       {/* ─── Card Header Wrapper (Affordance Tag + Actions) ─── */}
       <div className="flex items-center justify-between w-full relative z-20 pointer-events-none select-none">
-        {/* Left: Prominent Affordance Badge (Tells user: "This has a full reflection") */}
-        <div className="flex items-center gap-1.5 rounded-full border border-gold/35 bg-gold/10 px-3 py-1 text-[11px] font-semibold tracking-wider uppercase font-display text-gold-light group-hover:bg-gold/20 group-hover:border-gold/55 transition-all shadow-sm">
-          <BookOpen size={12} className="text-gold" />
-          <span>Full Reflection</span>
+        {/* Topic label */}
+        <div className="rounded-full border border-gold/25 bg-gold/[.07] px-3 py-1 text-[10px] font-semibold tracking-[.14em] uppercase font-display text-gold-muted">
+          <span>{wisdom.category?.name ?? "Wisdom"}</span>
         </div>
 
         {/* Right: Action buttons (Bookmark/Save & Share) */}
@@ -152,7 +130,7 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
       <div className="relative z-20 flex-grow flex flex-col justify-center py-5 pointer-events-none select-none text-center">
         {/* Arabic Typography */}
         <p
-          className="wisdom-classic-title text-[1.65rem] leading-[2.1] text-center font-arabic drop-shadow-sm text-foreground"
+          className="wisdom-classic-title text-[clamp(1.35rem,4vw,1.65rem)] leading-[2] text-center font-arabic text-foreground"
           dir="rtl"
           lang="ar"
         >
@@ -186,11 +164,7 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
       {/* ─── Footer Layout (Metadata & High-Affordance CTA Button) ─── */}
       <div className="relative z-20 mt-auto pt-4 text-center pointer-events-none select-none">
         {/* Category & Source Metadata */}
-        <div className="wisdom-classic-indicator text-center text-foreground/90">
-          <span className="wisdom-classic-indicator-amount font-semibold text-gold">
-            {wisdom.category?.name ?? "Wisdom"}
-          </span>
-          <span className="opacity-40 mx-1.5">•</span>
+        <div className="wisdom-classic-indicator text-center text-foreground/80">
           <span className="wisdom-classic-indicator-percentage text-muted">
             {wisdom.source}
           </span>
@@ -203,9 +177,9 @@ export function WisdomCard({ wisdom, index = 0 }: WisdomCardProps) {
 
         {/* Prominent Illuminated CTA Pill Button (Fixed Navigation & Affordance) */}
         <div className="mt-2 flex items-center justify-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gradient-to-r from-gold/15 via-gold/10 to-gold/15 px-5 py-2 text-xs font-semibold uppercase tracking-wider font-display text-gold-light shadow-sm transition-all duration-300 group-hover:border-gold group-hover:bg-gold group-hover:text-black group-hover:shadow-[0_6px_25px_rgba(199,166,84,0.45)] group-hover:scale-[1.03]">
-            <span>Read Full Reflection</span>
-            <span className="text-sm font-bold transition-transform duration-300 group-hover:translate-x-1.5">→</span>
+          <span className="inline-flex items-center gap-2 border-b border-gold/30 pb-1 text-[11px] font-semibold uppercase tracking-[.15em] font-display text-gold-muted transition-colors group-hover:border-gold group-hover:text-gold-light">
+            <span>Read reflection</span>
+            <span className="text-sm font-bold transition-transform duration-300 group-hover:translate-x-1">→</span>
           </span>
         </div>
       </div>

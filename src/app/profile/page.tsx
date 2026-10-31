@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useStreak } from "@/lib/streak";
 import { useBookmarks } from "@/lib/bookmarks";
-import { Flame, Bookmark, Award, LogOut, User, Sparkles, ArrowRight, ShieldCheck, Heart } from "lucide-react";
+import { Bookmark, Award, LogOut, User, Sparkles, ArrowRight, ShieldCheck, Heart } from "lucide-react";
 import Link from "next/link";
+import { StreakDashboard } from "@/components/home/StreakDashboard";
 
 export default function ProfilePage() {
   const { user, loading, loginWithGoogle, updateAvatar, logout } = useAuth();
@@ -148,17 +149,10 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* Stats & Streak Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Daily Streak Card */}
-        <div className="rounded-3xl border border-gold/40 bg-gradient-to-br from-gold/10 via-surface-alt to-surface-elevated p-6 text-center space-y-2 shadow-lg">
-          <div className="flex items-center justify-center gap-1.5 text-gold text-xs uppercase font-bold tracking-widest">
-            <Flame size={18} className="animate-bounce text-orange-400" />
-            <span>Daily Noor Streak</span>
-          </div>
-          <p className="text-4xl font-extrabold text-foreground">{streak.currentStreak} <span className="text-sm font-normal text-muted">Days</span></p>
-          <p className="text-[10px] text-muted">Best Streak: {streak.longestStreak} Days | Total Read: {streak.totalDays} Cards</p>
-        </div>
+      <StreakDashboard variant="full" />
+
+      {/* Personal account summaries */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         {/* Saved Bookmarks Count */}
         <div className="rounded-3xl border border-border/30 bg-surface-alt/70 p-6 text-center space-y-2 shadow-lg">
