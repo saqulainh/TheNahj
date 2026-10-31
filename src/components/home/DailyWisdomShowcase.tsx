@@ -103,7 +103,7 @@ export function DailyWisdomShowcase({ items }: DailyWisdomShowcaseProps) {
           {items.length > 1 && (
             <button 
               onClick={() => setIsPaused(!isPaused)}
-              className="p-2 rounded-full bg-gold/10 text-gold hover:bg-gold/20 transition-all border border-gold/20"
+              className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-gold/10 text-gold hover:bg-gold/20 flex items-center justify-center transition-all border border-gold/20 active:scale-95"
               aria-label={isPaused ? "Play" : "Pause"}
             >
               {isPaused ? <Play size={14} className="ml-0.5" /> : <Pause size={14} />}
@@ -134,14 +134,14 @@ export function DailyWisdomShowcase({ items }: DailyWisdomShowcaseProps) {
             <>
               <button 
                 onClick={prevSlide}
-                className="p-2 rounded-full bg-gold/10 text-gold hover:bg-gold/20 transition-all border border-gold/20"
+                className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-gold/10 text-gold hover:bg-gold/20 flex items-center justify-center transition-all border border-gold/20 active:scale-95"
                 aria-label="Previous slide"
               >
                 <ChevronLeft size={16} />
               </button>
               <button 
                 onClick={nextSlide}
-                className="p-2 rounded-full bg-gold/10 text-gold hover:bg-gold/20 transition-all border border-gold/20"
+                className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-gold/10 text-gold hover:bg-gold/20 flex items-center justify-center transition-all border border-gold/20 active:scale-95"
                 aria-label="Next slide"
               >
                 <ChevronRight size={16} />

@@ -97,7 +97,7 @@ export function ReflectionFlow() {
         <span className="text-[10px] uppercase tracking-[0.3em] text-gold-muted font-medium">
           Check In
         </span>
-        <h2 className="mt-4 text-3xl font-light tracking-tight text-[#F5F5F0] sm:text-4xl">
+        <h2 className="mt-4 text-3xl font-light tracking-tight text-foreground sm:text-4xl">
           How are you feeling right now?
         </h2>
         <p className="mt-4 text-sm text-muted/70">
@@ -141,7 +141,7 @@ export function ReflectionFlow() {
         <span className="text-[10px] uppercase tracking-[0.3em] text-gold-muted font-medium">
           A Moment of Pause
         </span>
-        <h2 className="mt-4 text-3xl font-light tracking-tight text-[#F5F5F0] sm:text-4xl">
+        <h2 className="mt-4 text-3xl font-light tracking-tight text-foreground sm:text-4xl">
           Before You Text Them
         </h2>
 
@@ -159,7 +159,7 @@ export function ReflectionFlow() {
         <div className="mt-8 flex flex-col items-center justify-center gap-4">
           <button
             onClick={next}
-            className="group relative flex items-center justify-center gap-4 rounded-full bg-[#F5F5F0] px-8 py-4 text-xs font-semibold uppercase tracking-[0.2em] text-black transition-all duration-300 hover:bg-white hover:shadow-[0_0_35px_-5px_rgba(255,255,255,0.25)]"
+            className="group relative flex items-center justify-center gap-4 rounded-full bg-foreground px-8 py-4 text-xs font-semibold uppercase tracking-[0.2em] text-background transition-all duration-300 hover:bg-gold hover:text-black hover:shadow-[0_0_35px_-5px_rgba(199,166,84,0.4)]"
           >
             Start Reflection
             <Sparkles size={14} className="transition-transform duration-300 group-hover:rotate-12" />

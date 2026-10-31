@@ -60,6 +60,7 @@ export function PrismaHero({
             loop
             muted
             playsInline
+            poster={activeImage}
             className="h-full w-full object-cover opacity-40 mix-blend-luminosity filter contrast-125"
             style={{ objectPosition: focalPoint || "center" }}
           >

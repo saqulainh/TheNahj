@@ -38,6 +38,11 @@ export function CornerPreview({ title, subtitle, basePath, topics, accent }: Cor
             <h2 className="text-2xl font-light tracking-tight text-foreground md:text-3xl">
               {title}
             </h2>
+            {subtitle && (
+              <p className="mt-2 text-sm text-muted/70 max-w-lg font-light leading-relaxed">
+                {subtitle}
+              </p>
+            )}
           </div>
           <Link
             href={basePath}

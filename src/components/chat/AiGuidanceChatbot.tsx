@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useAudioStore } from "@/lib/stores/audioStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { speakMultilingualText, stopTTS } from "@/lib/tts";
 import { Sparkles, X, Send, Bot, User, Loader2, ArrowRight, Mic, MicOff, Volume2, VolumeX, RefreshCw } from "lucide-react";
@@ -101,6 +102,7 @@ declare global {
 }
 
 export function AiGuidanceChatbot() {
+  const { currentTrack } = useAudioStore();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -516,7 +518,7 @@ export function AiGuidanceChatbot() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full border border-gold/40 bg-gradient-to-r from-gold/90 to-gold px-4 py-2.5 shadow-[0_4px_25px_rgba(199,166,84,0.4)] text-black font-semibold text-xs tracking-wider transition-all hover:brightness-110"
+            className={`fixed ${currentTrack ? "bottom-24 sm:bottom-28" : "bottom-6"} right-6 z-40 flex items-center gap-2 rounded-full border border-gold/40 bg-gradient-to-r from-gold/90 to-gold px-4 py-2.5 shadow-[0_4px_25px_rgba(199,166,84,0.4)] text-black font-semibold text-xs tracking-wider transition-all hover:brightness-110"
             aria-label="Open AI Guidance Assistant"
           >
             <Sparkles size={15} className="animate-pulse" />
@@ -533,7 +535,7 @@ export function AiGuidanceChatbot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.25 }}
-            className="fixed bottom-6 right-6 z-50 flex h-[600px] w-[calc(100vw-3rem)] max-w-[420px] flex-col rounded-3xl border border-gold/30 bg-surface/95 shadow-2xl backdrop-blur-xl overflow-hidden"
+            className={`fixed ${currentTrack ? "bottom-24 sm:bottom-28" : "bottom-6"} right-6 z-50 flex h-[600px] max-h-[calc(100vh-8rem)] w-[calc(100vw-3rem)] max-w-[420px] flex-col rounded-3xl border border-gold/30 bg-surface/95 shadow-2xl backdrop-blur-xl overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border/20 bg-surface-alt/70 px-5 py-4">

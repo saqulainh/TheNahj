@@ -27,7 +27,7 @@ export default function BeforeYouTextPage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          className="noise-overlay relative overflow-hidden rounded-3xl border border-white/[0.05] bg-[#0A0A0A]/40 p-8 md:p-12 shadow-[0_30px_100px_rgba(0,0,0,0.8)] backdrop-blur-2xl"
+          className="noise-overlay relative overflow-hidden rounded-3xl border border-border/40 bg-surface/80 p-8 md:p-12 shadow-[0_30px_100px_rgba(0,0,0,0.3)] backdrop-blur-2xl"
         >
           {/* Subtle gold line on top card border */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
