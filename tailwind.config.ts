@@ -12,6 +12,7 @@ const config: Config = {
         background: "hsl(var(--background) / <alpha-value>)",
         surface: "hsl(var(--surface) / <alpha-value>)",
         "surface-elevated": "hsl(var(--surface-elevated) / <alpha-value>)",
+        "surface-alt": "hsl(var(--surface-alt) / <alpha-value>)",
         border: "hsl(var(--border) / <alpha-value>)",
         gold: {
           DEFAULT: "hsl(var(--gold) / <alpha-value>)",

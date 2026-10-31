@@ -158,12 +158,12 @@ export function PrismaHero({
           >
             <Link
               href={ctaLink}
-              className="group inline-flex items-center gap-5 rounded-full bg-foreground p-2 pl-8 transition-all duration-500 hover:bg-white hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
+              className="group inline-flex items-center gap-5 rounded-full bg-foreground p-2 pl-8 transition-all duration-500 hover:bg-gold hover:shadow-[0_0_40px_-10px_rgba(199,166,84,0.4)]"
             >
-              <span className="text-xs font-medium uppercase tracking-[0.2em] text-background">
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-background group-hover:text-black transition-colors">
                 {ctaText}
               </span>
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-background text-foreground transition-transform duration-500 group-hover:scale-105">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-background text-foreground transition-all duration-500 group-hover:scale-105 group-hover:bg-black group-hover:text-gold">
                 <ArrowRight className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1" />
               </div>
             </Link>

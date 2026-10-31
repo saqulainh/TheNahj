@@ -12,6 +12,7 @@
   --background: 40 46% 94%;
   --surface: 40 39% 91%;
   --surface-elevated: 36 34% 89%;
+  --surface-alt: 38 35% 87%;
   --border: 37 20% 83%;
   --foreground: 28 28% 13%;
   --secondary: 30 23% 29%;
@@ -27,6 +28,7 @@
   --background: 219 16% 7%;
   --surface: 220 16% 11%;
   --surface-elevated: 218 16% 14%;
+  --surface-alt: 220 16% 16%;
   --border: 220 15% 20%;
   --foreground: 41 40% 94%;
   --secondary: 32 19% 74%;
@@ -600,22 +602,6 @@
   }
 }
 
-/* ─── Premium Cinematic Typography System Utilities ─── */
-.font-cinematic-title {
-  font-family: var(--font-instrument-serif), Georgia, serif;
-}
-
-.font-cinematic-display {
-  font-family: var(--font-plus-jakarta-sans), Satoshi, sans-serif;
-}
-
-.font-serif-cinematic {
-  font-family: var(--font-instrument-serif), Georgia, serif;
-}
-
-.font-sans-display {
-  font-family: var(--font-plus-jakarta-sans), Satoshi, sans-serif;
-}
 
 .font-arabic-classical {
   font-family: var(--font-amiri), serif;
