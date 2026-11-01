@@ -209,15 +209,43 @@ export default function KarbalaConnectPage() {
 
         <div className={styles.closingPreview}>
           <div className={styles.closingGlow} aria-hidden="true" />
-          <div className={styles.closingPhone}>
-            <div className={styles.closingPhoneIsland} aria-hidden="true" />
-            <div className={styles.closingPhoneScreen}>
-              <Image
-                src="/karbala-connect/player.webp"
-                alt="Karbala Connect Audio Player Screen"
-                fill
-                sizes="(max-width: 880px) 70vw, 300px"
-              />
+          
+          <div className={styles.phoneStage}>
+            {/* Left Phone: Anjumans Directory */}
+            <div className={`${styles.stagePhone} ${styles.phoneBackLeft}`}>
+              <div className={styles.stagePhoneScreen}>
+                <Image
+                  src="/karbala-connect/anjumans-real.jpg"
+                  alt="Karbala Connect Anjuman Directory"
+                  fill
+                  sizes="(max-width: 880px) 45vw, 210px"
+                />
+              </div>
+            </div>
+
+            {/* Right Phone: Quran Recitation */}
+            <div className={`${styles.stagePhone} ${styles.phoneBackRight}`}>
+              <div className={styles.stagePhoneScreen}>
+                <Image
+                  src="/karbala-connect/quran.webp"
+                  alt="Karbala Connect Quran Recitation"
+                  fill
+                  sizes="(max-width: 880px) 45vw, 210px"
+                />
+              </div>
+            </div>
+
+            {/* Center Front Phone: Dedicated Audio Player */}
+            <div className={`${styles.stagePhone} ${styles.phoneFront}`}>
+              <div className={styles.stagePhoneIsland} aria-hidden="true" />
+              <div className={styles.stagePhoneScreen}>
+                <Image
+                  src="/karbala-connect/player.webp"
+                  alt="Karbala Connect Audio Player Screen"
+                  fill
+                  sizes="(max-width: 880px) 60vw, 240px"
+                />
+              </div>
             </div>
           </div>
         </div>
