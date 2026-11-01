@@ -15,6 +15,7 @@ import { AudioPreview } from "@/components/home/AudioPreview";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { getAudioTracks } from "@/lib/audio-catalog";
 import { ArticleCard } from "@/components/articles/ArticleCard";
+import { KarbalaConnectPromo } from "@/components/home/KarbalaConnectPromo";
 
 export default async function HomePage() {
   const [daily, featured, trending, articles, cms, audioTracks] = await Promise.all([
@@ -160,6 +161,8 @@ export default async function HomePage() {
           <NewsletterCTA />
         </>
       )}
+
+      <KarbalaConnectPromo />
     </>
   );
 }

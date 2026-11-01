@@ -13,7 +13,10 @@ const slides = [
     description: "Featured voices, Quran and the categories you return to.",
     image: "/karbala-connect/home.webp",
     alt: "Karbala Connect home screen with featured audio, Quran and categories",
+    secondaryImage: "/karbala-connect/quran.webp",
+    secondaryAlt: "Karbala Connect Quran screen",
     note: "Your listening, at a glance",
+    arrow: "M286 42 C259 78 252 110 224 145 C199 177 183 203 157 265",
   },
   {
     eyebrow: "DISCOVER · FIND YOUR VOICE",
@@ -21,7 +24,10 @@ const slides = [
     description: "Explore Ulema, nauhakhwans and reciters by collection.",
     image: "/karbala-connect/reciters.webp",
     alt: "Karbala Connect reciters screen showing Ulema and nauhakhwans",
+    secondaryImage: "/karbala-connect/anjumans.webp",
+    secondaryAlt: "Karbala Connect Anjuman directory",
     note: "Browse by reciter",
+    arrow: "M284 42 C263 78 239 108 219 144 C196 178 174 202 148 260",
   },
   {
     eyebrow: "LISTEN · PICK UP WHERE YOU LEFT OFF",
@@ -29,7 +35,10 @@ const slides = [
     description: "Rewind, move forward, save a favourite or share a track.",
     image: "/karbala-connect/player.webp",
     alt: "Karbala Connect audio player with artwork and playback controls",
+    secondaryImage: "/karbala-connect/home.webp",
+    secondaryAlt: "Karbala Connect home screen",
     note: "Playback that follows you",
+    arrow: "M286 42 C268 80 263 112 231 149 C203 181 179 207 158 268",
   },
   {
     eyebrow: "COMMUNITY · AROUND YOU",
@@ -37,7 +46,10 @@ const slides = [
     description: "Search by Anjuman, city or state. Location stays optional.",
     image: "/karbala-connect/anjumans.webp",
     alt: "Karbala Connect Anjuman directory with state and city search",
+    secondaryImage: "/karbala-connect/reciters.webp",
+    secondaryAlt: "Karbala Connect reciters screen",
     note: "Search by city or state",
+    arrow: "M284 42 C258 78 238 110 216 148 C194 181 174 205 148 264",
   },
   {
     eyebrow: "QURAN · READ & LISTEN",
@@ -45,7 +57,10 @@ const slides = [
     description: "Open a surah and follow along with recitation and translation.",
     image: "/karbala-connect/quran.webp",
     alt: "Karbala Connect Quran screen with Arabic text and translation",
+    secondaryImage: "/karbala-connect/player.webp",
+    secondaryAlt: "Karbala Connect audio player",
     note: "Read along with audio",
+    arrow: "M286 42 C265 80 250 111 223 148 C198 181 176 208 154 267",
   },
   {
     eyebrow: "PODCASTS · NEW PERSPECTIVES",
@@ -53,7 +68,10 @@ const slides = [
     description: "Find thoughtful talks and podcasts from trusted voices.",
     image: "/karbala-connect/podcast.webp",
     alt: "Karbala Connect podcast screen with featured episodes",
+    secondaryImage: "/karbala-connect/player.webp",
+    secondaryAlt: "Karbala Connect audio player",
     note: "Listen to a full episode",
+    arrow: "M286 42 C264 80 251 110 221 148 C196 181 175 207 152 266",
   },
 ];
 
@@ -62,7 +80,7 @@ export default function KarbalaFeatureShowcase() {
   const trackRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
   const [index, setIndex] = useState(0);
-  const [visible, setVisible] = useState(3);
+  const [visible, setVisible] = useState(4);
   const [playing, setPlaying] = useState(true);
   const direction = useRef(1);
   const maxIndex = Math.max(0, slides.length - visible);
@@ -75,7 +93,7 @@ export default function KarbalaFeatureShowcase() {
       if (!card) return;
       const gap = parseFloat(getComputedStyle(track).columnGap || "0");
       setStep(card.getBoundingClientRect().width + gap);
-      setVisible(window.innerWidth <= 680 ? 1 : window.innerWidth <= 1000 ? 2 : 3);
+      setVisible(window.innerWidth <= 680 ? 1 : window.innerWidth <= 1000 ? 2 : window.innerWidth <= 1280 ? 3 : 4);
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -146,16 +164,19 @@ export default function KarbalaFeatureShowcase() {
               <h3>{slide.title}</h3>
               <p>{slide.description}</p>
               <div className={styles.featureVisual}>
-                <div className={styles.featureScreen}>
-                  <Image src={slide.image} alt={slide.alt} fill sizes="(max-width: 680px) 76vw, (max-width: 1000px) 38vw, 25vw" />
+                <div className={`${styles.featureScreen} ${styles.featureScreenSecondary}`}>
+                  <Image src={slide.secondaryImage} alt={slide.secondaryAlt} fill sizes="(max-width: 680px) 34vw, 12vw" />
+                </div>
+                <div className={`${styles.featureScreen} ${styles.featureScreenPrimary}`}>
+                  <Image src={slide.image} alt={slide.alt} fill sizes="(max-width: 680px) 54vw, 16vw" />
                 </div>
                 <div className={styles.featureAnnotation}>
                   <span className={styles.annotationDot} />
                   <span>{slide.note}</span>
                 </div>
-                <svg className={styles.annotationArrow} viewBox="0 0 320 250" fill="none" aria-hidden="true">
+                <svg className={styles.annotationArrow} viewBox="0 0 320 340" fill="none" aria-hidden="true">
                   <defs><marker id={`arrowhead-${slideIndex}`} markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M1 1L7 4.5L1 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></marker></defs>
-                  <path d="M284 34C239 42 238 77 204 91C173 104 150 101 132 128C121 145 122 163 107 180" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" markerEnd={`url(#arrowhead-${slideIndex})`} />
+                  <path d={slide.arrow} stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" markerEnd={`url(#arrowhead-${slideIndex})`} />
                 </svg>
                 <span className={styles.visualIndex}>{String(slideIndex + 1).padStart(2, "0")}</span>
               </div>

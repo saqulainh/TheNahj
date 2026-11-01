@@ -3,7 +3,7 @@
 import Script from "next/script";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Headphones } from "lucide-react";
-import { KarbalaConnectPromo } from "@/components/home/KarbalaConnectPromo";
+import { KarbalaConnectHeroPromo } from "@/components/home/KarbalaConnectHeroPromo";
 
 interface PrismaHeroProps {
   headline?: string;
@@ -54,7 +54,8 @@ export function PrismaHero({
             </Link>
           </div>
 
-          <KarbalaConnectPromo />
+          <KarbalaConnectHeroPromo />
+
         </div>
 
         <div className="orbit__art" data-scene aria-hidden="true">

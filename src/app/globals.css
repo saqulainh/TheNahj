@@ -222,6 +222,15 @@
   @media (prefers-reduced-motion: reduce) { .orbit__scene, .orbit__fx { display: none; } .orbit__beams i, .thenahj-hero-kicker-dot { animation: none; } }
 
   /* Reuse the Imam & Science leaf atlas in the Karbala Connect app card. */
+  .kc-store-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .kc-store-badge { box-sizing: border-box; display: inline-flex; flex: 0 0 182px; width: 182px; height: 58px; align-items: center; gap: 11px; overflow: hidden; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 7px 13px; color: #fff; background: #292929; box-shadow: 0 10px 22px rgba(0,0,0,.18); text-decoration: none; transition: transform .2s, background .2s, box-shadow .2s; }
+  .kc-store-badge:hover { transform: translateY(-2px); background: #333; box-shadow: 0 14px 24px rgba(0,0,0,.22); }
+  .kc-store-badge:focus-visible { outline: 2px solid #55d98a; outline-offset: 3px; }
+  .kc-store-icon { display: block; width: 24px; height: 28px; flex: none; }
+  .kc-store-icon--apple { width: 23px; height: 27px; }
+  .kc-store-copy { display: grid; min-width: 0; gap: 1px; text-align: left; }
+  .kc-store-kicker { color: rgba(255,255,255,.64); font-size: 9px; font-weight: 700; line-height: 1.15; letter-spacing: .015em; white-space: nowrap; }
+  .kc-store-name { color: #fff; font-size: 16px; font-weight: 700; line-height: 1.1; letter-spacing: -.025em; white-space: nowrap; }
   .karbala-connect-card { --kc-leaf-travel: 690px; text-align: left; }
   .kc-leaf-layer { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
   .kc-leaf { position: absolute; top: -100px; display: block; background-image: url('/imam-science-hero/img/hero-leaves.webp'); background-repeat: no-repeat; background-size: 837px 105px; opacity: 0; filter: drop-shadow(0 3px 5px rgba(0,0,0,.2)); animation: kcLeafFall var(--kc-duration) linear var(--kc-delay) infinite; will-change: transform, opacity; }
@@ -243,6 +252,7 @@
     100% { opacity: 0; transform: translate3d(calc(var(--kc-drift) * -.2),var(--kc-leaf-travel),0) rotate(var(--kc-spin)) scale(var(--kc-scale)); }
   }
   @media (max-width: 640px) { .karbala-connect-card { --kc-leaf-travel: 780px; } .kc-leaf--two { left: 74%; } .kc-leaf--three { left: 48%; } }
+  @media (max-width: 680px) { .kc-store-badge { flex-basis: calc((100% - 10px) / 2); width: calc((100% - 10px) / 2); height: 56px; gap: 8px; padding-inline: 10px; } .kc-store-name { font-size: clamp(12px, 3.7vw, 16px); } }
   @media (prefers-reduced-motion: reduce) { .kc-leaf { display: none; animation: none; } }
 
   /* ─── Prose Reflection Styles ─── */
