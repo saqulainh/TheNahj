@@ -96,6 +96,66 @@ export default function KarbalaConnectPage() {
 
       <KarbalaFeatureShowcase />
 
+      <section className={styles.reviewsSection} aria-labelledby="reviews-title">
+        <div className={styles.reviewsHeader}>
+          <div>
+            <span className={styles.reviewsTag}>Real Reviews</span>
+            <h2 id="reviews-title" className={styles.reviewsTitle}>
+              Loved by the <span>Community</span>
+            </h2>
+            <p className={styles.reviewsSub}>
+              Real reviews from our users on Google Play Store.
+            </p>
+          </div>
+
+          <div className={styles.ratingScoreCard}>
+            <div className={styles.scoreNumber}>5.0</div>
+            <div className={styles.scoreDetails}>
+              <div className={styles.scoreStars} aria-label="5 out of 5 stars">
+                ★★★★★
+              </div>
+              <div className={styles.scoreMeta}>Google Play Store · Verified Reviews</div>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.reviewsGrid}>
+          <article className={styles.reviewCard}>
+            <div className={styles.reviewQuoteIcon} aria-hidden="true">“</div>
+            <div className={styles.reviewCardStars} aria-label="5 stars">★★★★★</div>
+            <p className={styles.reviewCardText}>
+              &ldquo;I am thoroughly impressed with this app! The overall design, categorization, and the inclusion of 2x playback speed are fantastic. It is clearly a very well-developed platform for Islamic audio and music collections. Also the Dua and Ulema section is best.&rdquo;
+            </p>
+            <div className={styles.reviewCardFooter}>
+              <div className={styles.reviewAvatar} aria-hidden="true">A</div>
+              <div className={styles.reviewMetaInfo}>
+                <span className={styles.reviewAuthor}>App User</span>
+                <span className={styles.reviewVerification}>
+                  <span>★</span> Verified · Google Play · Jun 2026
+                </span>
+              </div>
+            </div>
+          </article>
+
+          <article className={styles.reviewCard}>
+            <div className={styles.reviewQuoteIcon} aria-hidden="true">“</div>
+            <div className={styles.reviewCardStars} aria-label="5 stars">★★★★★</div>
+            <p className={styles.reviewCardText}>
+              &ldquo;Good app for Nuha and Azadari — excellent platform for Islamic content. Very well designed and easy to use.&rdquo;
+            </p>
+            <div className={styles.reviewCardFooter}>
+              <div className={styles.reviewAvatar} aria-hidden="true">م</div>
+              <div className={styles.reviewMetaInfo}>
+                <span className={styles.reviewAuthor}>محمد رضوان</span>
+                <span className={styles.reviewVerification}>
+                  <span>★</span> Verified · Google Play · Jun 2026
+                </span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <section className={styles.closing} aria-labelledby="closing-title">
         <div className={styles.closingLogo}>
           <Image src="/karbala-connect-logo.webp" alt="Karbala Connect logo" fill sizes="72px" />

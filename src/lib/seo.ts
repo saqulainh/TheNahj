@@ -75,6 +75,10 @@ export function websiteJsonLd(description: string) {
         url: `${SITE_URL}/`,
         logo: absoluteUrl("/thenahj-logo.jpeg"),
         description,
+        sameAs: [
+          "https://www.instagram.com/thenahj",
+          "https://t.me/thenahj",
+        ],
       },
       {
         "@type": "WebSite",
@@ -101,6 +105,92 @@ export function breadcrumbJsonLd(items: Array<{ name: string; path?: string }>) 
       position: index + 1,
       name: item.name,
       ...(item.path ? { item: absoluteUrl(item.path) } : {}),
+    })),
+  };
+}
+
+export function articleJsonLd({
+  title,
+  description,
+  path,
+  datePublished,
+  dateModified,
+  image = "/thenahj-logo.jpeg",
+  category = "Islamic Wisdom",
+  keywords = [],
+}: {
+  title: string;
+  description: string;
+  path: string;
+  datePublished?: string;
+  dateModified?: string;
+  image?: string;
+  category?: string;
+  keywords?: string[];
+}) {
+  const url = absoluteUrl(path);
+  const imageUrl = absoluteUrl(image);
+  const pubDate = datePublished ? new Date(datePublished).toISOString() : new Date("2026-01-01").toISOString();
+  const modDate = dateModified ? new Date(dateModified).toISOString() : pubDate;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": `${url}#article`,
+    isPartOf: {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      name: "TheNahj",
+      url: `${SITE_URL}/`,
+    },
+    headline: title,
+    description: description,
+    image: [imageUrl],
+    datePublished: pubDate,
+    dateModified: modDate,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": url,
+    },
+    author: [
+      {
+        "@type": "Person",
+        name: "Imam Ali ibn Abi Talib (AS)",
+        description: "Fourth Caliph of Islam, First Shia Imam, and author of the teachings in Nahjul Balagha (Peak of Eloquence).",
+      },
+      {
+        "@type": "Organization",
+        name: "TheNahj Editorial Team",
+        url: `${SITE_URL}/about`,
+      },
+    ],
+    publisher: {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "TheNahj",
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl("/thenahj-logo.jpeg"),
+      },
+    },
+    articleSection: category,
+    keywords: keywords.join(", "),
+    inLanguage: "en-US",
+  };
+}
+
+export function faqJsonLd(items: Array<{ question: string; answer: string }>) {
+  if (!items.length) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
     })),
   };
 }

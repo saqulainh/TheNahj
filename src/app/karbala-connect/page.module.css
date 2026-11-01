@@ -285,8 +285,9 @@
 .showcase {
   width: min(1200px, calc(100% - 48px));
   margin: 0 auto;
-  padding: clamp(56px, 7vw, 96px) 0 80px;
+  padding: clamp(64px, 8vw, 100px) 0 80px;
   overflow: hidden;
+  scroll-margin-top: 130px;
 }
 
 .showcaseHeader {
@@ -294,32 +295,37 @@
   align-items: end;
   justify-content: space-between;
   gap: 28px;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
 
 .showcaseEyebrow {
-  color: #8b682a;
+  display: block;
+  color: #9a732e;
   font-size: 11px;
   font-weight: 750;
   letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .showcaseHeader h2 {
   margin: 12px 0 0;
-  color: #28231b;
-  font-size: clamp(34px, 4vw, 54px);
-  line-height: 1.02;
-  letter-spacing: -0.055em;
+  color: #241e17;
+  font-size: clamp(34px, 4vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-weight: 700;
 }
 
 .showcaseHeader h2 em {
-  color: #ae8a42;
-  font-style: normal;
+  font-family: Georgia, 'Playfair Display', 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #3b3226;
 }
 
 .showcaseHeader p {
   margin: 10px 0 0;
-  color: #766c5b;
+  color: #786d5c;
   font-size: 15px;
 }
 
@@ -332,33 +338,37 @@
 
 .showcaseControls button {
   display: grid;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   place-items: center;
-  border: 1px solid rgba(99, 77, 39, 0.17);
+  border: 1px solid rgba(135, 105, 50, 0.22);
   border-radius: 50%;
   color: #3b3429;
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 3px 12px rgba(77, 60, 34, 0.06);
-  transition: transform 0.2s, background 0.2s;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 14px rgba(77, 60, 34, 0.06);
+  transition: transform 0.2s, background 0.2s, border-color 0.2s;
+  cursor: pointer;
 }
 
 .showcaseControls button:hover:not(:disabled) {
   transform: translateY(-2px);
-  background: white;
+  background: #ffffff;
+  border-color: rgba(135, 105, 50, 0.45);
 }
 
 .showcaseControls button:disabled {
-  opacity: 0.38;
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .showcaseViewport {
   overflow: hidden;
+  padding: 10px 4px 20px;
 }
 
 .showcaseTrack {
   display: flex;
-  gap: 18px;
+  gap: 20px;
   width: max-content;
   cursor: grab;
   touch-action: pan-y;
@@ -369,131 +379,192 @@
 }
 
 .showcaseCard {
-  flex: 0 0 calc((min(1200px, 100vw - 48px) - 54px) / 4);
-  min-width: 0;
-  min-height: 590px;
+  flex: 0 0 calc((min(1200px, 100vw - 48px) - 60px) / 4);
+  min-width: 280px;
+  max-width: 330px;
+  min-height: 620px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgba(143, 112, 61, 0.17);
-  border-radius: 24px;
-  padding: 24px 18px 0;
-  background: linear-gradient(150deg, #f8e8d4, #fffaf2 66%, #f3e6d4);
-  box-shadow: 0 16px 40px rgba(69, 54, 28, 0.07);
+  border: 1px solid rgba(143, 112, 61, 0.18);
+  border-radius: 28px;
+  padding: 28px 20px 0;
+  background: linear-gradient(155deg, #f8ecdc 0%, #fffbf5 52%, #f3e5d1 100%);
+  box-shadow:
+    0 20px 46px -12px rgba(68, 51, 24, 0.08),
+    0 3px 8px rgba(68, 51, 24, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.showcaseCard:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 26px 52px -12px rgba(68, 51, 24, 0.12),
+    0 4px 12px rgba(68, 51, 24, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .cardEyebrow {
   display: block;
-  color: #a77c2e;
-  font-size: 9px;
+  color: #9f752f;
+  font-size: 9.5px;
   font-weight: 750;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.14em;
   text-align: center;
+  text-transform: uppercase;
 }
 
 .showcaseCard h3 {
-  min-height: 58px;
-  margin: 12px 0 0;
-  color: #342a1d;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(21px, 1.8vw, 26px);
+  min-height: 48px;
+  margin: 10px 0 0;
+  color: #2b2216;
+  font-family: Georgia, 'Playfair Display', 'Times New Roman', serif;
+  font-size: clamp(23px, 1.85vw, 27px);
   font-style: italic;
   font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.035em;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
   text-align: center;
-  white-space: pre-line;
 }
 
 .showcaseCard > p {
-  min-height: 40px;
+  min-height: 42px;
   margin: 8px auto 0;
-  max-width: 290px;
-  color: #766b5b;
-  font-size: 12px;
-  line-height: 1.55;
+  max-width: 275px;
+  color: #726553;
+  font-size: 12.5px;
+  line-height: 1.5;
   text-align: center;
 }
 
 .featureVisual {
   position: relative;
-  min-height: 380px;
-  margin: 5px -8px 0;
-  overflow: hidden;
-  background: radial-gradient(ellipse at 53% 70%, rgba(197, 156, 74, 0.2), transparent 63%);
+  flex: 1;
+  min-height: 410px;
+  margin: 18px -12px 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  background: radial-gradient(ellipse at 50% 82%, rgba(200, 160, 85, 0.2) 0%, transparent 68%);
 }
 
-.featureScreen {
+/* Smartphone Mockup Frame */
+.phoneDevice {
+  position: relative;
+  width: 216px;
+  height: 388px;
+  margin-bottom: 0;
+  border: 5px solid #1a1a17;
+  border-bottom: 0;
+  border-top-left-radius: 34px;
+  border-top-right-radius: 34px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background: #0d0f0e;
+  box-shadow:
+    0 24px 50px -10px rgba(45, 34, 18, 0.32),
+    0 4px 12px rgba(45, 34, 18, 0.15),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.phoneIsland {
   position: absolute;
-  display: block;
-  overflow: hidden;
-  border: 4px solid #171714;
-  border-bottom-width: 6px;
-  border-radius: 22px;
-  background: #080a09;
-  box-shadow: 0 17px 36px rgba(32, 24, 13, 0.22);
+  top: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 52px;
+  height: 10px;
+  background: #1a1a17;
+  border-radius: 999px;
+  z-index: 10;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
-.featureScreen img {
+.phoneScreen {
+  position: absolute;
+  inset: 0;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  overflow: hidden;
+  background: #090b0a;
+}
+
+.phoneScreen img {
   object-fit: cover;
   object-position: top center;
 }
 
-.featureScreenSecondary {
-  z-index: 1;
-  top: 68px;
-  bottom: 14px;
-  left: 8%;
-  width: 39%;
-  border-width: 3px;
-  border-bottom-width: 5px;
-  border-radius: 18px;
-  transform: rotate(-9deg);
-}
-
-.featureScreenPrimary {
-  z-index: 2;
-  top: 10px;
-  right: 6%;
-  bottom: 5px;
-  width: 49%;
-  transform: rotate(2.5deg);
-}
-
-.featureAnnotation {
+/* Floating Editorial Annotations with Pointers */
+.featureCallout {
   position: absolute;
-  z-index: 4;
-  top: 14px;
-  right: 0;
+  z-index: 15;
   display: flex;
-  align-items: center;
-  gap: 7px;
-  max-width: 150px;
-  border: 1px solid rgba(166, 126, 48, 0.24);
-  border-radius: 999px;
-  padding: 8px 10px;
-  color: #604a23;
-  background: rgba(255, 251, 243, 0.96);
-  box-shadow: 0 6px 18px rgba(60, 43, 18, 0.1);
-  font-size: 9px;
-  font-weight: 700;
+  flex-direction: column;
+  pointer-events: none;
 }
 
-.annotationDot {
-  width: 6px;
-  height: 6px;
+.calloutLeft {
+  left: 2px;
+  align-items: flex-start;
+}
+
+.calloutRight {
+  right: 2px;
+  align-items: flex-end;
+}
+
+.calloutBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 140px;
+  border: 1px solid rgba(160, 122, 50, 0.28);
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #55411e;
+  background: rgba(255, 253, 248, 0.96);
+  box-shadow: 0 4px 12px rgba(60, 42, 16, 0.08);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.calloutDot {
+  width: 5px;
+  height: 5px;
   flex: none;
   border-radius: 50%;
-  background: #c69d4b;
-  box-shadow: 0 0 0 3px rgba(198, 157, 75, 0.15);
+  background: #b08a3e;
+  box-shadow: 0 0 0 2px rgba(176, 138, 62, 0.2);
+}
+
+.calloutArrow {
+  width: 75px;
+  height: 65px;
+  overflow: visible;
+}
+
+.arrowLeft {
+  margin-left: 20px;
+  margin-top: -2px;
+}
+
+.arrowRight {
+  margin-right: 20px;
+  margin-top: -2px;
 }
 
 .visualIndex {
   position: absolute;
   z-index: 4;
-  right: 11px;
+  right: 12px;
   bottom: 12px;
-  color: rgba(86, 69, 39, 0.52);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 14px;
+  color: rgba(86, 69, 39, 0.5);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 13px;
+  font-style: italic;
 }
 
 .showcaseFooter {
@@ -817,6 +888,191 @@
 /* ==========================================================================
    Closing CTA Section — 1200px Max Width
    ========================================================================== */
+
+/* ==========================================================================
+   Reviews Section — Loved by the Community (Google Play Store Verified)
+   ========================================================================== */
+
+.reviewsSection {
+  width: min(1200px, calc(100% - 48px));
+  margin: 40px auto 80px;
+  border: 1px solid rgba(228, 222, 204, 0.12);
+  border-radius: 32px;
+  padding: clamp(36px, 5vw, 60px) clamp(24px, 4vw, 56px);
+  color: white;
+  background:
+    radial-gradient(ellipse at 85% 15%, rgba(23, 201, 107, 0.18), transparent 60%),
+    radial-gradient(ellipse at 15% 85%, rgba(217, 187, 121, 0.12), transparent 60%),
+    #08120e;
+  box-shadow: 0 30px 80px -50px rgba(0, 0, 0, 0.6);
+}
+
+.reviewsHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 36px;
+}
+
+.reviewsTag {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(23, 201, 107, 0.12);
+  border: 1px solid rgba(23, 201, 107, 0.3);
+  color: #17c96b;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.reviewsTitle {
+  margin: 0;
+  color: #f7f4ea;
+  font-size: clamp(32px, 3.8vw, 48px);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.reviewsTitle span {
+  color: #17c96b;
+}
+
+.reviewsSub {
+  margin: 10px 0 0;
+  color: #9db2a4;
+  font-size: 14.5px;
+}
+
+.ratingScoreCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 22px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.scoreNumber {
+  font-size: 38px;
+  font-weight: 800;
+  color: #f5c767;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.scoreDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scoreStars {
+  color: #f5c767;
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+
+.scoreMeta {
+  color: #8fa696;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.reviewsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 22px;
+}
+
+.reviewCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 28px 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+
+.reviewCard:hover {
+  transform: translateY(-3px);
+  border-color: rgba(23, 201, 107, 0.25);
+}
+
+.reviewQuoteIcon {
+  color: #17c96b;
+  font-size: 26px;
+  line-height: 1;
+  margin-bottom: 8px;
+  font-family: Georgia, serif;
+}
+
+.reviewCardStars {
+  color: #f5c767;
+  font-size: 14px;
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+}
+
+.reviewCardText {
+  color: #d8e5dc;
+  font-size: 13.5px;
+  line-height: 1.65;
+  margin: 0 0 24px;
+  flex: 1;
+}
+
+.reviewCardFooter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.reviewAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #15b760;
+  color: #072615;
+  display: grid;
+  place-items: center;
+  font-weight: 750;
+  font-size: 15px;
+  flex: none;
+}
+
+.reviewMetaInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reviewAuthor {
+  color: #f7f4ea;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.reviewVerification {
+  color: #799482;
+  font-size: 11px;
+}
+
+.reviewVerification span {
+  color: #f5c767;
+}
 
 .closing {
   position: relative;
