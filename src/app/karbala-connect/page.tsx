@@ -14,6 +14,15 @@ export const metadata: Metadata = {
 
 const categories = ["Nauhe & Marsiye", "Duas & Ziyarat", "Manqabat", "Masaib", "Majlis", "Quran", "Podcasts", "Ulema"];
 
+const closingHighlights = [
+  "500+ Curated Audio Tracks",
+  "23 Verified Anjumans Across States",
+  "2x Playback Speed & Fast Scrubber",
+  "Surah-wise Quran with Translation",
+  "Respected Ulema & Reciter Catalogs",
+  "100% Free Forever · Zero Ads",
+];
+
 function StoreLinks() {
   return <StoreBadges className={styles.storeLinks} />;
 }
@@ -157,27 +166,61 @@ export default function KarbalaConnectPage() {
       </section>
 
       <section className={styles.closing} aria-labelledby="closing-title">
-        <div className={styles.closingLogo}>
-          <Image src="/karbala-connect-logo.webp" alt="Karbala Connect logo" fill sizes="72px" />
+        <div className={styles.closingContent}>
+          <div className={styles.closingHeader}>
+            <div className={styles.closingLogo}>
+              <Image src="/karbala-connect-logo.webp" alt="Karbala Connect logo" fill sizes="72px" />
+            </div>
+            <div>
+              <span className={styles.closingTag}>
+                <span>✦</span> Free Islamic Audio App
+              </span>
+              <h2 id="closing-title" className={styles.closingHeading}>
+                Make room for <em>what matters.</em>
+              </h2>
+            </div>
+          </div>
+
+          <p className={styles.closingDescription}>
+            Stream Nauhe, Duas, Ziyarat, Quran recitations, and connect with verified Anjumans. Crafted with devotion for Ahle Bayt (A.S.) lovers worldwide.
+          </p>
+
+          <div className={styles.closingFeatureGrid}>
+            {closingHighlights.map((feat) => (
+              <div key={feat} className={styles.closingFeatureChip}>
+                <span className={styles.closingFeatureDot}>✓</span>
+                <span>{feat}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.closingActions}>
+            <StoreLinks />
+            <Link
+              href="https://karbalaconnect.in/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.siteLink}
+            >
+              Visit Karbala Connect <ArrowRight size={16} />
+            </Link>
+          </div>
         </div>
-        <div className={styles.closingCopy}>
-          <span className={styles.sectionEyebrow}>
-            <span>✦</span> Carry it with you
-          </span>
-          <h2 id="closing-title">
-            Make room for <em>what matters.</em>
-          </h2>
-          <p>Get Karbala Connect on your phone and explore a growing collection of Islamic audio.</p>
+
+        <div className={styles.closingPreview}>
+          <div className={styles.closingGlow} aria-hidden="true" />
+          <div className={styles.closingPhone}>
+            <div className={styles.closingPhoneIsland} aria-hidden="true" />
+            <div className={styles.closingPhoneScreen}>
+              <Image
+                src="/karbala-connect/player.webp"
+                alt="Karbala Connect Audio Player Screen"
+                fill
+                sizes="(max-width: 880px) 70vw, 300px"
+              />
+            </div>
+          </div>
         </div>
-        <StoreLinks />
-        <Link
-          href="https://karbalaconnect.in/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.siteLink}
-        >
-          Visit Karbala Connect <ArrowRight size={16} />
-        </Link>
       </section>
       <p className={styles.rightsNote}>
         Karbala Connect content is shared with permission from its creators. App features and availability may vary by release.
