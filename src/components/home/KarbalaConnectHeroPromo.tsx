@@ -4,7 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 
 export function KarbalaConnectHeroPromo() {
   return (
-    <aside className="relative mt-7 w-full max-w-[680px] overflow-hidden rounded-[22px] border border-white/[.09] bg-[#14221a]/90 p-4 text-left text-white shadow-[0_18px_48px_-30px_rgba(0,0,0,.9)] backdrop-blur-xl sm:mt-8 sm:rounded-[25px] sm:p-5" aria-label="Karbala Connect app">
+    <aside className="relative mt-7 w-full max-w-[680px] overflow-hidden rounded-[22px] border border-white/[.09] bg-[#14221a]/95 p-4 text-left text-white shadow-[0_18px_48px_-30px_rgba(0,0,0,.9)] backdrop-blur-md sm:mt-8 sm:rounded-[25px] sm:p-5" aria-label="Karbala Connect app">
       <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-20 h-48 w-48 rounded-full bg-emerald-400/10 blur-[70px]" />
       <div className="relative z-10 flex items-center gap-3.5 sm:gap-4">
         <div className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-[16px] border border-[#d9bb79]/40 bg-[#064a37] shadow-[0_8px_24px_-12px_rgba(0,0,0,.8)] sm:h-[68px] sm:w-[68px] sm:rounded-[19px]">

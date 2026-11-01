@@ -25,8 +25,9 @@
 	var cx = cf.getContext("2d");
 	if (!gl || !cx) return;
 
-	var me = d.currentScript && d.currentScript.src || "/assets/js/hero.js";
-	var IMG = me.replace(/js\/hero\.js.*$/, "img/"), VQ = me.indexOf("?") > -1 ? me.slice(me.indexOf("?")) : "";   /* images change between versions: never reuse an old cached copy */
+	var me = d.currentScript && d.currentScript.src || "/imam-science-hero/js/hero.js";
+	var IMG = "/imam-science-hero/img/";
+	var VQ = me.indexOf("?") > -1 ? me.slice(me.indexOf("?")) : "";   /* images change between versions: never reuse an old cached copy */
 	var IW = 1312, IH = 1199;
 	var small = Math.min(screen.width || 9999, screen.height || 9999) < 820;
 	var TAU = Math.PI * 2, rnd = Math.random;
@@ -142,7 +143,7 @@
 		cg.style.left = still.offsetLeft + "px"; cg.style.top = still.offsetTop + "px"; cg.style.width = w + "px"; cg.style.height = h + "px";
 		var dp = window.devicePixelRatio || 1;
 		/* keep the shader's pixel count modest: sharp on screens that need it, never heavy */
-		gdpr = Math.min(dp, small ? 2 : 1.75, Math.sqrt((small ? 4.5e5 : 1.4e6) / (w * h)));
+		gdpr = Math.min(dp, small ? 1.0 : 1.25, Math.sqrt((small ? 3.5e5 : 9.0e5) / (w * h)));
 		cw = Math.max(1, Math.round(w * gdpr)); chh = Math.max(1, Math.round(h * gdpr));
 		if (cg.width !== cw || cg.height !== chh) { cg.width = cw; cg.height = chh; }
 		var s = Math.max(cw / IW, chh / IH), dw = IW * s, dh = IH * s;
@@ -154,7 +155,7 @@
 		gl.uniform4f(U.uMap, -px / s, -py / s, 1 / s, 1 / s);
 		/* the effects layer spans the whole hero */
 		SW = stage.clientWidth; SH = stage.clientHeight;
-		fdpr = Math.min(dp, small ? 1.25 : 1.5);
+		fdpr = Math.min(dp, small ? 1.0 : 1.25);
 		var fw = Math.round(SW * fdpr), fh = Math.round(SH * fdpr);
 		if (cf.width !== fw || cf.height !== fh) { cf.width = fw; cf.height = fh; }
 		var sr = stage.getBoundingClientRect(), ir = still.getBoundingClientRect();
@@ -175,7 +176,11 @@
 	var atlas = null, rays = null, RW = 82, RH = 75, leaves = [], dust = [], drops = [];
 	function rayAt(x, y) {   /* x, y in hero pixels: brightness of the light there (beams on the left, painted rays on the right) */
 		var b = 0;
-		for (var i = 0; i < BEAMS.length; i++) { var cxb = BEAMS[i][0] / 100 * SW + BEAMS[i][1] / 2 + y * TILT, dd = (x - cxb) / (BEAMS[i][1] * .6); b += Math.exp(-dd * dd); }
+		for (var i = 0; i < BEAMS.length; i++) {
+			var cxb = BEAMS[i][0] / 100 * SW + BEAMS[i][1] / 2 + y * TILT, dd = (x - cxb) / (BEAMS[i][1] * .6);
+			var d2 = dd * dd;
+			if (d2 < 5.5) b += Math.exp(-d2);
+		}
 		b *= Math.max(0, 1 - y / SH * 1.1) * Math.max(0, Math.min(1, (SW * .75 - x) / (SW * .25)));
 		if (rays) { var u = (x - im2css.x) / im2css.s, v = (y - im2css.y) / im2css.s; if (u >= 0 && v >= 0 && u < IW && v < IH) b += rays[(v / IH * RH | 0) * RW + (u / IW * RW | 0)] / 255; }
 		return Math.min(1, b);
@@ -296,9 +301,19 @@
 			if ("IntersectionObserver" in window) new IntersectionObserver(function (es) { onScreen = es[0].isIntersecting; play(); }, { rootMargin: "60px" }).observe(stage);
 			d.addEventListener("visibilitychange", play);
 			var rto; window.addEventListener("resize", function () { clearTimeout(rto); rto = setTimeout(function () { layout(); initFx(); if (!run) gl.drawArrays(gl.TRIANGLES, 0, 6); }, 120); });
-			if (window.matchMedia && matchMedia("(pointer: fine)").matches) stage.addEventListener("pointermove", function (e) {
-				var r = stage.getBoundingClientRect(); par.tx = ((e.clientX - r.left) / r.width - .5) * -8; par.ty = ((e.clientY - r.top) / r.height - .5) * -6;
-			});
+			if (window.matchMedia && matchMedia("(pointer: fine)").matches) {
+				var ticking = false;
+				stage.addEventListener("pointermove", function (e) {
+					if (ticking) return;
+					ticking = true;
+					requestAnimationFrame(function () {
+						var r = stage.getBoundingClientRect();
+						par.tx = ((e.clientX - r.left) / r.width - .5) * -8;
+						par.ty = ((e.clientY - r.top) / r.height - .5) * -6;
+						ticking = false;
+					});
+				}, { passive: true });
+			}
 			if (rm && rm.addEventListener) rm.addEventListener("change", function () { if (rm.matches) { onScreen = false; play(); box.classList.remove("is-live"); stage.classList.remove("is-live"); } });
 			play();
 		}).catch(function () {});

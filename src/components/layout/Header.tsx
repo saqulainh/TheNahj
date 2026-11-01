@@ -43,10 +43,18 @@ export function Header({
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setHasScrolled(window.scrollY > 15);
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(() => {
+          const scrolled = window.scrollY > 15;
+          setHasScrolled((prev) => (prev !== scrolled ? scrolled : prev));
+          ticking = false;
+        });
+      }
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
